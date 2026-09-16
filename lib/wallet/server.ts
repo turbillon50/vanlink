@@ -7,6 +7,7 @@ import { wallets } from "@/lib/db/schema";
 import { walletConfig } from "./config";
 import { assertIdentity } from "./security";
 import { assertServiceIdentity } from "./service-identity";
+import { walletStep } from "./diagnostics";
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | undefined;
 export async function exchangeIdentity(code: string, verifier: string, userId: string, publicKey: string) {
@@ -30,40 +31,40 @@ export async function provisionWallet(userId: string, oidcToken: string, publicK
   const client = new Turnkey({ apiBaseUrl: "https://api.turnkey.com", defaultOrganizationId: config.parentId,
     apiPublicKey: process.env.TURNKEY_API_PUBLIC_KEY!, apiPrivateKey: process.env.TURNKEY_API_PRIVATE_KEY! }).apiClient();
   // A root credential must never be silently used as the production service.
-  await assertServiceIdentity(client, config.parentId, config.serviceUserId);
+  await walletStep("service_identity", () => assertServiceIdentity(client, config.parentId, config.serviceUserId));
 
   return db().transaction(async tx => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
-    const existing = (await tx.select().from(wallets).where(eq(wallets.clerkUserId, userId)))[0];
+    await walletStep("database_lock", () => tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`));
+    const existing = (await walletStep("wallet_lookup", () => tx.select().from(wallets).where(eq(wallets.clerkUserId, userId))))[0];
     // Recover an interrupted create using the verified OIDC identity, never email.
-    const matches = await client.getSubOrgIds({ organizationId: config.parentId, filterType: "OIDC_TOKEN", filterValue: oidcToken });
+    const matches = await walletStep("identity_lookup", () => client.getSubOrgIds({ organizationId: config.parentId, filterType: "OIDC_TOKEN", filterValue: oidcToken }));
     if (matches.organizationIds.length > 1) throw new Error("Ambiguous wallet ownership");
     if (existing && matches.organizationIds[0] !== existing.organizationId) throw new Error("Wallet ownership mismatch");
     let organizationId = existing?.organizationId ?? matches.organizationIds[0];
     if (!organizationId) {
-      const created = await client.createSubOrganization({ organizationId: config.parentId,
+      const created = await walletStep("wallet_create", () => client.createSubOrganization({ organizationId: config.parentId,
         subOrganizationName: `VanLink ${userId}`, rootQuorumThreshold: 1,
         rootUsers: [{ userName: "Wallet owner", apiKeys: [], authenticators: [],
           oauthProviders: [{ providerName: "Clerk", oidcToken }] }],
         wallet: { walletName: "VanLink", accounts: [...DEFAULT_ETHEREUM_ACCOUNTS, ...DEFAULT_BITCOIN_MAINNET_P2WPKH_ACCOUNTS] },
-      });
+      }));
       organizationId = created.subOrganizationId;
     }
-    const session = await client.oauthLogin({ organizationId, oidcToken, publicKey, expirationSeconds: "3600", invalidateExisting: false });
+    const session = await walletStep("device_session", () => client.oauthLogin({ organizationId, oidcToken, publicKey, expirationSeconds: "3600", invalidateExisting: false }));
     if (!session.session) throw new Error("Wallet session unavailable");
     // The JWT only describes the session. The browser signs requests with its
     // IndexedDB key; neither the wallet key nor a browser private key reaches us.
     if (existing) return existing;
-    const result = await client.getWallets({ organizationId });
+    const result = await walletStep("wallet_read", () => client.getWallets({ organizationId }));
     if (result.wallets.length !== 1) throw new Error("Unexpected wallet count");
     const walletId = result.wallets[0].walletId;
-    const accounts = await client.getWalletAccounts({ organizationId, walletId });
+    const accounts = await walletStep("accounts_read", () => client.getWalletAccounts({ organizationId, walletId }));
     const evm = accounts.accounts.find(a => a.addressFormat === "ADDRESS_FORMAT_ETHEREUM");
     const btc = accounts.accounts.find(a => a.addressFormat === "ADDRESS_FORMAT_BITCOIN_MAINNET_P2WPKH");
-    const users = await client.getUsers({ organizationId });
+    const users = await walletStep("owner_read", () => client.getUsers({ organizationId }));
     if (!evm || !btc || users.users.length !== 1) throw new Error("Wallet setup incomplete");
-    const [saved] = await tx.insert(wallets).values({ clerkUserId: userId, organizationId, walletId,
-      turnkeyUserId: users.users[0].userId, evmAddress: evm.address, bitcoinAddress: btc.address }).returning();
+    const [saved] = await walletStep("wallet_save", () => tx.insert(wallets).values({ clerkUserId: userId, organizationId, walletId,
+      turnkeyUserId: users.users[0].userId, evmAddress: evm.address, bitcoinAddress: btc.address }).returning());
     return saved;
   });
 }
