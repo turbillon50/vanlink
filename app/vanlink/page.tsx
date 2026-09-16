@@ -6,6 +6,7 @@ import { TopBar } from "@/components/top-bar";
 import { PressButton } from "@/components/ui/press-button";
 import { PageIntro, EmptyState, ConnectionNote } from "@/components/craft";
 import { Icon } from "@/components/icons";
+import { LinkSculpture } from "@/components/brand/link-sculpture";
 import { readDrafts, type Draft } from "@/lib/drafts";
 export default function VanLinkPage() {
   const [filter, setFilter] = useState("drafts"),
@@ -114,9 +115,7 @@ export default function VanLinkPage() {
           )}
         </section>
         <aside className="how-panel">
-          <span className="hero-link-icon">
-            <Icon name="link" size={25} />
-          </span>
+          <div className="how-sculpture"><LinkSculpture /></div>
           <h3>
             Menos pasos.
             <br />

@@ -11,6 +11,7 @@ import {
 } from "react";
 import { Wordmark } from "@/components/brand/logo";
 import { Icon, type IconName } from "@/components/icons";
+import { AccountLink } from "@/components/auth/account-link";
 const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "Inicio", icon: "home" },
   { href: "/vanlink", label: "VanLink", icon: "link" },
@@ -90,15 +91,7 @@ export function AppShell({
               <br />
               un simple link.
             </p>
-            <Link href="/profile" className="rail-account">
-              <span className="avatar">
-                <Icon name="user" size={19} />
-              </span>
-              <span>
-                Tu cuenta<small>Sin conectar</small>
-              </span>
-              <Icon name="chevron" size={16} />
-            </Link>
+            <AccountLink rail />
           </div>
         </aside>
         <div className="workspace">

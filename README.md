@@ -6,8 +6,8 @@ Revisión del proyecto existente `septvandefi`, recuperado del deployment Vercel
 ## Estado real
 
 Esta entrega reconstruye la interfaz y corrige flujos engañosos. No es todavía
-una wallet operativa: el proyecto original no tiene autenticación, API, base de
-datos ni variables de entorno configuradas. No se han enviado fondos.
+una wallet operativa: el acceso ahora se integra con Clerk, pero faltan la
+wallet, las APIs financieras y la base de datos. No se han enviado fondos.
 
 ### Implementado
 
@@ -25,8 +25,8 @@ datos ni variables de entorno configuradas. No se han enviado fondos.
 
 ### Pendiente para operar
 
-Conectar Clerk como único acceso; Turnkey con propiedad/firma del usuario
-verificadas; Alchemy; LI.FI; Onramper; Postgres. Mantener Base/USDC como eje.
+Completar verificación de dominios/HTTPS en Clerk y probar una sesión real.
+Conectar Turnkey con propiedad/firma del usuario verificadas; Alchemy; LI.FI; Onramper; Postgres. Mantener Base/USDC como eje.
 
 Los VanLinks publicados necesitan identificadores de servidor, control del
 propietario, expiración, estado persistente y confirmación real en cadena.
@@ -47,18 +47,35 @@ habilitada durante la compilación.
 ## Alcance
 
 Sin dLocal, MercadoPago, Rapyd, Cryptomus, Reloadly, Airtable ni auth/ramp/swap
-adicionales. No se cambiaron accesos ni se ejecutaron operaciones financieras.
+adicionales. Clerk es el único sistema de autenticación. No se ejecutaron
+operaciones financieras.
 
 ## Código y publicación
 
 - Repositorio exclusivo: https://github.com/turbillon50/vanlink
 - Proyecto Vercel: septvandefi
-- Producción: https://septvandefi.vercel.app
-- Dominio asociado: vandefi.live (requiere DNS en Name.com)
+- Producción: https://vandefi.live (DNS y HTTPS activos)
+- URL alternativa: https://septvandefi.vercel.app
 - Node 24; npm y package-lock.json para instalaciones reproducibles.
-- Splash decorativo de 1.48 s al abrir, sin retrasar peticiones ni capturar clics; navegación normal sin repetirlo.
+- Entrada de marca de 4.4 s, omitible con Entrar. Trazo de luz, corrientes orbitales, halo y revelado suave. No espera a las APIs; CSS la cierra incluso sin hidratación; no se repite en navegación interna.
 - Movimiento reducido omite la entrada y detiene las animaciones.
+- Campos, filtros, botones, dock y superficies comparten bordes ópticos, estados de foco y microinteracciones.
+- Los cinco CNAME de Clerk están publicados en Name.com con TTL 300; falta completar la verificación en Clerk y validar el primer acceso.
 - Cristal y gráficos vectoriales locales; no hay vídeos pesados ni peticiones de imágenes externas.
 
 Este repositorio contiene exclusivamente el reinicio de septiembre de 2026.
 Los repositorios antiguos de VanDeFi se conservan por separado.
+
+## Acceso con Clerk
+
+- `@clerk/nextjs` 7, `proxy.ts` para Next 16, interfaz en español de México.
+- Registro `/sign-up`, acceso `/login`, y `/profile` protegido en el servidor.
+- Datos y seguridad de la cuenta se administran con la interfaz oficial de Clerk.
+- Variables: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` y `CLERK_SECRET_KEY`.
+  La secreta solo existe como variable sensible de producción en Vercel.
+- Para desarrollar usa claves de una instancia de desarrollo en `.env.local`;
+  `.env.example` documenta sus nombres. Sin configuración se mantiene la vista
+  pública; `/profile` redirige al acceso.
+- La interfaz maneja carga lenta/fallida de Clerk con reintento y salida a inicio.
+- Los borradores siguen siendo locales al navegador, no datos asociados a una
+  identidad ni enlaces cobrables.

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Wordmark } from "@/components/brand/logo";
 import { Icon } from "@/components/icons";
 import { useAppMenu } from "@/components/app-shell";
+import { AccountLink } from "@/components/auth/account-link";
 export function TopBar({
   title,
   brand = false,
@@ -50,9 +51,7 @@ export function TopBar({
             <Icon name="shield" size={19} />
           </span>
         ) : (
-          <Link href="/profile" className="avatar" aria-label="Mi cuenta">
-            <Icon name="user" size={19} />
-          </Link>
+          <AccountLink />
         )}
       </div>
     </header>
