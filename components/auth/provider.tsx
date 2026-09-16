@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { esMX } from "@clerk/localizations";
 import { authConfigured } from "@/lib/auth-config";
+import { WalletSessionBoundary } from "@/components/wallet/session-boundary";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   if (!authConfigured) return children;
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       }}
     >
+      <WalletSessionBoundary />
       {children}
     </ClerkProvider>
   );

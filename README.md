@@ -7,7 +7,8 @@ Revisión del proyecto existente `septvandefi`, recuperado del deployment Vercel
 
 Esta entrega reconstruye la interfaz y corrige flujos engañosos. No es todavía
 una wallet operativa: el acceso ahora se integra con Clerk, pero faltan la
-wallet, las APIs financieras y la base de datos. No se han enviado fondos.
+activación de wallets y las APIs financieras. Postgres y el puente Clerk–Turnkey
+están preparados, con activación deshabilitada. No se han enviado fondos.
 
 ### Implementado
 
@@ -25,8 +26,10 @@ wallet, las APIs financieras y la base de datos. No se han enviado fondos.
 
 ### Pendiente para operar
 
-Completar verificación de dominios/HTTPS en Clerk y probar una sesión real.
-Conectar Turnkey con propiedad/firma del usuario verificadas; Alchemy; LI.FI; Onramper; Postgres. Mantener Base/USDC como eje.
+Clerk tiene DNS/HTTPS activos. Falta autorizar la credencial limitada de Turnkey
+y probar la activación real; conectar las claves de Alchemy, LI.FI y Onramper.
+Mantener Base/USDC como eje, con USDT por red y Bitcoin nativo para rutas que lo
+justifiquen. Consulta [el estado y los controles de activación](docs/wallet-integrations.md).
 
 Los VanLinks publicados necesitan identificadores de servidor, control del
 propietario, expiración, estado persistente y confirmación real en cadena.
@@ -38,7 +41,7 @@ Un borrador local no es un link público, no recibe dinero ni se sincroniza.
 npm ci
 npm run dev
 npm run build
-node --test tests/drafts.test.mjs
+node --test tests/*.test.mjs
 ```
 
 Las pruebas de borradores usan Node 24. La comprobación de TypeScript está
@@ -60,7 +63,7 @@ operaciones financieras.
 - Entrada de marca de 4.4 s, omitible con Entrar. Trazo de luz, corrientes orbitales, halo y revelado suave. No espera a las APIs; CSS la cierra incluso sin hidratación; no se repite en navegación interna.
 - Movimiento reducido omite la entrada y detiene las animaciones.
 - Campos, filtros, botones, dock y superficies comparten bordes ópticos, estados de foco y microinteracciones.
-- Los cinco CNAME de Clerk están publicados en Name.com con TTL 300; falta completar la verificación en Clerk y validar el primer acceso.
+- Los cinco CNAME de Clerk están publicados en Name.com con TTL 300; HTTPS y el formulario de acceso funcionan. La activación de una wallet requiere una prueba con un usuario real.
 - Cristal y gráficos vectoriales locales; no hay vídeos pesados ni peticiones de imágenes externas.
 
 Este repositorio contiene exclusivamente el reinicio de septiembre de 2026.

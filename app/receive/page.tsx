@@ -21,7 +21,7 @@ export default function ReceivePage() {
         icon="wallet"
         title="Primero, conecta tu wallet"
         description="Cuando esté conectada, aquí aparecerán tu dirección real en Base y su código QR."
-        action={<PressButton href="/login">Ver acceso a mi cuenta</PressButton>}
+        action={<PressButton href="/profile">Ver mi wallet</PressButton>}
       />
       <ConnectionNote>
         También puedes dejar preparado un VanLink y publicarlo cuando tu wallet

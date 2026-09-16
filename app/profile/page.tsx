@@ -6,6 +6,7 @@ import { TopBar } from "@/components/top-bar";
 import { Icon } from "@/components/icons";
 import { PressButton } from "@/components/ui/press-button";
 import { authConfigured } from "@/lib/auth-config";
+import { WalletSetup } from "@/components/wallet/setup";
 
 function ProfileContent() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -22,11 +23,7 @@ function ProfileContent() {
       <button onClick={() => openUserProfile()}><Icon name="user" size={19} /><span>Mi cuenta y seguridad</span><Icon name="chevron" size={17} /></button>
       <p>Actualiza tus datos, revisa tus sesiones y administra tu acceso.</p>
     </div>
-    <section className="access-status">
-      <h2>Tu cuenta ya tiene su espacio</h2>
-      <p>Tu wallet está pendiente de conexión. Mientras tanto puedes explorar VanDeFi y preparar tus VanLinks.</p>
-      <PressButton href="/vanlink">Ver mis VanLinks <Icon name="arrow" size={17} /></PressButton>
-    </section>
+    <WalletSetup userId={user.id} />
     <div className="connection-note"><p>Los borradores se guardan solo en este navegador. Todavía no se sincronizan con tu cuenta ni reciben fondos.</p></div>
     <SignOutButton redirectUrl="/"><button className="press-button secondary">Cerrar sesión</button></SignOutButton>
   </>;

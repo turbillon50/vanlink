@@ -8,6 +8,7 @@ const withClerk = clerkMiddleware(async (auth, request) => {
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
+    if (request.nextUrl.pathname.startsWith("/api/")) return NextResponse.json({ error: "Acceso no disponible." }, { status: 503, headers: { "Cache-Control": "no-store" } });
     if (isPrivate(request)) return NextResponse.redirect(new URL("/login", request.url));
     return NextResponse.next();
   }

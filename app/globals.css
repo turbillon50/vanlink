@@ -1600,3 +1600,9 @@ small {
     opacity: 0.65;
   }
 }
+/* Wallet setup uses the same compact glass surfaces as the account screen. */
+.wallet-setup .section-heading { margin-bottom: 1rem; }
+.wallet-network-list { display: flex; flex-wrap: wrap; gap: .55rem; margin: 1rem 0 1.4rem; }
+.wallet-network-list span { font-size: .75rem; line-height: 1.5; padding: .4rem .7rem; border: 1px solid #a0e8cb24; background: #36d6a809; border-radius: 999px; color: #b7d0c5; }
+.wallet-error { margin-top: 1rem; }
+.wallet-error p { color: #ffb9b1; }
