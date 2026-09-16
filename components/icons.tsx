@@ -19,6 +19,9 @@ export type IconName =
   | "wallet"
   | "globe"
   | "info"
+  | "chart"
+  | "spark"
+  | "send"
   | "chevron";
 const paths: Record<IconName, React.ReactNode> = {
   home: <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-8H9v8H4a1 1 0 0 1-1-1Z" />,
@@ -83,6 +86,14 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M12 11v6M12 7h.01" />
     </>
   ),
+  chart: <path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-6" />,
+  spark: (
+    <>
+      <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" />
+      <path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7Z" />
+    </>
+  ),
+  send: <path d="m4 4 16 8-16 8 3-8Z" />,
   chevron: <path d="m9 5 7 7-7 7" />,
 };
 export function Icon({

@@ -14,8 +14,10 @@ import { Icon, type IconName } from "@/components/icons";
 import { AccountLink } from "@/components/auth/account-link";
 const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "Inicio", icon: "home" },
+  { href: "/market", label: "Mercado", icon: "chart" },
   { href: "/vanlink", label: "VanLink", icon: "link" },
   { href: "/activity", label: "Actividad", icon: "activity" },
+  { href: "/v", label: "V", icon: "spark" },
 ];
 const MenuContext = createContext<(() => void) | null>(null);
 export function useAppMenu() {
@@ -60,7 +62,7 @@ export function AppShell({
           </Link>
           <p className="rail-label">TU DINERO. TU CONTROL.</p>
           <nav aria-label="Navegación principal">
-            {items.slice(0, 4).map((n) => (
+            {items.slice(0, 6).map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
@@ -123,7 +125,7 @@ export function AppShell({
                 aria-current={active === i ? "page" : undefined}
                 className={active === i ? "dock-item selected" : "dock-item"}
               >
-                <Icon name={n.icon} size={23} />
+                <Icon name={n.icon} size={n.label === "V" ? 20 : 22} />
                 <span>{n.label}</span>
               </Link>
             ))}
