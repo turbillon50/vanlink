@@ -6,6 +6,7 @@ import { walletFlows } from "@/lib/db/schema";
 import { walletConfig, walletConfigured } from "@/lib/wallet/config";
 import { digest, equalSecret } from "@/lib/wallet/security";
 import { exchangeIdentity, provisionWallet } from "@/lib/wallet/server";
+import { walletDiagnostic } from "@/lib/wallet/diagnostics";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -39,9 +40,9 @@ export async function GET(request: NextRequest) {
     stage = "wallet";
     await provisionWallet(userId, identity, flow.publicKey);
     return finish("connected");
-  } catch {
+  } catch (error) {
     // Provider errors can contain tokens; never log raw exceptions or responses.
-    console.error("wallet_activation_failed", { stage });
+    console.error("wallet_activation_failed", { stage, ...walletDiagnostic(error) });
     return finish(stage === "callback" ? "error" : `${stage}_error`);
   }
 }

@@ -118,12 +118,6 @@ small {
   font-weight: 600;
   letter-spacing: 0.08em;
 }
-.van-logo-glow {
-  filter: drop-shadow(0 0 8px #00ebaf55);
-}
-.van-logo {
-  flex-shrink: 0;
-}
 .skip-link {
   position: fixed;
   top: 8px;
@@ -1110,38 +1104,6 @@ small {
   color: #bdd0c3;
   font-size: 12px;
 }
-.welcome-art {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 245px;
-  width: 250px;
-  margin: auto;
-  isolation: isolate;
-}
-.welcome-art:before {
-  content: "";
-  position: absolute;
-  inset: 22%;
-  border-radius: 50%;
-  background: #00edaf24;
-  filter: blur(45px);
-  z-index: -1;
-}
-.welcome-art:after {
-  content: "";
-  position: absolute;
-  bottom: 12px;
-  width: 140px;
-  height: 18px;
-  background: radial-gradient(ellipse, #00edaf33, transparent 70%);
-  filter: blur(5px);
-}
-.welcome-art svg {
-  filter: drop-shadow(0 0 10px #00ecad66);
-  animation: mark-in 0.8s var(--ease) both;
-}
 .welcome-core {
   padding: 30px 0;
   max-width: 540px;
@@ -1176,45 +1138,6 @@ small {
 }
 .welcome-actions .secondary {
   border-color: #c3dbc04d;
-}
-.splash {
-  position: fixed;
-  inset: 0;
-  z-index: 99;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  flex-direction: column;
-  padding: 30px;
-}
-.splash h1 {
-  font-size: 28px;
-  letter-spacing: 0.2em;
-  margin: 25px 0 8px;
-  font-weight: 550;
-}
-.splash p {
-  font-size: 13px;
-  color: #a3bcae;
-}
-.splash-loader {
-  width: 150px;
-  height: 2px;
-  background: #143524;
-  margin-top: 60px;
-  border-radius: 3px;
-  overflow: hidden;
-}
-.splash-loader:after {
-  content: "";
-  display: block;
-  width: 40%;
-  height: 100%;
-  background: #32ffc0;
-  box-shadow: 0 0 12px #00edaf;
-  animation: load 1.3s ease-in-out infinite;
 }
 .loading-label {
   padding: 20px;
@@ -1533,9 +1456,6 @@ small {
   .welcome-core {
     padding: 30px 0;
   }
-  .welcome-art {
-    min-height: 250px;
-  }
   .welcome-top {
     max-width: 1000px;
   }
@@ -1600,9 +1520,3 @@ small {
     opacity: 0.65;
   }
 }
-/* Wallet setup uses the same compact glass surfaces as the account screen. */
-.wallet-setup .section-heading { margin-bottom: 1rem; }
-.wallet-network-list { display: flex; flex-wrap: wrap; gap: .55rem; margin: 1rem 0 1.4rem; }
-.wallet-network-list span { font-size: .75rem; line-height: 1.5; padding: .4rem .7rem; border: 1px solid #a0e8cb24; background: #36d6a809; border-radius: 999px; color: #b7d0c5; }
-.wallet-error { margin-top: 1rem; }
-.wallet-error p { color: #ffb9b1; }
