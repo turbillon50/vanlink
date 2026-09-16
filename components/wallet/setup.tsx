@@ -10,6 +10,8 @@ const callbackMessages: Record<string, string> = {
   expired: "La conexión venció. Puedes intentarlo otra vez.",
   cancelled: "Cancelaste la conexión. Tu cuenta sigue disponible.",
   error: "No pudimos terminar de conectar tu wallet. Intenta de nuevo.",
+  identity_error: "No pudimos confirmar tu sesión. Vuelve a intentar la conexión con tu misma cuenta.",
+  wallet_error: "No pudimos terminar de crear o conectar tu wallet. Puedes reintentar; conservaremos la misma wallet si ya se creó.",
   unavailable: "Estamos terminando la conexión de wallets.",
 };
 
@@ -70,18 +72,19 @@ export function WalletSetup({ userId }: { userId: string }) {
 
   return <section className="access-status wallet-setup" aria-busy={busy}>
     <div className="section-heading"><span className="eyebrow">TU WALLET</span><Icon name="wallet" size={22} /></div>
-    <h2>{status?.wallet ? "Tu wallet, vinculada" : "Tu dinero empieza aquí"}</h2>
+    <h2>{status?.wallet ? "Tu wallet, vinculada" : "Tu cuenta ya está creada"}</h2>
     {status ? <>
       <p>{status.wallet
         ? verified ? "Tu dispositivo ya está conectado. Los envíos y la recepción de fondos siguen en preparación."
           : "Tu wallet está guardada en tu cuenta. Conecta este dispositivo cuando quieras continuar."
-        : status.canActivate ? "Activa tu wallet con la misma cuenta. Solo necesitas confirmar la conexión."
+        : status.canActivate ? "Ahora crea tu wallet con esta misma cuenta. Confirma la conexión para vincularla a ti."
           : "Tu cuenta está lista. Estamos terminando la conexión para activar tu wallet."}</p>
       <div className="wallet-network-list"><span>USDC · Base</span><span>Bitcoin · Próximamente</span></div>
       {status.canActivate && !verified ? <PressButton onClick={connect} disabled={busy}>
-        {busy ? "Conectando…" : status.wallet ? "Conectar este dispositivo" : "Activar mi wallet"}
+        {busy ? "Conectando…" : status.wallet ? "Conectar este dispositivo" : "Crear mi wallet"}
         {!busy ? <Icon name="arrow" size={17} /> : null}
       </PressButton> : !status.wallet ? <PressButton href="/vanlink">Ver mis VanLinks <Icon name="arrow" size={17} /></PressButton> : null}
+      {!status.wallet && status.canActivate ? <p className="wallet-activation-note">Este paso crea tu wallet. Los depósitos y envíos se habilitarán después.</p> : null}
     </> : !error ? <p role="status">Consultando tu wallet…</p> : null}
     {error ? <div className="wallet-error"><p role="alert">{error}</p>
       {!status ? <PressButton variant="secondary" onClick={() => { setError(""); setRetry(n => n + 1); }}>Reintentar</PressButton> : null}

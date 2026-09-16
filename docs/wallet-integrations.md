@@ -27,7 +27,9 @@ account change; provider sessions expire after one hour.
   exclusion from the root quorum were verified against Turnkey's live API.
 - Vercel production now uses this service's API key pair and
   `TURNKEY_SERVICE_USER_ID`; the original root user's access is preserved.
-- `WALLET_ACTIVATION_ENABLED=false`. No receiving addresses or transfers exposed.
+- `WALLET_ACTIVATION_ENABLED=true` for user-initiated wallet setup from **Mi cuenta**.
+  Luis confirmed his Clerk registration and requested the missing wallet step.
+  No receiving addresses or transfers are exposed; `transfersEnabled=false`.
 - `TURNKEY_SERVICE_USER_ID` must match whoami and must not be in the root quorum.
 - Alchemy, LI.FI and Onramper production credentials still need to be supplied.
 - VanLinks remain local drafts; they are not payable invoices.
@@ -51,10 +53,19 @@ the installed SDK does not expose `getOrganization`. Missing root-quorum data
 fails closed, as do unexpected service IDs or organization IDs.
 No bootstrap script holding a root key is committed to this repository.
 
-Before enabling activation, verify the service's creation permission and the
-OIDC login flow on a dedicated test sub-org, including retry after interruption.
-Then test a real user on mobile, sign-out and another device. Funds stay disabled
-until user-controlled signing, export/recovery, fees and network checks pass.
+The service's identity, root exclusion and create-only policy were checked live.
+Clerk's production discovery, RS256 JWKS and S256 authorization redirect were
+checked. Activation now makes the existing flow reachable from Luis's own
+authenticated browser; it does not assert a wallet has already been created.
+The first actual OIDC consent, sub-org creation, retry after interruption,
+mobile sign-out and another-device connection still require live verification.
+Funds stay disabled until those checks, user-controlled signing, export/recovery,
+fees and network checks pass. Callback logs include a fixed stage only, never
+provider responses, identity tokens, bank data or private keys.
+
+Luis's screenshot showed the earlier static profile card. The current profile
+loads wallet status from the API with no-store. No service worker is installed
+in this version; a full navigation to `/profile` loads the current client bundle.
 
 ## Assets and remittance routing
 

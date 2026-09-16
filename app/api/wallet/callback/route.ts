@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
   if (request.nextUrl.origin !== config.origin) return finish("expired");
   const state = request.nextUrl.searchParams.get("state");
   if (!equalSecret(state, request.cookies.get("__Host-vanlink-wallet")?.value)) return finish("expired");
+  let stage: "callback" | "identity" | "wallet" = "callback";
   try {
     // Atomic, one-time consumption also rejects replay, expiry and another user.
     const [flow] = await db().delete(walletFlows).where(and(eq(walletFlows.clerkUserId, userId),
@@ -33,12 +34,14 @@ export async function GET(request: NextRequest) {
     if (request.nextUrl.searchParams.has("error")) return finish("cancelled");
     const code = request.nextUrl.searchParams.get("code");
     if (!code || code.length > 4096) return finish("expired");
+    stage = "identity";
     const identity = await exchangeIdentity(code, flow.verifier, userId, flow.publicKey);
+    stage = "wallet";
     await provisionWallet(userId, identity, flow.publicKey);
     return finish("connected");
   } catch {
     // Provider errors can contain tokens; never log raw exceptions or responses.
-    console.error("wallet_activation_failed");
-    return finish("error");
+    console.error("wallet_activation_failed", { stage });
+    return finish(stage === "callback" ? "error" : `${stage}_error`);
   }
 }
