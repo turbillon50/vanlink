@@ -1,0 +1,575 @@
+/* VanDeFi · crystal / motion. Shared, local effects; no video or canvas runtime. */
+body {
+  isolation: isolate;
+}
+.ambient-light {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+.ambient-light i {
+  position: absolute;
+  width: min(80vw, 760px);
+  height: min(75vw, 650px);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #00ddaa0c, transparent 68%);
+  animation: ambient-drift 21s ease-in-out infinite alternate;
+}
+.ambient-light i:nth-child(1) {
+  top: -28%;
+  right: -18%;
+}
+.ambient-light i:nth-child(2) {
+  top: 35%;
+  left: -35%;
+  background: radial-gradient(ellipse, #18bce60a, transparent 65%);
+  animation-delay: -11s;
+}
+.ambient-light i:nth-child(3) {
+  bottom: -45%;
+  right: 5%;
+  animation-delay: -6s;
+}
+@keyframes ambient-drift {
+  to {
+    transform: translate3d(5%, 12%, 0) scale(1.12);
+  }
+}
+
+.van-logo-glow {
+  filter: drop-shadow(0 0 7px #25ffc53d) drop-shadow(0 2px 1px #001612);
+}
+.van-logo-glint {
+  stroke-dasharray: 6 94;
+  stroke-dashoffset: 110;
+}
+.brand-sculpture {
+  width: 290px;
+  height: 280px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  isolation: isolate;
+}
+.sculpture-mark {
+  transform-origin: 50% 70%;
+  animation: sculpture-float 7s ease-in-out infinite;
+  z-index: 2;
+}
+.sculpture-mark .van-logo {
+  filter: drop-shadow(0 5px 3px #0008) drop-shadow(0 0 15px #00ffc13b);
+}
+.sculpture-mark .van-logo-glint {
+  animation: glass-glint 7s ease-in-out infinite;
+}
+.sculpture-aura {
+  position: absolute;
+  inset: 4%;
+  background: radial-gradient(
+    ellipse,
+    #00cba326,
+    #00b9b209 40%,
+    transparent 68%
+  );
+  animation: aura-breathe 7s ease-in-out infinite;
+}
+.sculpture-orbit {
+  position: absolute;
+  width: 265px;
+  height: 125px;
+  border: 1px solid #9cffe916;
+  border-top-color: #abffeb55;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 1px 0 #dcfff70a,
+    0 -3px 20px #00ffcc05;
+}
+.orbit-one {
+  transform: rotate(-32deg);
+  animation: orbit-drift 12s ease-in-out infinite alternate;
+}
+.orbit-two {
+  width: 240px;
+  height: 105px;
+  transform: rotate(32deg);
+  border-top-color: #78e7ff2e;
+  opacity: 0.65;
+  animation: orbit-drift-two 14s ease-in-out infinite alternate;
+}
+.sculpture-floor {
+  position: absolute;
+  bottom: 15px;
+  width: 175px;
+  height: 35px;
+  background: radial-gradient(ellipse, #08dbb225, transparent 70%);
+  transform: scaleY(0.45);
+}
+.sculpture-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #d0fff0;
+  box-shadow: 0 0 9px #32ffd3;
+  animation: particle-shine 5s ease-in-out infinite;
+}
+.particle-one {
+  top: 65px;
+  right: 44px;
+}
+.particle-two {
+  left: 26px;
+  bottom: 78px;
+  animation-delay: -2s;
+}
+.particle-three {
+  left: 87px;
+  top: 38px;
+  width: 2px;
+  height: 2px;
+  animation-delay: -4s;
+}
+@keyframes sculpture-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+@keyframes aura-breathe {
+  50% {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
+}
+@keyframes orbit-drift {
+  to {
+    transform: rotate(-20deg) scale(0.96);
+  }
+}
+@keyframes orbit-drift-two {
+  to {
+    transform: rotate(23deg) scale(1.04);
+  }
+}
+@keyframes particle-shine {
+  50% {
+    opacity: 0.25;
+    transform: translateY(-5px);
+  }
+}
+@keyframes glass-glint {
+  0%,
+  35% {
+    stroke-dashoffset: 110;
+    opacity: 0;
+  }
+  42% {
+    opacity: 0.9;
+  }
+  68%,
+  100% {
+    stroke-dashoffset: -100;
+    opacity: 0;
+  }
+}
+
+.splash {
+  overflow: hidden;
+  background: #000;
+  padding: 24px;
+}
+.splash-haze {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 42%, #00251e91, transparent 47%),
+    radial-gradient(ellipse at 70% 88%, #00262f3b, transparent 50%);
+  pointer-events: none;
+}
+.splash-center {
+  position: relative;
+  margin-top: -35px;
+}
+.splash h1 {
+  margin: 10px 0 12px;
+  font-size: clamp(29px, 8vw, 37px);
+  letter-spacing: 0.19em;
+  padding-left: 0.19em;
+  font-weight: 520;
+}
+.splash p {
+  color: #94aaa3;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+.splash-bottom {
+  position: absolute;
+  bottom: calc(54px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+}
+.splash-bottom p {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  color: #83998f;
+}
+.splash-loader {
+  margin: 0;
+  width: 105px;
+  height: 2px;
+  background: #ffffff0c;
+}
+.splash-loader:after {
+  background: linear-gradient(90deg, transparent, #51f3c8, #defff7);
+  box-shadow: 0 0 12px #00edaf88;
+}
+.brand-entrance {
+  pointer-events: none;
+  z-index: 98;
+  animation: entrance-out 0.48s 1s cubic-bezier(0.3, 0, 0.2, 1) forwards;
+}
+.brand-entrance .splash-center {
+  animation: entrance-mark 0.75s var(--ease) both;
+}
+.brand-entrance .splash-loader:after {
+  animation: load 1.25s ease-in-out both;
+}
+/* Keyboard users immediately get an unobstructed interface. */
+body:has(:focus-visible) .brand-entrance {
+  display: none;
+}
+@keyframes entrance-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(1.025);
+  }
+}
+@keyframes entrance-mark {
+  from {
+    opacity: 0;
+    transform: translateY(9px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.welcome-page {
+  background: transparent;
+}
+.welcome-core {
+  padding-top: 6px;
+}
+.brand-sculpture.compact {
+  height: 250px;
+}
+.welcome-assets {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #b9cfc6;
+  font-size: 11px;
+  margin-top: 8px;
+}
+.welcome-assets > span:not(.crypto-mark) {
+  color: #7e978c;
+  margin: 0 4px;
+}
+
+/* Clear crystal edge and neutral glass, with emerald reserved for light. */
+.dock {
+  background: linear-gradient(
+    165deg,
+    #5c777052,
+    #131c1ddd 24%,
+    #04080aeb 60%,
+    #15302aab
+  );
+  border-color: #d3fff047;
+  border-top-color: #dcfff08c;
+  backdrop-filter: blur(28px) saturate(155%);
+  -webkit-backdrop-filter: blur(28px) saturate(155%);
+  box-shadow:
+    inset 0 2px 2px #f2fff43d,
+    inset 0 -2px 3px #91cfff20,
+    0 0 0 3px #c3ffff07,
+    0 15px 40px #000d,
+    0 -5px 35px #00ebba0a;
+}
+.dock:before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  top: 0;
+  left: 17%;
+  right: 17%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #edfff8d9, transparent);
+}
+.dock-selection {
+  background:
+    radial-gradient(ellipse at 50% 0, #92ffe440, transparent 80%),
+    linear-gradient(160deg, #156c5766, #04211ad9 70%);
+  border-color: #6effd361;
+  border-top-color: #caffecab;
+  box-shadow:
+    inset 0 1px 4px #d5fff046,
+    inset 0 -1px 3px #00f0c923,
+    0 0 22px #00ffc018;
+  transition:
+    transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s;
+}
+.dock-item svg {
+  transition: transform 0.35s var(--ease);
+}
+.dock-item.selected svg {
+  transform: translateY(-1px);
+}
+.icon-button:not(.quiet),
+.avatar,
+.quick-actions a > span,
+.empty-symbol,
+.small-orb {
+  background:
+    radial-gradient(100% 90% at 12% 0, #dcfff126, transparent 64%),
+    linear-gradient(145deg, #1a2624c9, #070c0cf5 72%);
+  border-color: #b4decc2e;
+  border-top-color: #e7fff257;
+  box-shadow:
+    inset 0 1px 1px #ffffff17,
+    inset 0 -1px 1px #62dcce0c,
+    0 7px 15px #0007;
+}
+.quick-actions a > span {
+  position: relative;
+  transition:
+    transform 0.3s var(--ease),
+    box-shadow 0.3s,
+    border-color 0.3s;
+}
+.quick-actions a > span:after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1px solid #ffffff07;
+  border-radius: 17px;
+  pointer-events: none;
+}
+.quick-actions a:first-child > span {
+  color: #85fbd1;
+}
+.quick-actions a:nth-child(2) > span {
+  color: #84dff0;
+}
+.quick-actions a:nth-child(3) > span {
+  color: #c2c7ff;
+}
+.quick-actions a:last-child > span {
+  color: #d0fff0;
+}
+.press-button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: linear-gradient(
+    155deg,
+    #91ffce 0%,
+    #38f5b7 28%,
+    #00d7af 74%,
+    #00bfc0
+  );
+  border-color: #c1ffddad;
+  box-shadow:
+    inset 0 1px 2px #f4fffec9,
+    inset 0 -3px 5px #006c6261,
+    0 3px 0 #006d5929,
+    0 8px 28px #00e7b31c;
+}
+.press-button:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    110deg,
+    transparent 22%,
+    #ffffff33 48%,
+    transparent 68%
+  );
+  transform: translateX(-135%);
+  transition: transform 0.7s var(--ease);
+}
+.press-button.ghost:after {
+  display: none;
+}
+.press-button:focus-visible:after {
+  transform: translateX(135%);
+}
+.vanlink-hero {
+  background:
+    radial-gradient(100% 100% at 95% 0, #04443b80, transparent 68%),
+    linear-gradient(145deg, #112722b8, #030a09eb 76%);
+  border-color: #7bffe32e;
+  border-top-color: #c8fff256;
+  box-shadow:
+    inset 0 1px 1px #d6fff512,
+    inset 0 -1px 0 #66d4d910,
+    0 14px 40px #0007;
+}
+.vanlink-hero:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    #d4fff508,
+    transparent 35%,
+    #33d5ed05 68%,
+    transparent
+  );
+}
+.vanlink-hero .section-heading {
+  height: 48px;
+}
+.link-sculpture {
+  filter: drop-shadow(0 7px 6px #0009) drop-shadow(0 0 13px #42fcca25);
+  animation: chain-float 8s ease-in-out infinite;
+}
+@keyframes chain-float {
+  50% {
+    transform: translateY(-5px) rotate(4deg);
+  }
+}
+.hero-shine {
+  border-color: #8cfff027;
+  box-shadow:
+    0 0 0 25px #51ecc405,
+    0 0 0 50px #51ecc404;
+  animation: halo-drift 16s ease-in-out infinite alternate;
+}
+@keyframes halo-drift {
+  to {
+    transform: rotate(-32deg) translateY(8px);
+    opacity: 0.65;
+  }
+}
+.how-panel,
+.amount-field,
+.summary-panel {
+  background:
+    radial-gradient(100% 90% at 0 0, #436b6522, transparent 70%),
+    linear-gradient(135deg, #101a18bc, #050a09d9);
+  border-top-color: #cffff344;
+  box-shadow: inset 0 1px 1px #ffffff0b;
+}
+.menu-dialog {
+  background:
+    radial-gradient(150% 65% at 0 0, #19524566, transparent), #070d0bf5;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-right-color: #dbfff539;
+}
+.currency-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.amount-field > div {
+  align-items: center;
+}
+.crypto-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.crypto-mark img,
+.crypto-mark svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.crypto-eth {
+  background: linear-gradient(145deg, #292e4480, #0a1022);
+  box-shadow:
+    inset 0 0 0 1px #bbc9ff30,
+    0 3px 9px #0006;
+  padding: 3px;
+}
+.crypto-base {
+  background: transparent;
+  border-radius: 0;
+}
+.crypto-usdc {
+  background: transparent;
+}
+.network-pill {
+  background: linear-gradient(130deg, #c9fff20c, #03100bd9);
+  border-top-color: #ddfff12b;
+}
+@media (hover: hover) and (pointer: fine) {
+  .quick-actions a:hover > span {
+    transform: translateY(-3px);
+    box-shadow:
+      inset 0 1px 1px #d1ffe74d,
+      0 8px 25px #00edaf15;
+  }
+  .press-button:hover:not(:disabled):after {
+    transform: translateX(135%);
+  }
+  .icon-button:hover:not(.quiet) {
+    transform: translateY(-2px);
+  }
+}
+@media (min-width: 768px) {
+  .balance-panel {
+    background:
+      radial-gradient(100% 80% at 0 0, #acd8d312, transparent 65%),
+      linear-gradient(140deg, #0c1413cc, #030807dc);
+    border-top-color: #d3fff535;
+    box-shadow: inset 0 1px 0 #effff009;
+  }
+  .desktop-rail {
+    background:
+      radial-gradient(100% 40% at 0 0, #063b301c, transparent), #020604f0;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+}
+@media (max-height: 650px) {
+  .splash-center {
+    transform: scale(0.8);
+    margin-top: -25px;
+  }
+  .splash-bottom {
+    bottom: 25px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-entrance {
+    display: none !important;
+  }
+  .van-logo-glint {
+    display: none;
+  }
+}
