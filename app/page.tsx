@@ -25,7 +25,7 @@ export default function HomePage() {
             <p className="eyebrow">TU ESPACIO FINANCIERO</p>
             <h1>Muévete<br /><span>con ventaja.</span></h1>
           </div>
-          <Link href="/v" className="v-corner" aria-label="Abrir V, tu guía de VanDeFi"><span>V</span><small>AYUDA</small></Link>
+          <Link href="/v" className="v-corner" aria-label="Abrir asistente de VanDeFi"><Icon name="chat" size={26} /><small>AYUDA</small></Link>
         </div>
 
         <div className="van-balance">
@@ -65,8 +65,8 @@ export default function HomePage() {
         </section>
 
         <Link href="/v" className="v-assistant-card">
-          <div className="v-assistant-mark"><span>V</span></div>
-          <div><p className="eyebrow">V / INTELIGENCIA</p><h2>¿Qué quieres hacer?</h2><p>Te ayuda a entender rutas, activos y tus siguientes pasos.</p></div>
+          <div className="v-assistant-mark"><Icon name="chat" size={26} /></div>
+          <div><p className="eyebrow">ASISTENTE</p><h2>¿Qué quieres hacer?</h2><p>Te ayuda a entender rutas, activos y tus siguientes pasos.</p></div>
           <Icon name="arrow" size={18} />
         </Link>
       </section>

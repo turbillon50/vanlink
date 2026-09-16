@@ -16,11 +16,11 @@ export default function VPage() {
   const [selected, setSelected] = useState<string | null>(null);
   return (
     <AppShell>
-      <TopBar title="V" />
+      <TopBar title="Asistente" />
       <section className="v-page v-folio">
-        <div className="v-orbit" aria-hidden="true"><i /><i /><span>V</span></div>
-        <p className="eyebrow">V / GUÍA DE VANDEFI</p>
-        <h2>Pregunta.<br />V te orienta.</h2>
+        <div className="v-orbit" aria-hidden="true"><i /><i /><Icon name="chat" size={48} /></div>
+        <p className="eyebrow">ASISTENTE / VANDEFI</p>
+        <h2>Pregunta.<br />Te orientamos.</h2>
         <p className="v-lead">Una capa de ayuda para entender rutas, activos y tus próximos pasos sin salir de tu wallet.</p>
         <div className="v-prompt-list">
           {prompts.map((prompt) => (
@@ -30,10 +30,10 @@ export default function VPage() {
           ))}
         </div>
         <form className="v-composer" onSubmit={(event) => { event.preventDefault(); if (query.trim()) setSelected(query.trim()); }}>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Escribe lo que necesitas…" aria-label="Pregunta a V" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Escribe lo que necesitas…" aria-label="Pregunta al asistente" />
           <button type="submit" disabled={!query.trim()} aria-label="Enviar pregunta"><Icon name="send" size={17} /></button>
         </form>
-        {selected && <p className="v-disclosure">V abrirá esta guía contextual cuando conectemos el motor de conversación. No ejecutará movimientos ni usará tu wallet sin tu confirmación.</p>}
+        {selected && <p className="v-disclosure">El asistente abrirá esta guía contextual cuando conectemos el motor de conversación. No ejecutará movimientos ni usará tu wallet sin tu confirmación.</p>}
       </section>
     </AppShell>
   );

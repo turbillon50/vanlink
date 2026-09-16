@@ -19,6 +19,7 @@ export type IconName =
   | "wallet"
   | "globe"
   | "info"
+  | "chat"
   | "chart"
   | "spark"
   | "send"
@@ -86,6 +87,7 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M12 11v6M12 7h.01" />
     </>
   ),
+  chat: <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-2 2V11.5A8.5 8.5 0 0 1 10.5 3h2A8.5 8.5 0 0 1 21 11.5ZM7 10h9M7 14h6" />,
   chart: <path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-6" />,
   spark: (
     <>

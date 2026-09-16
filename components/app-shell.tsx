@@ -17,7 +17,7 @@ const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: "/market", label: "Mercado", icon: "chart" },
   { href: "/vanlink", label: "VanLink", icon: "link" },
   { href: "/activity", label: "Actividad", icon: "activity" },
-  { href: "/v", label: "V", icon: "spark" },
+  { href: "/v", label: "Asistente", icon: "chat" },
 ];
 const MenuContext = createContext<(() => void) | null>(null);
 export function useAppMenu() {
@@ -125,7 +125,7 @@ export function AppShell({
                 aria-current={active === i ? "page" : undefined}
                 className={active === i ? "dock-item selected" : "dock-item"}
               >
-                <Icon name={n.icon} size={n.label === "V" ? 20 : 22} />
+                <Icon name={n.icon} size={n.label === "Asistente" ? 20 : 22} />
                 <span>{n.label}</span>
               </Link>
             ))}

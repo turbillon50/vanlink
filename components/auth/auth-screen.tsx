@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ClerkFailed, ClerkLoaded, ClerkLoading, SignIn, SignUp } from "@clerk/nextjs";
 import { TopBar } from "@/components/top-bar";
 import { PressButton } from "@/components/ui/press-button";
-import { Logo } from "@/components/brand/logo";
+import { Wordmark } from "@/components/brand/logo";
 import { authConfigured } from "@/lib/auth-config";
 
 function AccessRetry() {
@@ -25,7 +25,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
     <main className="auth-page">
       <TopBar brand backHref="/" right={<span />} />
       <div className="auth-intro">
-        <span className="auth-brand-mark"><Logo size={46} /></span>
+        <span className="auth-brand-mark"><Wordmark size={32} /></span>
         <p className="eyebrow">TU ESPACIO EN VANDEFI</p>
         <h1>{signUp ? "Todo empieza contigo." : "Qué bueno verte."}</h1>
         <p>{signUp ? "Crea tu cuenta y hazla tuya." : "Entra a tu cuenta. Así de simple."}</p>
