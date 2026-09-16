@@ -23,18 +23,19 @@ account change; provider sessions expire after one hour.
 
 - Clerk login, DNS/HTTPS and OAuth application: configured.
 - Neon Postgres: isolated `vanlink-production`, migration `0001_wallets.sql`.
-- Turnkey's provided credentials validate but belong to the root user.
-- A dedicated non-root server user and policy remain blocked by automatic
-  approval review; no Turnkey permission changes were made.
+- Luis authorized the dedicated non-root service on 2026-09-16. Its identity and
+  exclusion from the root quorum were verified against Turnkey's live API.
+- Vercel production now uses this service's API key pair and
+  `TURNKEY_SERVICE_USER_ID`; the original root user's access is preserved.
 - `WALLET_ACTIVATION_ENABLED=false`. No receiving addresses or transfers exposed.
 - `TURNKEY_SERVICE_USER_ID` must match whoami and must not be in the root quorum.
 - Alchemy, LI.FI and Onramper production credentials still need to be supplied.
 - VanLinks remain local drafts; they are not payable invoices.
 
-## Exact Turnkey change awaiting approval
+## Authorized Turnkey service
 
-Create one non-root user named `VanLink production wallet service`, with one
-P-256 API key. Add one ALLOW policy for that user with condition:
+Created one non-root user named `VanLink production wallet service`, with one
+P-256 API key, and one ALLOW policy for that user with condition:
 
 ```
 activity.type == 'ACTIVITY_TYPE_CREATE_SUB_ORGANIZATION_V8'
@@ -43,8 +44,11 @@ activity.type == 'ACTIVITY_TYPE_CREATE_SUB_ORGANIZATION_V8'
 No signing, transfers, exports, policy administration or root membership.
 Turnkey gives org users read access by default; this permission is inherent in
 its model. The backend additionally enforces Clerk ownership for every request.
-Replace Vercel's two runtime Turnkey API credentials with the service pair and
-set `TURNKEY_SERVICE_USER_ID`. Preserve the original root user's access.
+The service ID is `9d4ff90e-7d47-4d44-9cbb-ff3e2dbdee61`; its policy ID is
+`f6f4b1be-3505-47ab-8359-a1ce0b68e3d2`. These are identifiers, not credentials.
+The runtime checks `getWhoami` and `getOrganizationConfigs().configs.quorum`;
+the installed SDK does not expose `getOrganization`. Missing root-quorum data
+fails closed, as do unexpected service IDs or organization IDs.
 No bootstrap script holding a root key is committed to this repository.
 
 Before enabling activation, verify the service's creation permission and the

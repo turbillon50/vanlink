@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { wallets } from "@/lib/db/schema";
 import { walletConfig } from "./config";
 import { assertIdentity } from "./security";
+import { assertServiceIdentity } from "./service-identity";
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | undefined;
 export async function exchangeIdentity(code: string, verifier: string, userId: string, publicKey: string) {
@@ -29,10 +30,7 @@ export async function provisionWallet(userId: string, oidcToken: string, publicK
   const client = new Turnkey({ apiBaseUrl: "https://api.turnkey.com", defaultOrganizationId: config.parentId,
     apiPublicKey: process.env.TURNKEY_API_PUBLIC_KEY!, apiPrivateKey: process.env.TURNKEY_API_PRIVATE_KEY! }).apiClient();
   // A root credential must never be silently used as the production service.
-  const identity = await client.getWhoami({ organizationId: config.parentId });
-  if (identity.userId !== config.serviceUserId) throw new Error("Service identity mismatch");
-  const organization = await client.getOrganization({ organizationId: config.parentId });
-  if (organization.organization.rootQuorum.userIds.includes(identity.userId)) throw new Error("Root credentials prohibited");
+  await assertServiceIdentity(client, config.parentId, config.serviceUserId);
 
   return db().transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
