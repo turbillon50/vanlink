@@ -1,32 +1,13 @@
 import "server-only";
 import { Turnkey, DEFAULT_ETHEREUM_ACCOUNTS, DEFAULT_BITCOIN_MAINNET_P2WPKH_ACCOUNTS } from "@turnkey/sdk-server";
 import { eq, sql } from "drizzle-orm";
-import { createRemoteJWKSet, jwtVerify } from "jose";
 import { db } from "@/lib/db";
 import { wallets } from "@/lib/db/schema";
 import { walletConfig } from "./config";
-import { assertIdentity } from "./security";
 import { assertServiceIdentity } from "./service-identity";
 import { walletStep } from "./diagnostics";
 
-let jwks: ReturnType<typeof createRemoteJWKSet> | undefined;
-export async function exchangeIdentity(code: string, verifier: string, userId: string, publicKey: string) {
-  const config = walletConfig();
-  const response = await fetch(`${config.issuer}/oauth/token`, { method: "POST", cache: "no-store",
-    signal: AbortSignal.timeout(15_000), headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "authorization_code", code, code_verifier: verifier,
-      client_id: config.clientId, redirect_uri: config.redirectUri }) });
-  if (!response.ok) throw new Error("Identity exchange failed");
-  const tokens = await response.json();
-  if (typeof tokens.id_token !== "string") throw new Error("Missing identity token");
-  jwks ??= createRemoteJWKSet(new URL(`${config.issuer}/.well-known/jwks.json`));
-  const { payload } = await jwtVerify(tokens.id_token, jwks, { issuer: config.issuer,
-    audience: config.clientId, algorithms: ["RS256"], requiredClaims: ["exp", "iat", "sub", "nonce"] });
-  assertIdentity(payload, userId, publicKey, config.clientId);
-  return tokens.id_token as string;
-}
-
-export async function provisionWallet(userId: string, oidcToken: string, publicKey: string) {
+export async function provisionWallet(userId: string, publicKey: string) {
   const config = walletConfig();
   const client = new Turnkey({ apiBaseUrl: "https://api.turnkey.com", defaultOrganizationId: config.parentId,
     apiPublicKey: process.env.TURNKEY_API_PUBLIC_KEY!, apiPrivateKey: process.env.TURNKEY_API_PRIVATE_KEY! }).apiClient();
@@ -36,24 +17,21 @@ export async function provisionWallet(userId: string, oidcToken: string, publicK
   return db().transaction(async tx => {
     await walletStep("database_lock", () => tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`));
     const existing = (await walletStep("wallet_lookup", () => tx.select().from(wallets).where(eq(wallets.clerkUserId, userId))))[0];
-    // Recover an interrupted create using the verified OIDC identity, never email.
-    const matches = await walletStep("identity_lookup", () => client.getSubOrgIds({ organizationId: config.parentId, filterType: "OIDC_TOKEN", filterValue: oidcToken }));
+    // A public key is unique to this browser device. The private half never reaches
+    // our server, so it becomes the wallet owner's only root credential.
+    const matches = await walletStep("device_lookup", () => client.getSubOrgIds({ organizationId: config.parentId, filterType: "PUBLIC_KEY", filterValue: publicKey }));
     if (matches.organizationIds.length > 1) throw new Error("Ambiguous wallet ownership");
     if (existing && matches.organizationIds[0] !== existing.organizationId) throw new Error("Wallet ownership mismatch");
     let organizationId = existing?.organizationId ?? matches.organizationIds[0];
     if (!organizationId) {
       const created = await walletStep("wallet_create", () => client.createSubOrganization({ organizationId: config.parentId,
         subOrganizationName: `VanLink ${userId}`, rootQuorumThreshold: 1,
-        rootUsers: [{ userName: "Wallet owner", apiKeys: [], authenticators: [],
-          oauthProviders: [{ providerName: "Clerk", oidcToken }] }],
+        rootUsers: [{ userName: "Wallet owner", apiKeys: [{ apiKeyName: "VanLink device", publicKey,
+          curveType: "API_KEY_CURVE_P256" }], authenticators: [], oauthProviders: [] }],
         wallet: { walletName: "VanLink", accounts: [...DEFAULT_ETHEREUM_ACCOUNTS, ...DEFAULT_BITCOIN_MAINNET_P2WPKH_ACCOUNTS] },
       }));
       organizationId = created.subOrganizationId;
     }
-    const session = await walletStep("device_session", () => client.oauthLogin({ organizationId, oidcToken, publicKey, expirationSeconds: "3600", invalidateExisting: false }));
-    if (!session.session) throw new Error("Wallet session unavailable");
-    // The JWT only describes the session. The browser signs requests with its
-    // IndexedDB key; neither the wallet key nor a browser private key reaches us.
     if (existing) return existing;
     const result = await walletStep("wallet_read", () => client.getWallets({ organizationId }));
     if (result.wallets.length !== 1) throw new Error("Unexpected wallet count");

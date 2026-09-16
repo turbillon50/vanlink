@@ -12,8 +12,9 @@ export async function prepareWalletDevice(userId: string) {
   const { IndexedDbStamper } = await import("@turnkey/indexed-db-stamper");
   const stamper = new IndexedDbStamper();
   await stamper.init();
-  // A fresh non-extractable device key is bound to this OAuth nonce.
-  await stamper.resetKeyPair();
+  // The P-256 private key remains non-extractable in this browser. Reuse it on
+  // a retry so an interrupted request cannot create a second device identity.
+  if (localStorage.getItem(OWNER) !== userId || !stamper.getPublicKey()) await stamper.resetKeyPair();
   localStorage.setItem(OWNER, userId);
   const publicKey = stamper.getPublicKey();
   if (!publicKey) throw new Error("Device key unavailable");

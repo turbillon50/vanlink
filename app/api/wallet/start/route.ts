@@ -1,13 +1,12 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "drizzle-orm";
-import { db } from "@/lib/db";
-import { walletFlows } from "@/lib/db/schema";
 import { walletConfig, walletConfigured } from "@/lib/wallet/config";
-import { allowedOrigin, digest, newOAuthChallenge, validPublicKey } from "@/lib/wallet/security";
+import { allowedOrigin, validPublicKey } from "@/lib/wallet/security";
+import { provisionWallet } from "@/lib/wallet/server";
+import { walletDiagnostic } from "@/lib/wallet/diagnostics";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 60;
 const headers = { "Cache-Control": "no-store" };
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -20,20 +19,10 @@ export async function POST(request: NextRequest) {
     if (raw.length > 512) return NextResponse.json({ error: "Solicitud demasiado grande." }, { status: 400, headers });
     const { publicKey } = JSON.parse(raw);
     if (!validPublicKey(publicKey)) return NextResponse.json({ error: "No pudimos preparar este dispositivo." }, { status: 400, headers });
-    const { state, verifier, challenge } = newOAuthChallenge();
-    const values = { clerkUserId: userId, stateHash: digest(state), publicKey, verifier,
-      expiresAt: new Date(Date.now() + 5 * 60_000), createdAt: new Date() };
-    const started = await db().insert(walletFlows).values(values).onConflictDoUpdate({ target: walletFlows.clerkUserId,
-      set: values, setWhere: sql`${walletFlows.createdAt} < now() - interval '15 seconds'` }).returning();
-    if (!started.length) return NextResponse.json({ error: "Espera unos segundos e intenta de nuevo." }, { status: 429, headers });
-    const url = new URL(`${config.issuer}/oauth/authorize`);
-    url.search = new URLSearchParams({ client_id: config.clientId, redirect_uri: config.redirectUri,
-      response_type: "code", scope: "openid profile email", state, nonce: digest(publicKey),
-      code_challenge: challenge, code_challenge_method: "S256" }).toString();
-    const response = NextResponse.json({ url: url.toString() }, { headers });
-    response.cookies.set("__Host-vanlink-wallet", state, { secure: true, httpOnly: true, sameSite: "lax", path: "/", maxAge: 300 });
-    return response;
-  } catch {
-    return NextResponse.json({ error: "No pudimos iniciar la conexión. Intenta de nuevo." }, { status: 503, headers });
+    await provisionWallet(userId, publicKey);
+    return NextResponse.json({ connected: true }, { headers });
+  } catch (error) {
+    console.error("wallet_activation_failed", { stage: "wallet", ...walletDiagnostic(error) });
+    return NextResponse.json({ error: "No pudimos activar tu wallet. Intenta de nuevo." }, { status: 503, headers });
   }
 }

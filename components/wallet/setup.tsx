@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PressButton } from "@/components/ui/press-button";
 import { Icon } from "@/components/icons";
 import { Logo } from "@/components/brand/logo";
@@ -10,10 +10,6 @@ type WalletStatus = { canActivate: boolean; transfersEnabled: false;
   wallet: null | { organizationId: string; turnkeyUserId: string; networks: string[] } };
 const callbackMessages: Record<string, string> = {
   expired: "La conexión venció. Puedes intentarlo otra vez.",
-  cancelled: "Cancelaste la conexión. Tu cuenta sigue disponible.",
-  error: "No pudimos terminar de conectar tu wallet. Intenta de nuevo.",
-  identity_error: "No pudimos confirmar tu sesión. Vuelve a intentar la conexión con tu misma cuenta.",
-  wallet_error: "No pudimos completar la conexión. Reintenta con tu misma cuenta.",
   unavailable: "Estamos terminando la conexión de wallets.",
 };
 
@@ -23,6 +19,33 @@ export function WalletSetup({ userId }: { userId: string }) {
   const [busy, setBusy] = useState(false);
   const [verified, setVerified] = useState(false);
   const [retry, setRetry] = useState(0);
+  const activating = useRef(false);
+  const automaticAttempted = useRef(false);
+
+  const connect = useCallback(async () => {
+    if (activating.current) return;
+    activating.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      const { prepareWalletDevice } = await import("@/lib/wallet/browser");
+      const publicKey = await prepareWalletDevice(userId);
+      const response = await fetch("/api/wallet/start", { method: "POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicKey }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "No pudimos activar tu wallet.");
+      setRetry(n => n + 1);
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "No pudimos preparar este dispositivo.");
+    } finally {
+      activating.current = false;
+      setBusy(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    automaticAttempted.current = false;
+  }, [userId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -42,6 +65,13 @@ export function WalletSetup({ userId }: { userId: string }) {
         if (!response.ok) throw new Error(data.error || "No pudimos consultar tu wallet.");
         if (controller.signal.aborted) return;
         setStatus(data);
+        // Registration redirects here. Enrollment happens automatically only after
+        // Clerk has authenticated the user and this browser has made its local key.
+        if (!data.wallet && data.canActivate && !automaticAttempted.current) {
+          automaticAttempted.current = true;
+          void connect();
+          return;
+        }
         if (data.wallet) {
           const { verifyWalletDevice } = await import("@/lib/wallet/browser");
           const ok = await verifyWalletDevice(userId, data.wallet.organizationId, data.wallet.turnkeyUserId).catch(() => false);
@@ -52,25 +82,7 @@ export function WalletSetup({ userId }: { userId: string }) {
       }
     })();
     return () => controller.abort();
-  }, [userId, retry]);
-
-  const connect = useCallback(async () => {
-    if (busy) return;
-    setBusy(true);
-    setError("");
-    try {
-      const { prepareWalletDevice } = await import("@/lib/wallet/browser");
-      const publicKey = await prepareWalletDevice(userId);
-      const response = await fetch("/api/wallet/start", { method: "POST",
-        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicKey }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "No pudimos conectar tu wallet.");
-      window.location.assign(data.url);
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "No pudimos preparar este dispositivo.");
-      setBusy(false);
-    }
-  }, [busy, userId]);
+  }, [connect, userId, retry]);
 
   return <WalletSetupView status={status} error={error} busy={busy} verified={verified} onConnect={connect}
     onRetry={() => { setError(""); setRetry(n => n + 1); }} />;
@@ -87,8 +99,8 @@ export function WalletSetupView({ status, error, busy, verified, onConnect, onRe
     <div className="wallet-copy"><h2 id="wallet-title">{status?.wallet ? "Tu wallet" : "Activa tu wallet"}</h2>
     {status ? <p>{status.wallet
       ? verified ? "Tu wallet ya está vinculada a esta cuenta y a este dispositivo."
-        : "Tu wallet está guardada. Conecta este dispositivo para continuar."
-      : status.canActivate ? "Vincula tu wallet a la cuenta con la que iniciaste sesión."
+        : "Esta wallet se activó desde otro dispositivo. La conexión de un segundo dispositivo llegará antes de habilitar movimientos."
+      : status.canActivate ? "La estamos creando en este dispositivo. Tu llave privada no sale de tu navegador."
         : "Tu cuenta está lista. Estamos preparando la activación de tu wallet."}</p>
       : !error ? <p role="status">Consultando tu wallet…</p> : null}
     </div>
@@ -96,9 +108,9 @@ export function WalletSetupView({ status, error, busy, verified, onConnect, onRe
       <div className="wallet-network-list"><span><CryptoMark asset="USDC" size={19} />USDC <em>en Base</em></span><span className="wallet-future">Bitcoin <em>Próximamente</em></span></div>
       {error ? <div className="wallet-error"><Icon name="info" size={17} /><p role="alert">{error}</p></div> : null}
       <div className="wallet-action-area">
-        {status.canActivate && !verified ? <PressButton onClick={onConnect} disabled={busy}>
+        {status.canActivate && !verified && !status.wallet && error ? <PressButton onClick={onConnect} disabled={busy}>
           {busy ? <span className="button-spinner" aria-hidden="true" /> : null}
-          {busy ? "Conectando…" : status.wallet ? "Conectar dispositivo" : error ? "Reintentar conexión" : "Activar mi wallet"}
+          {busy ? "Activando…" : "Reintentar activación"}
           {!busy ? <Icon name="arrow" size={17} /> : null}
         </PressButton> : !status.wallet ? <PressButton href="/vanlink" variant="secondary">Ver mis VanLinks <Icon name="arrow" size={17} /></PressButton> : null}
         <p className="wallet-activation-note"><Icon name="shield" size={13} />Los depósitos y envíos todavía no están disponibles.</p>
