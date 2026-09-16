@@ -54,10 +54,12 @@ until user-controlled signing, export/recovery, fees and network checks pass.
 
 ## Assets and remittance routing
 
-USDC on Base is the primary wallet balance. The exact VanLink model still needs
-confirmation from the owner: payment request versus a funded link claimed by
-the recipient. Do not implement invoice settlement, escrow or claim-link custody
-from the draft UI alone. This release does not alter or enable VanLink payments.
+USDC on Base is the primary wallet balance. Luis clarified VanLink's core model:
+the sender funds a remittance from crypto and shares a preconfigured withdrawal
+link; the recipient completes identity verification and receives local fiat.
+See [the confirmed product brief](vanlink-remittances.md). The existing collection
+drafts must be redesigned for this sending flow. This release does not enable
+remittances, invoice settlement, escrow or crypto-funded claim links.
 LI.FI's live API confirmed native Bitcoin chain `20000000000001`, asset `bitcoin`,
 8 decimals. BTC mainnet gets a separate native SegWit wallet account. It is not
 cbBTC, WBTC or Lightning. EVM signing does not implement Bitcoin PSBT/UTXO signing.
