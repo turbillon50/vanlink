@@ -105,7 +105,7 @@ export function WalletSetupView({ status, error, busy, verified, onConnect, onRe
       : !error ? <p role="status">Consultando tu wallet…</p> : null}
     </div>
     {status ? <>
-      <div className="wallet-network-list"><span><CryptoMark asset="USDC" size={19} />USDC <em>en Base</em></span><span className="wallet-future">Bitcoin <em>Próximamente</em></span></div>
+      <div className="wallet-network-list"><span><CryptoMark asset="USDC" size={19} />USDC <em>en Base</em></span><span className="wallet-future">BTC <em>en Bitcoin</em></span></div>
       {error ? <div className="wallet-error"><Icon name="info" size={17} /><p role="alert">{error}</p></div> : null}
       <div className="wallet-action-area">
         {status.canActivate && !verified && !status.wallet && error ? <PressButton onClick={onConnect} disabled={busy}>
