@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/logo";
-import { BrandSculpture } from "@/components/brand/atmosphere";
 import { CryptoMark } from "@/components/brand/crypto-mark";
 import { PressButton } from "@/components/ui/press-button";
 import { Icon } from "@/components/icons";
@@ -14,7 +13,6 @@ export default function WelcomePage() {
         </Link>
       </header>
       <section className="welcome-core">
-        <BrandSculpture compact />
         <p className="eyebrow">TU DINERO. TU CONTROL.</p>
         <h1>
           Muévelo.
