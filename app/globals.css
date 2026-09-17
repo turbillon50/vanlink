@@ -1781,3 +1781,82 @@ small {
 .account-legal a + a { border-top: 1px solid rgba(255,255,255,.05); }
 .account-legal small { display: block; opacity: .5; font-size: .74rem; margin-top: 2px; }
 .account-legal a > span:nth-child(2) { flex: 1; }
+
+/* ── Recibir ────────────────────────────────────────────────────────────── */
+.rcv { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 6px; }
+.rcv-tabs { display: flex; gap: 6px; align-self: stretch; }
+.rcv-tab {
+  flex: 1; padding: 9px 12px; border-radius: 11px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02);
+  color: #a9b2bd; font-size: .84rem;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease, transform 140ms ease;
+}
+.rcv-tab:active { transform: scale(.98); }
+.rcv-tab.active {
+  color: #001b1f; background: #44f7d2; border-color: #44f7d2;
+  box-shadow: 0 0 16px rgba(68,247,210,.26);
+}
+.rcv-qr-wrap {
+  padding: 16px; border-radius: 18px; margin-top: 4px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: radial-gradient(120% 120% at 50% 0%, rgba(68,247,210,.07), transparent 60%), #08090d;
+}
+.rcv-qr { display: block; width: 196px; height: 196px; animation: rcv-in 380ms cubic-bezier(.22,.8,.3,1) both; }
+@keyframes rcv-in { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+.rcv-qr-loading { border-radius: 10px; background: rgba(255,255,255,.03); }
+.rcv-hint { font-size: .78rem; opacity: .5; margin: 0; }
+.rcv-address {
+  font-size: .82rem; letter-spacing: .04em; line-height: 1.7; text-align: center;
+  word-break: break-all; max-width: 300px; color: #e6edf5;
+  font-variant-ligatures: none;
+}
+.rcv-actions { display: flex; gap: 8px; align-self: stretch; margin-top: 2px; }
+.rcv-actions button {
+  flex: 1; padding: 12px; border-radius: 12px; font-size: .88rem; cursor: pointer;
+  transition: background 160ms ease, transform 140ms ease, color 160ms ease;
+}
+.rcv-copy { border: 1px solid #44f7d2; background: rgba(68,247,210,.12); color: #44f7d2; }
+.rcv-copy:hover { background: rgba(68,247,210,.2); }
+.rcv-share { border: 1px solid rgba(255,255,255,.12); background: none; color: #c9d1da; }
+.rcv-actions button:active { transform: scale(.985); }
+.rcv-warn {
+  font-size: .78rem; text-align: center; margin: 4px 0 0; padding: 10px 13px;
+  border-radius: 10px; color: #ffc7d2;
+  border: 1px solid rgba(255,107,138,.26); background: rgba(255,107,138,.06);
+}
+.rcv-skeleton { height: 330px; border-radius: 16px; background: rgba(255,255,255,.02); }
+@media (prefers-reduced-motion: reduce) { .rcv-qr { animation: none; } }
+
+/* ── Actividad ──────────────────────────────────────────────────────────── */
+.act-list { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; }
+.act-row { animation: bal-in 380ms cubic-bezier(.22,.8,.3,1) both; }
+.act-row:nth-child(2) { animation-delay: 40ms; }
+.act-row:nth-child(3) { animation-delay: 80ms; }
+.act-row:nth-child(4) { animation-delay: 120ms; }
+.act-row:nth-child(n+5) { animation-delay: 160ms; }
+.act-row a {
+  display: flex; align-items: center; gap: 12px; padding: 12px 4px;
+  border-bottom: 1px solid rgba(255,255,255,.05); text-decoration: none; color: inherit;
+  transition: background 150ms ease;
+}
+.act-row a:hover { background: rgba(255,255,255,.02); }
+.act-row:last-child a { border-bottom: none; }
+.act-arrow {
+  width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center;
+  border-radius: 50%; font-size: 1rem;
+}
+.act-arrow.in { color: #44f7d2; background: rgba(68,247,210,.1); }
+.act-arrow.out { color: #ff8ea6; background: rgba(255,107,138,.1); }
+.act-main { flex: 1; min-width: 0; }
+.act-main strong { display: block; font-size: .9rem; font-weight: 500; }
+.act-main small, .act-amount small { display: block; font-size: .72rem; opacity: .48; margin-top: 2px; }
+.act-amount { text-align: right; font-variant-numeric: tabular-nums; }
+.act-amount strong { font-size: .94rem; font-weight: 500; }
+.act-amount strong.in { color: #44f7d2; }
+.act-amount strong.out { color: #e6edf5; }
+.act-partial {
+  font-size: .78rem; padding: 9px 12px; border-radius: 10px; margin: 8px 0 0;
+  border: 1px solid rgba(226,184,104,.24); background: rgba(226,184,104,.05); color: #e6d3ac;
+}
+.act-skeleton { height: 180px; border-radius: 12px; background: rgba(255,255,255,.02); margin-top: 10px; }
+@media (prefers-reduced-motion: reduce) { .act-row { animation: none; } }

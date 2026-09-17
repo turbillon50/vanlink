@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { TopBar } from "@/components/top-bar";
-import { PageIntro, EmptyState, ConnectionNote } from "@/components/craft";
+import { PageIntro } from "@/components/craft";
+import { ActivityList } from "@/components/wallet/activity-list";
 export default function ActivityPage() {
   const [filter, setFilter] = useState("all");
   return (
@@ -28,18 +29,7 @@ export default function ActivityPage() {
           </button>
         ))}
       </div>
-      <EmptyState
-        icon="activity"
-        title={
-          filter === "all"
-            ? "Todavía no hay movimientos"
-            : filter === "in"
-              ? "Aún no hay entradas"
-              : "Aún no hay salidas"
-        }
-        description="Cuando conectes tu wallet, podrás consultar aquí tus movimientos y el detalle de cada operación."
-      />
-      <ConnectionNote />
+      <ActivityList filter={filter as "all" | "in" | "out"} />
     </AppShell>
   );
 }
