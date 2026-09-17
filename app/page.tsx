@@ -6,6 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { TopBar } from "@/components/top-bar";
 import { Icon } from "@/components/icons";
 import { MarketPulse } from "@/components/market-pulse";
+import { WalletBalances } from "@/components/wallet/balances";
 
 const actions = [
   { label: "Enviar", href: "/send", icon: "up" as const },
@@ -35,8 +36,7 @@ export default function HomePage() {
               <Icon name="eye" size={17} />
             </button>
           </div>
-          <div className="van-balance-value">{hidden ? "••••••" : "—"}<small>USDC</small></div>
-          <p>Activa tu wallet para ver tus activos y movimientos.</p>
+          <WalletBalances hidden={hidden} />
           <span className="balance-rim" aria-hidden="true" />
         </div>
 
