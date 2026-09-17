@@ -1890,3 +1890,63 @@ small {
   pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) { .ramp-box { animation: none; } }
+
+/* ── Pantalla pública de cobro (VanLink) ────────────────────────────────── */
+.pay-shell {
+  min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 16px; padding: 24px 18px;
+  background: radial-gradient(120% 70% at 50% 0%, rgba(68,247,210,.06), transparent 60%), #000;
+}
+.pay-brand { font-size: 1.05rem; letter-spacing: -.01em; opacity: .85; }
+.pay-card {
+  width: 100%; max-width: 380px; padding: 26px 22px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.08); background: #08090d;
+  display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;
+  animation: bal-in 460ms cubic-bezier(.22,.8,.3,1) both;
+}
+.pay-eyebrow { font-size: .68rem; letter-spacing: .16em; opacity: .45; margin: 0; }
+.pay-amount { display: flex; align-items: baseline; gap: 8px; }
+.pay-amount strong { font-size: 2.2rem; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.pay-amount span { font-size: 1rem; opacity: .55; }
+.pay-concept { font-size: .9rem; color: #c9d1da; margin: 0; }
+.pay-network {
+  padding: 6px 14px; border-radius: 999px; font-size: .78rem; letter-spacing: .05em;
+  color: #44f7d2; border: 1px solid rgba(68,247,210,.35); background: rgba(68,247,210,.08);
+}
+.pay-qr { width: 200px; height: 200px; margin: 4px 0; }
+.pay-qr-loading { border-radius: 10px; background: rgba(255,255,255,.03); }
+.pay-address {
+  font-size: .74rem; word-break: break-all; color: #c9d1da; line-height: 1.6; max-width: 300px;
+}
+.pay-copy {
+  width: 100%; padding: 13px; border-radius: 12px; cursor: pointer; font-size: .92rem;
+  border: 1px solid #44f7d2; background: rgba(68,247,210,.14); color: #44f7d2;
+  transition: background 160ms ease, transform 140ms ease;
+}
+.pay-copy:hover { background: rgba(68,247,210,.22); }
+.pay-copy:active { transform: scale(.985); }
+.pay-waiting { display: flex; align-items: center; gap: 7px; font-size: .8rem; opacity: .55; margin: 0; }
+.pay-waiting i {
+  width: 7px; height: 7px; border-radius: 50%; background: #44f7d2;
+  animation: pay-pulse 1.6s ease-in-out infinite;
+}
+@keyframes pay-pulse { 0%,100% { opacity: .3; transform: scale(.8); } 50% { opacity: 1; transform: scale(1); } }
+.pay-pending { font-size: .82rem; color: #e2b868; margin: 0; }
+.pay-warn {
+  font-size: .76rem; line-height: 1.55; margin: 2px 0 0; padding: 10px 12px; border-radius: 10px;
+  color: #ffc7d2; border: 1px solid rgba(255,107,138,.24); background: rgba(255,107,138,.05);
+}
+.pay-done { border-color: rgba(68,247,210,.32); }
+.pay-check {
+  width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 1.7rem; color: #001b1f; background: #44f7d2;
+}
+.pay-card h1 { font-size: 1.32rem; letter-spacing: -.02em; margin: 0; }
+.pay-card p { font-size: .88rem; color: #a9b2bd; margin: 0; }
+.pay-explorer { font-size: .82rem; color: #44f7d2; text-decoration: none; border-bottom: 1px solid rgba(68,247,210,.3); }
+.pay-void { padding: 34px 22px; }
+.pay-foot { font-size: .72rem; opacity: .38; text-align: center; max-width: 320px; }
+.pay-skeleton { width: 100%; max-width: 380px; height: 420px; border-radius: 20px; background: rgba(255,255,255,.02); }
+@media (prefers-reduced-motion: reduce) {
+  .pay-card { animation: none; } .pay-waiting i { animation: none; opacity: .8; }
+}
