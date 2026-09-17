@@ -18,3 +18,22 @@ export const walletFlows = pgTable("wallet_oauth_flows", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/**
+ * Solicitudes de alta de un segundo dispositivo.
+ *
+ * El dispositivo nuevo deja aquí su llave pública y un código corto que el
+ * usuario compara a simple vista en el dispositivo autorizado. El servidor
+ * NUNCA autoriza: solo transporta la llave pública. La firma la hace el
+ * dispositivo que ya es dueño de la sub-organización.
+ */
+export const deviceRequests = pgTable("wallet_device_requests", {
+  id: text("id").primaryKey(),
+  clerkUserId: text("clerk_user_id").notNull(),
+  publicKey: text("public_key").notNull(),
+  code: text("code").notNull(),
+  label: text("label").notNull(),
+  status: text("status").notNull().default("pendiente"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
