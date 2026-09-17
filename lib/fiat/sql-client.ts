@@ -16,7 +16,12 @@ export type SqlTag = (
 
 export function sqlClient(): SqlTag {
   return async (strings, ...values) => {
-    const query = dsql(strings, ...values);
+    // undefined -> null: drizzle omite el placeholder cuando el valor es
+    // undefined y deja el SQL roto (VALUES ($1, $2, , $3)). El driver de
+    // Neon lo trataba como NULL; aquí lo normalizamos para igualar ese
+    // comportamiento y que la consulta siga siendo válida.
+    const safe = values.map(v => (v === undefined ? null : v));
+    const query = dsql(strings, ...safe);
     const result = await db().execute(query);
     return (result as unknown as { rows: Record<string, unknown>[] }).rows ?? [];
   };
