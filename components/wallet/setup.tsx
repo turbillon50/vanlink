@@ -7,11 +7,27 @@ import { Logo } from "@/components/brand/logo";
 import { CryptoMark } from "@/components/brand/crypto-mark";
 
 type WalletStatus = { canActivate: boolean; transfersEnabled: false;
-  wallet: null | { organizationId: string; turnkeyUserId: string; networks: string[] } };
+  wallet: null | { organizationId: string; turnkeyUserId: string; evmAddress?: string;
+    bitcoinAddress?: string; networks: string[] } };
 const callbackMessages: Record<string, string> = {
   expired: "La conexión venció. Puedes intentarlo otra vez.",
   unavailable: "Estamos terminando la conexión de wallets.",
 };
+
+function WalletAddress({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="wallet-address">
+      <span className="eyebrow">{label}</span>
+      <code title={value}>{value.slice(0, 10)}…{value.slice(-8)}</code>
+      <button type="button" onClick={() => {
+        navigator.clipboard?.writeText(value).then(() => {
+          setCopied(true); setTimeout(() => setCopied(false), 1800);
+        }).catch(() => undefined);
+      }}>{copied ? "Copiada" : "Copiar"}</button>
+    </div>
+  );
+}
 
 export function WalletSetup({ userId }: { userId: string }) {
   const [status, setStatus] = useState<WalletStatus | null>(null);
@@ -106,6 +122,14 @@ export function WalletSetupView({ status, error, busy, verified, onConnect, onRe
     </div>
     {status ? <>
       <div className="wallet-network-list"><span><CryptoMark asset="USDC" size={19} />USDC <em>en Base</em></span><span className="wallet-future">BTC <em>en Bitcoin</em></span></div>
+      {status?.wallet?.evmAddress ? (
+        <div className="wallet-address-list">
+          <WalletAddress label="Base (EVM)" value={status.wallet.evmAddress} />
+          {status.wallet.bitcoinAddress ? (
+            <WalletAddress label="Bitcoin" value={status.wallet.bitcoinAddress} />
+          ) : null}
+        </div>
+      ) : null}
       {error ? <div className="wallet-error"><Icon name="info" size={17} /><p role="alert">{error}</p></div> : null}
       <div className="wallet-action-area">
         {status.canActivate && !verified && !status.wallet && error ? <PressButton onClick={onConnect} disabled={busy}>
