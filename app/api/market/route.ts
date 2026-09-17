@@ -15,6 +15,7 @@ export const runtime = "nodejs";
 const BYBIT_SYMBOLS = [
   ["BTC", "BTCUSDT"],
   ["ETH", "ETHUSDT"],
+  ["USDC", "USDCUSDT"],
 ] as const;
 
 type Quote = { symbol: string; price: number; change: number };
@@ -59,11 +60,29 @@ async function fromCoinbase(symbol: string, pair: string): Promise<Quote> {
   return { symbol, price, change: ((price - open) / open) * 100 };
 }
 
+async function fromProxyFx(): Promise<number | null> {
+  const base = process.env.MARKET_PROXY_URL;
+  const secret = process.env.MARKET_PROXY_SECRET;
+  if (!base || !secret) return null;
+  try {
+    const response = await fetch(`${base}/fx`, {
+      headers: { "x-market-secret": secret, Accept: "application/json" },
+      next: { revalidate: 300 },
+      signal: AbortSignal.timeout(7000),
+    });
+    if (!response.ok) return null;
+    const data = (await response.json()) as { usdMxn?: number };
+    return Number.isFinite(data.usdMxn) ? (data.usdMxn as number) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET() {
   try {
-    const quotes = await fromProxy();
+    const [quotes, usdMxn] = await Promise.all([fromProxy(), fromProxyFx()]);
     return Response.json(
-      { quotes, asOf: new Date().toISOString(), source: "Bybit" },
+      { quotes, usdMxn, asOf: new Date().toISOString(), source: "Bybit" },
       { headers: { "Cache-Control": "public, s-maxage=15, stale-while-revalidate=45" } },
     );
   } catch {

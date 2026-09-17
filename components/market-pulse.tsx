@@ -8,13 +8,21 @@ type Quote = {
   change: number | null;
 };
 
-type MarketResponse = { quotes: Quote[]; asOf: string; source: string };
+type MarketResponse = { quotes: Quote[]; asOf: string; source: string; usdMxn?: number | null };
 
 function price(value: number) {
   return new Intl.NumberFormat("es-MX", {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: value >= 100 ? 0 : 2,
+  }).format(value);
+}
+
+function pesos(value: number) {
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    maximumFractionDigits: value >= 1000 ? 0 : 2,
   }).format(value);
 }
 
@@ -60,6 +68,9 @@ export function MarketPulse({ compact = false }: { compact?: boolean }) {
           </div>
           <div className="quote-value">
             <strong>{price(quote.price)}</strong>
+            {market.usdMxn ? (
+              <small className="quote-mxn">{pesos(quote.price * market.usdMxn)}</small>
+            ) : null}
             {quote.change !== null && (
               <small className={quote.change >= 0 ? "up" : "down"}>
                 {quote.change >= 0 ? "+" : ""}{quote.change.toFixed(2)}% · 24 h
@@ -68,7 +79,10 @@ export function MarketPulse({ compact = false }: { compact?: boolean }) {
           </div>
         </div>
       ))}
-      <p className="market-asof">Actualizado {new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit" }).format(new Date(market.asOf))}</p>
+      <p className="market-asof">
+        Actualizado {new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit" }).format(new Date(market.asOf))}
+        {market.usdMxn ? ` · 1 USD = ${market.usdMxn.toFixed(2)} MXN` : ""}
+      </p>
     </div>
   );
 }
