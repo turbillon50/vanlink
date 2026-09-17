@@ -64,7 +64,7 @@ export function AppShell({
           <nav aria-label="Navegación principal">
             {items.slice(0, 6).map((n) => (
               <Link
-                key={n.href}
+                key={n.href} data-central={n.label === "VanLink" ? "true" : undefined}
                 href={n.href}
                 aria-current={pathname === n.href ? "page" : undefined}
                 className={
@@ -125,7 +125,7 @@ export function AppShell({
                 aria-current={active === i ? "page" : undefined}
                 className={active === i ? "dock-item selected" : "dock-item"}
               >
-                <Icon name={n.icon} size={n.label === "Asistente" ? 20 : 22} />
+                <Icon name={n.icon} size={n.label === "Asistente" ? 20 : n.label === "VanLink" ? 25 : 22} />
                 <span>{n.label}</span>
               </Link>
             ))}

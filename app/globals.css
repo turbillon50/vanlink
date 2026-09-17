@@ -1863,3 +1863,30 @@ small {
 
 .quote-mxn { display: block; font-size: .74rem; opacity: .45; margin-top: 1px; font-variant-numeric: tabular-nums; }
 .quote-value strong { font-variant-numeric: tabular-nums; }
+
+/* ── Rampas Up / Down ───────────────────────────────────────────────────── */
+.ramp-box {
+  display: flex; flex-direction: column; align-items: center; gap: 9px;
+  padding: 26px 20px; margin-top: 14px; border-radius: 16px; text-align: center;
+  border: 1px solid rgba(255,255,255,.07); background: #08090d;
+  animation: bal-in 420ms cubic-bezier(.22,.8,.3,1) both;
+}
+.ramp-box strong { font-size: 1rem; font-weight: 500; }
+.ramp-box p { font-size: .84rem; line-height: 1.6; color: #a9b2bd; margin: 0; max-width: 300px; }
+.ramp-orb {
+  width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+}
+.ramp-orb.up { color: #44f7d2; background: rgba(68,247,210,.1); }
+.ramp-orb.down { color: #e2b868; background: rgba(226,184,104,.1); }
+.ramp-ready { border-color: rgba(68,247,210,.26); }
+.ramp-skeleton { height: 168px; border-radius: 16px; background: rgba(255,255,255,.02); margin-top: 14px; }
+
+/* VanLink como pieza central de la navegación */
+.tabbar a[data-central] { position: relative; }
+.tabbar a[data-central]::before {
+  content: ""; position: absolute; top: 2px; left: 50%; transform: translateX(-50%);
+  width: 42px; height: 42px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(68,247,210,.16), transparent 70%);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) { .ramp-box { animation: none; } }

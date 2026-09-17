@@ -9,10 +9,11 @@ import { MarketPulse } from "@/components/market-pulse";
 import { WalletBalances } from "@/components/wallet/balances";
 
 const actions = [
-  { label: "Enviar", href: "/send", icon: "up" as const },
-  { label: "Recibir", href: "/receive", icon: "down" as const },
+  { label: "Up", href: "/up", icon: "up" as const },
+  { label: "Down", href: "/down", icon: "down" as const },
+  { label: "Enviar", href: "/send", icon: "send" as const },
+  { label: "Recibir", href: "/receive", icon: "wallet" as const },
   { label: "Cambiar", href: "/swap", icon: "swap" as const },
-  { label: "Comprar", href: "/buy", icon: "plus" as const },
 ];
 
 export default function HomePage() {
