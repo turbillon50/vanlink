@@ -16,6 +16,7 @@ export async function GET() {
       ? (await db().select().from(wallets).where(eq(wallets.clerkUserId, userId)))[0] : undefined;
     return NextResponse.json({ canActivate: walletConfigured(), transfersEnabled: false,
       wallet: wallet ? { organizationId: wallet.organizationId, turnkeyUserId: wallet.turnkeyUserId,
+        evmAddress: wallet.evmAddress, bitcoinAddress: wallet.bitcoinAddress,
         networks: ["Base", "Bitcoin"] } : null }, { headers });
   } catch {
     return NextResponse.json({ error: "No pudimos consultar tu wallet. Intenta de nuevo." }, { status: 503, headers });
