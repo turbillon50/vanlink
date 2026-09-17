@@ -18,6 +18,7 @@ type VanLink = {
   uri: string; expiresAt: string | null;
 };
 type Pago = { tx: string; amount: string; confirmed: boolean } | null;
+type Via = "cripto" | "tarjeta" | "cuenta";
 
 export function PayView({ slug }: { slug: string }) {
   const [link, setLink] = useState<VanLink | null>(null);
@@ -25,6 +26,9 @@ export function PayView({ slug }: { slug: string }) {
   const [state, setState] = useState<"cargando" | "listo" | "no-existe" | "error">("cargando");
   const [qr, setQr] = useState("");
   const [copied, setCopied] = useState(false);
+  const [via, setVia] = useState<Via>("cripto");
+  const [rampaLista, setRampaLista] = useState<boolean | null>(null);
+  const [guia, setGuia] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -46,6 +50,16 @@ export function PayView({ slug }: { slug: string }) {
     const timer = window.setInterval(() => void load(), 12_000);
     return () => window.clearInterval(timer);
   }, [link, load]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const r = await fetch("/api/onramp/status?direction=up", { cache: "no-store" });
+        const d = (await r.json()) as { available?: boolean };
+        setRampaLista(Boolean(d.available));
+      } catch { setRampaLista(false); }
+    })();
+  }, []);
 
   useEffect(() => {
     if (!link) return;
@@ -109,6 +123,19 @@ export function PayView({ slug }: { slug: string }) {
             )}
             {link.concept ? <p className="pay-concept">{link.concept}</p> : null}
 
+            <div className="pay-vias" role="tablist" aria-label="Cómo quieres pagar">
+              <button role="tab" type="button" aria-selected={via === "cripto"}
+                className={via === "cripto" ? "pay-via active" : "pay-via"}
+                onClick={() => setVia("cripto")}>Ya tengo cripto</button>
+              <button role="tab" type="button" aria-selected={via === "tarjeta"}
+                className={via === "tarjeta" ? "pay-via active" : "pay-via"}
+                onClick={() => setVia("tarjeta")}>Con tarjeta</button>
+              <button role="tab" type="button" aria-selected={via === "cuenta"}
+                className={via === "cuenta" ? "pay-via active" : "pay-via"}
+                onClick={() => setVia("cuenta")}>Crear cuenta</button>
+            </div>
+
+            {via === "cripto" ? (<>
             <div className="pay-network">Red {link.network}</div>
 
             {qr ? (
@@ -131,6 +158,19 @@ export function PayView({ slug }: { slug: string }) {
               {copied ? "Dirección copiada" : "Copiar dirección"}
             </button>
 
+            <button type="button" className="pay-guide-toggle" onClick={() => setGuia((g) => !g)}>
+              {guia ? "Ocultar" : "¿Cómo pago desde Binance?"}
+            </button>
+            {guia ? (
+              <ol className="pay-guide">
+                <li>Abre Binance y entra a <b>Billetera → Retirar</b>.</li>
+                <li>Elige <b>{link.asset}</b>.</li>
+                <li>Pega la dirección de arriba.</li>
+                <li>En red elige <b>{link.network === "Base" ? "Base" : "BTC (Bitcoin)"}</b>. Si eliges otra, el dinero se pierde.</li>
+                <li>Pon el monto y confirma. Llega en unos minutos.</li>
+              </ol>
+            ) : null}
+
             {pago && !pago.confirmed ? (
               <p className="pay-pending">Vimos un pago de {pago.amount}. Esperando confirmación de la red…</p>
             ) : (
@@ -141,6 +181,37 @@ export function PayView({ slug }: { slug: string }) {
               Envía únicamente {link.asset} por la red {link.network}. Enviar por otra red
               significa perder el dinero: nadie puede recuperarlo.
             </p>
+            </>) : null}
+
+            {via === "tarjeta" ? (
+              rampaLista === null
+                ? <div className="pay-qr pay-qr-loading" aria-hidden="true" />
+                : rampaLista
+                  ? <>
+                      <p className="pay-concept">Compra {link.asset} con tarjeta y llega directo a este cobro.</p>
+                      <a className="pay-copy pay-cta" href={"/api/onramp/widget?slug=" + link.slug}>Pagar con tarjeta</a>
+                      <p className="pay-warn">
+                        La compra la procesa un proveedor externo con sus comisiones y
+                        verificación de identidad. VanDeFi no toca ese dinero.
+                      </p>
+                    </>
+                  : <>
+                      <p className="pay-concept">El pago con tarjeta aún no está disponible en este cobro.</p>
+                      <p className="pay-soft">Mientras tanto puedes pagar con cripto desde la primera pestaña.</p>
+                    </>
+            ) : null}
+
+            {via === "cuenta" ? (<>
+              <p className="pay-concept">
+                Crea tu VanDeFi, ten tu propia wallet y paga desde ahí. También podrás cobrar
+                con tus propios links.
+              </p>
+              <a className="pay-copy pay-cta" href={"/sign-up?from=/l/" + link.slug}>Crear mi VanDeFi</a>
+              <p className="pay-soft">
+                Ojo: por este camino primero fondeas tu wallet y luego envías, o sea dos
+                operaciones. Si solo quieres pagar, la vía más corta es con cripto o tarjeta.
+              </p>
+            </>) : null}
           </>
         )}
       </div>

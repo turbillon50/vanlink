@@ -1980,3 +1980,25 @@ small {
 .vl-done-actions { display: flex; gap: 8px; width: 100%; }
 .vl-done-actions button { flex: 1; }
 .vl-link-btn { background: none; border: none; color: #a9b2bd; font-size: .82rem; cursor: pointer; text-decoration: underline; }
+
+.pay-vias { display: flex; gap: 5px; width: 100%; margin: 2px 0 4px; }
+.pay-via {
+  flex: 1; padding: 9px 6px; border-radius: 10px; cursor: pointer; font-size: .76rem;
+  border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); color: #a9b2bd;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease, transform 140ms ease;
+}
+.pay-via:active { transform: scale(.97); }
+.pay-via.active { color: #001b1f; background: #44f7d2; border-color: #44f7d2; }
+.pay-cta { display: block; text-align: center; text-decoration: none; }
+.pay-soft { font-size: .78rem !important; opacity: .55; line-height: 1.55; }
+.pay-guide-toggle {
+  background: none; border: none; color: #a9b2bd; font-size: .78rem; cursor: pointer;
+  text-decoration: underline; padding: 2px;
+}
+.pay-guide {
+  text-align: left; font-size: .8rem; line-height: 1.65; color: #c9d1da;
+  margin: 2px 0 0; padding: 12px 14px 12px 30px; border-radius: 11px;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+  display: flex; flex-direction: column; gap: 5px;
+}
+.pay-guide b { color: #44f7d2; font-weight: 500; }
