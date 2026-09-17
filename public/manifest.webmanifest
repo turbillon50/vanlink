@@ -1,7 +1,7 @@
 {
   "name": "VanDeFi",
   "short_name": "VanDeFi",
-  "description": "Tu wallet y tus VanLinks, en un solo lugar.",
+  "description": "Wallet de activos digitales: recibe, envía y sigue el mercado en Base y Bitcoin.",
   "start_url": "/welcome",
   "display": "standalone",
   "background_color": "#000000",
@@ -25,5 +25,14 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "lang": "es-MX",
+  "dir": "ltr",
+  "categories": [
+    "finance",
+    "utilities"
+  ],
+  "orientation": "portrait",
+  "scope": "/",
+  "id": "/"
 }

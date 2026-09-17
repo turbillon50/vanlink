@@ -30,6 +30,12 @@ function ProfileContent() {
       <div className="settings-group account-settings">
         <button onClick={() => openUserProfile()}><span className="account-setting-icon"><Icon name="shield" size={19} /></span><span><strong>Cuenta y seguridad</strong><small>Datos personales y sesiones</small></span><Icon name="chevron" size={16} /></button>
       </div>
+      <div className="settings-group account-settings account-legal">
+        <a href="/legal/privacidad"><span className="account-setting-icon"><Icon name="shield" size={19} /></span><span><strong>Aviso de privacidad</strong><small>Qué datos usamos y para qué</small></span><Icon name="chevron" size={16} /></a>
+        <a href="/legal/terminos"><span className="account-setting-icon"><Icon name="info" size={19} /></span><span><strong>Términos de uso</strong><small>Las reglas del servicio</small></span><Icon name="chevron" size={16} /></a>
+        <a href="/legal/riesgos"><span className="account-setting-icon"><Icon name="info" size={19} /></span><span><strong>Advertencia de riesgos</strong><small>Léelo antes de mover fondos</small></span><Icon name="chevron" size={16} /></a>
+        <a href="/legal/eliminar-cuenta"><span className="account-setting-icon"><Icon name="back" size={19} /></span><span><strong>Eliminar cuenta</strong><small>Cierra tu cuenta y borra tus datos</small></span><Icon name="chevron" size={16} /></a>
+      </div>
       <SignOutButton redirectUrl="/"><button className="account-signout"><Icon name="back" size={16} />Cerrar sesión</button></SignOutButton>
     </div>
     <aside className="account-footnote"><Icon name="info" size={16} /><p>Tus borradores de VanLink se guardan en este navegador. Aún no reciben fondos ni se sincronizan entre dispositivos.</p></aside>
