@@ -5,9 +5,10 @@ import { PressButton } from "@/components/ui/press-button";
 import { Icon } from "@/components/icons";
 import { Logo } from "@/components/brand/logo";
 import { CryptoMark } from "@/components/brand/crypto-mark";
+import { ExportWallet } from "@/components/wallet/export-wallet";
 
 type WalletStatus = { canActivate: boolean; transfersEnabled: false;
-  wallet: null | { organizationId: string; turnkeyUserId: string; evmAddress?: string;
+  wallet: null | { organizationId: string; turnkeyUserId: string; walletId?: string; evmAddress?: string;
     bitcoinAddress?: string; networks: string[] } };
 const callbackMessages: Record<string, string> = {
   expired: "La conexión venció. Puedes intentarlo otra vez.",
@@ -129,6 +130,12 @@ export function WalletSetupView({ status, error, busy, verified, onConnect, onRe
             <WalletAddress label="Bitcoin" value={status.wallet.bitcoinAddress} />
           ) : null}
         </div>
+      ) : null}
+      {status?.wallet?.walletId ? (
+        <ExportWallet
+          wallet={{ organizationId: status.wallet.organizationId, walletId: status.wallet.walletId }}
+          verified={verified}
+        ></ExportWallet>
       ) : null}
       {error ? <div className="wallet-error"><Icon name="info" size={17} /><p role="alert">{error}</p></div> : null}
       <div className="wallet-action-area">

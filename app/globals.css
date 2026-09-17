@@ -2002,3 +2002,29 @@ small {
   display: flex; flex-direction: column; gap: 5px;
 }
 .pay-guide b { color: #44f7d2; font-weight: 500; }
+
+/* ── Exportar wallet ────────────────────────────────────────────────────── */
+.exp-box {
+  margin-top: 16px; padding: 16px; border-radius: 15px;
+  border: 1px solid rgba(255,255,255,.08); background: #08090d;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.exp-box strong { font-size: .98rem; font-weight: 500; }
+.exp-box p { font-size: .84rem; line-height: 1.6; color: #a9b2bd; margin: 0; }
+.exp-alert { border-color: rgba(226,184,104,.32); background: rgba(226,184,104,.05); }
+.exp-open { border-color: rgba(255,107,138,.3); background: rgba(255,107,138,.04); }
+.exp-warn-strong { color: #ffc7d2 !important; font-size: .85rem !important; }
+.exp-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.exp-list li { font-size: .84rem; line-height: 1.55; color: #c9d1da; }
+.exp-words {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 4px 0;
+  transition: filter 220ms ease;
+}
+.exp-words.hidden { filter: blur(7px); user-select: none; pointer-events: none; }
+.exp-words span {
+  display: flex; align-items: baseline; gap: 6px; padding: 8px 9px; border-radius: 9px;
+  background: #101217; border: 1px solid rgba(255,255,255,.07); font-size: .82rem;
+}
+.exp-words i { font-style: normal; font-size: .64rem; opacity: .4; min-width: 12px; }
+.exp-note { font-size: .78rem !important; opacity: .55; }
+@media (max-width: 380px) { .exp-words { grid-template-columns: repeat(2, 1fr); } }
