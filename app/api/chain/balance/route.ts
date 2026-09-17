@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { wallets } from "@/lib/db/schema";
 import { tokenBalance, nativeBalance } from "@/lib/chain/rpc";
+import { bitcoinBalance } from "@/lib/chain/bitcoin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,15 +41,26 @@ export async function GET() {
   }
 
   try {
-    const [usdc, eth] = await Promise.all([
+    // Cada lectura por separado: que Bitcoin falle no debe tumbar Base,
+    // ni al revés. Lo que no se pudo leer se marca, no se inventa en cero.
+    const [usdc, usdt, cbbtc, eth, btc] = await Promise.allSettled([
       tokenBalance("USDC", wallet.evmAddress),
+      tokenBalance("USDT", wallet.evmAddress),
+      tokenBalance("cbBTC", wallet.evmAddress),
       nativeBalance(wallet.evmAddress),
+      bitcoinBalance(wallet.bitcoinAddress),
     ]);
+    const take = (r: PromiseSettledResult<unknown>) =>
+      r.status === "fulfilled" ? r.value : { error: "no_disponible" };
+
     return NextResponse.json(
       {
         wallet: { evmAddress: wallet.evmAddress, bitcoinAddress: wallet.bitcoinAddress },
-        network: "Base",
-        balances: [usdc, eth],
+        base: {
+          network: "Base",
+          balances: [take(usdc), take(usdt), take(cbbtc), take(eth)],
+        },
+        bitcoin: take(btc),
       },
       { headers }
     );
