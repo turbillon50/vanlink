@@ -70,3 +70,4 @@ export async function nativeBalance(address: string) {
 export async function chainTip(): Promise<number> {
   return parseInt(await rpc("eth_blockNumber", []), 16);
 }
+export { rpc as baseRpc };

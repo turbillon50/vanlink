@@ -14,7 +14,7 @@ export async function GET() {
   try {
     const wallet = process.env.DATABASE_URL
       ? (await db().select().from(wallets).where(eq(wallets.clerkUserId, userId)))[0] : undefined;
-    return NextResponse.json({ canActivate: walletConfigured(), transfersEnabled: false,
+    return NextResponse.json({ canActivate: walletConfigured(), transfersEnabled: walletConfigured(),
       wallet: wallet ? { organizationId: wallet.organizationId, turnkeyUserId: wallet.turnkeyUserId,
         walletId: wallet.walletId, evmAddress: wallet.evmAddress, bitcoinAddress: wallet.bitcoinAddress,
         networks: ["Base", "Bitcoin"] } : null }, { headers });

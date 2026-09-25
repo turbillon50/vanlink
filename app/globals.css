@@ -2028,3 +2028,63 @@ small {
 .exp-words i { font-style: normal; font-size: .64rem; opacity: .4; min-width: 12px; }
 .exp-note { font-size: .78rem !important; opacity: .55; }
 @media (max-width: 380px) { .exp-words { grid-template-columns: repeat(2, 1fr); } }
+
+/* ── Enviar ─────────────────────────────────────────────────────────────── */
+.snd-skeleton { height: 360px; border-radius: 16px; background: rgba(255,255,255,.02); }
+.snd-gate { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+.snd-gate p { margin: 0; color: #c9d1da; font-size: .92rem; line-height: 1.5; }
+.snd-assets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.snd-asset {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 4px;
+  border-radius: 11px; cursor: pointer; font-size: .86rem; font-weight: 600; color: #c9d1da;
+  border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02);
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease, transform 140ms ease;
+}
+.snd-asset small { font-weight: 400; font-size: .7rem; opacity: .55; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.snd-asset.active { color: #44f7d2; border-color: #44f7d2; background: rgba(68,247,210,.08); }
+.snd-asset:active { transform: scale(.97); }
+.snd-addr-field { display: flex; gap: 8px; align-items: stretch; }
+.snd-addr-field input { flex: 1; min-width: 0; font-variant-ligatures: none; }
+.snd-paste {
+  flex: none; padding: 0 14px; border-radius: 12px; cursor: pointer; font-size: .84rem;
+  border: 1px solid rgba(68,247,210,.5); background: rgba(68,247,210,.08); color: #44f7d2;
+}
+.snd-paste:active { transform: scale(.97); }
+.snd-hint {
+  margin: -4px 0 0; font-size: .8rem; color: #ffd28a; padding: 8px 11px; border-radius: 10px;
+  border: 1px solid rgba(255,196,94,.24); background: rgba(255,196,94,.06);
+}
+.snd-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: -4px; font-size: .8rem; color: #a9b2bd; }
+.snd-row em { font-style: normal; opacity: .75; }
+.snd-max {
+  flex: none; padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: .78rem;
+  border: 1px solid rgba(255,255,255,.14); background: none; color: #e6edf5;
+}
+.snd-max.active { border-color: #44f7d2; color: #44f7d2; background: rgba(68,247,210,.08); }
+.rcv-tab small.snd-eta { display: block; font-size: .68rem; opacity: .6; margin-top: 1px; }
+.snd-foot { font-size: .76rem; opacity: .5; text-align: center; margin: 2px 0 0; line-height: 1.5; }
+.snd-hero {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 20px 14px;
+  border-radius: 18px; border: 1px solid rgba(255,255,255,.08);
+  background: radial-gradient(120% 120% at 50% 0%, rgba(68,247,210,.09), transparent 60%), #08090d;
+}
+.snd-hero span { font-size: .78rem; opacity: .55; letter-spacing: .04em; }
+.snd-hero strong { font-size: 1.7rem; letter-spacing: -.01em; color: #f3f7fb; word-break: break-all; text-align: center; }
+.snd-hero small { font-size: .82rem; opacity: .6; }
+.snd-addr { font-size: .78rem; letter-spacing: .03em; line-height: 1.6; word-break: break-all; text-align: right; display: inline-block; max-width: 210px; font-variant-ligatures: none; }
+.snd-done { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; margin-top: 10px; }
+.snd-done h2 { margin: 6px 0 0; font-size: 1.25rem; }
+.snd-done-orb {
+  width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; font-size: 1.9rem; font-weight: 700;
+  color: #001b1f; background: rgba(68,247,210,.14); border: 1px solid rgba(68,247,210,.4);
+}
+.snd-done.confirmada .snd-done-orb { background: #44f7d2; box-shadow: 0 0 28px rgba(68,247,210,.35); }
+.snd-done.fallida .snd-done-orb { background: #ff6b8a; color: #fff; border-color: #ff6b8a; }
+.snd-spin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid rgba(68,247,210,.25); border-top-color: #44f7d2; animation: snd-rot 900ms linear infinite; }
+@keyframes snd-rot { to { transform: rotate(360deg); } }
+.snd-done-amt { font-size: 1.4rem; font-weight: 700; margin: 0; color: #f3f7fb; }
+.snd-done-note { font-size: .86rem; color: #a9b2bd; margin: 0; max-width: 320px; line-height: 1.5; }
+.snd-txid { font-size: .8rem; opacity: .7; }
+.snd-actions { display: flex; flex-direction: column; gap: 8px; align-self: stretch; margin-top: 8px; }
+.snd-link { font-size: .84rem; color: #44f7d2; margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .snd-spin { animation-duration: 3s; } }

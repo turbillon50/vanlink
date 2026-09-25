@@ -7,7 +7,7 @@ import { Logo } from "@/components/brand/logo";
 import { CryptoMark } from "@/components/brand/crypto-mark";
 import { ExportWallet } from "@/components/wallet/export-wallet";
 
-type WalletStatus = { canActivate: boolean; transfersEnabled: false;
+type WalletStatus = { canActivate: boolean; transfersEnabled: boolean;
   wallet: null | { organizationId: string; turnkeyUserId: string; walletId?: string; evmAddress?: string;
     bitcoinAddress?: string; networks: string[] } };
 const callbackMessages: Record<string, string> = {
