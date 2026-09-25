@@ -262,21 +262,16 @@ function SendFlowInner() {
   /* ---------------- vistas ---------------- */
 
   if (boot === "cargando") return <div className="snd-skeleton" aria-label="Cargando" />;
-  if (boot === "sin-sesion") return (
-    <div className="snd-gate">
-      <p>Para enviar necesitas tu cuenta y tu wallet. Mirar es libre; mover dinero, no.</p>
-      <PressButton href="/login?redirect_url=/send">Iniciar sesión</PressButton>
-    </div>
-  );
   if (boot === "sin-wallet") return (
     <div className="snd-gate">
       <p>Todavía no activas tu wallet. Se hace una sola vez, desde tu cuenta.</p>
       <PressButton href="/profile">Activar mi wallet</PressButton>
     </div>
   );
-  if (boot === "error" || !wallet) return <p className="field-error" role="alert">No pudimos cargar tu wallet. Recarga la página.</p>;
+  const guest = boot === "sin-sesion";
+  if (boot === "error" || (!wallet && !guest)) return <p className="field-error" role="alert">No pudimos cargar tu wallet. Recarga la página.</p>;
 
-  if (sent) {
+  if (sent && wallet) {
     const icon = status === "confirmada" ? "✓" : status === "fallida" ? "!" : "";
     return (
       <div className={`snd-done ${status}`}>
@@ -300,7 +295,7 @@ function SendFlowInner() {
     );
   }
 
-  if (review) {
+  if (review && wallet) {
     const isBtc = review.network === "bitcoin";
     const amt = isBtc ? Number(satsToBtc(review.plan.amount)) : Number(fromUnits(review.value, review.asset));
     const a: Asset = isBtc ? "BTC" : review.asset;
@@ -410,7 +405,9 @@ function SendFlowInner() {
 
       {error && <p role="alert" className="field-error">{error}</p>}
       {deviceOk === false && <p className="snd-hint">Este dispositivo no puede firmar envíos. Puedes preparar el envío, pero firmarlo requiere el dispositivo donde activaste tu wallet.</p>}
-      <PressButton type="submit" disabled={busy === "cotizando"}>{busy === "cotizando" ? "Cotizando la red…" : "Revisar envío"}</PressButton>
+      {guest
+        ? <PressButton href="/login?redirect_url=/send">Inicia sesión para enviar</PressButton>
+        : <PressButton type="submit" disabled={busy === "cotizando"}>{busy === "cotizando" ? "Cotizando la red…" : "Revisar envío"}</PressButton>}
       <p className="snd-foot">La comisión la cobra la red, no VanDeFi. Tú firmas desde este dispositivo; nadie más puede mover tu dinero.</p>
     </form>
   );
