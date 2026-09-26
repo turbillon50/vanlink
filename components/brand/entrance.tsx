@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { SplashContent } from "./atmosphere";
 import { Icon } from "@/components/icons";
 
@@ -8,7 +9,9 @@ import { Icon } from "@/components/icons";
  * It lives in the root layout, so client navigation never replays it. */
 export function BrandEntrance() {
   const [dismissed, setDismissed] = useState(false);
-  if (dismissed) return null;
+  const pathname = usePathname();
+  // El link de Bitcoin se abre directo: nada se interpone entre la persona y su dinero.
+  if (dismissed || pathname === "/c") return null;
 
   return (
     <div
