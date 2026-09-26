@@ -2088,3 +2088,21 @@ small {
 .snd-actions { display: flex; flex-direction: column; gap: 8px; align-self: stretch; margin-top: 8px; }
 .snd-link { font-size: .84rem; color: #44f7d2; margin-top: 4px; }
 @media (prefers-reduced-motion: reduce) { .snd-spin { animation-duration: 3s; } }
+
+/* ── Link de Bitcoin ────────────────────────────────────────────────────── */
+.snd-help-toggle { align-self: flex-start; background: none; border: 0; padding: 0; margin-top: -6px; color: #44f7d2; font-size: .82rem; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.snd-help { margin: -4px 0 0; padding: 12px 14px 12px 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); color: #c9d1da; font-size: .84rem; line-height: 1.7; }
+.snd-cta-link { display: block; text-align: center; padding: 12px; border-radius: 12px; border: 1px dashed rgba(68,247,210,.4); color: #44f7d2; font-size: .86rem; text-decoration: none; }
+.snd-cta-link:hover { background: rgba(68,247,210,.06); }
+.lnk-list { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.lnk-list h3 { margin: 0; font-size: .95rem; }
+.lnk-item { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); }
+.lnk-item strong { display: block; font-size: .9rem; }
+.lnk-item small { font-size: .74rem; opacity: .55; }
+.lnk-badge { font-size: .72rem; padding: 4px 9px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); color: #c9d1da; white-space: nowrap; }
+.lnk-badge.sin-reclamar { color: #ffd28a; border-color: rgba(255,196,94,.4); }
+.lnk-badge.reclamado { color: #44f7d2; border-color: rgba(68,247,210,.4); }
+.lnk-actions { grid-column: 1 / -1; display: flex; gap: 8px; }
+.lnk-actions button { flex: 1; padding: 9px; border-radius: 10px; cursor: pointer; font-size: .82rem; border: 1px solid rgba(255,255,255,.12); background: none; color: #e6edf5; }
+.lnk-actions button:first-child { border-color: rgba(68,247,210,.5); color: #44f7d2; }
+.lnk-actions button:disabled { opacity: .5; }

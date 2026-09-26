@@ -40,7 +40,7 @@ export function errorResponse(e: unknown) {
 const ESPLORA = [process.env.BITCOIN_API_URL, "https://mempool.space/api", "https://blockstream.info/api"]
   .filter(Boolean) as string[];
 
-async function esplora<T>(path: string, init?: RequestInit, as: "json" | "text" = "json"): Promise<T> {
+export async function esplora<T>(path: string, init?: RequestInit, as: "json" | "text" = "json"): Promise<T> {
   let last: Error | undefined;
   for (const base of ESPLORA) {
     try {
@@ -161,4 +161,34 @@ export async function baseStatus(hash: string) {
   if (!r || typeof r !== "object") return { confirmed: false, failed: false, block: null };
   const rec = r as { status?: string; blockNumber?: string };
   return { confirmed: rec.status === "0x1", failed: rec.status === "0x0", block: rec.blockNumber ? Number(hexNum(rec.blockNumber)) : null };
+}
+
+/* ---------------- Link de Bitcoin (público, sin sesión) ---------------- */
+
+/** Estado de una dirección de link: saldo gastable (incluye sin confirmar) y si ya se usó. */
+export async function linkState(address: string) {
+  const [utxos, info, fees] = await Promise.all([
+    esplora<{ txid: string; vout: number; value: number; status: { confirmed: boolean } }[]>(`/address/${address}/utxo`),
+    esplora<{ chain_stats: { tx_count: number }; mempool_stats: { tx_count: number } }>(`/address/${address}`),
+    btcFees(),
+  ]);
+  const txCount = info.chain_stats.tx_count + info.mempool_stats.tx_count;
+  return {
+    utxos: utxos.map(({ txid, vout, value }) => ({ txid, vout, value })),
+    unconfirmed: utxos.some(u => !u.status.confirmed),
+    balance: utxos.reduce((n, u) => n + u.value, 0),
+    status: utxos.length ? "disponible" : txCount > 0 ? "reclamado" : "sin_fondos",
+    fees,
+  };
+}
+
+/** Transmite un barrido de link ya firmado. Solo acepta transacciones P2WPKH pequeñas y válidas. */
+export async function linkBroadcast(hex: string) {
+  if (!/^[0-9a-f]+$/i.test(hex) || hex.length > 20_000) throw new SendError("tx_invalida");
+  let tx: Transaction;
+  try { tx = Transaction.fromHex(hex); } catch { throw new SendError("tx_invalida"); }
+  if (tx.outs.length !== 1 || tx.ins.some(i => i.witness?.length !== 2)) throw new SendError("tx_invalida");
+  const txid = (await esplora<string>("/tx", { method: "POST", body: hex, headers: { "Content-Type": "text/plain" } }, "text")).trim();
+  if (txid !== tx.getId()) throw new SendError("txid_inesperado", 502);
+  return txid;
 }

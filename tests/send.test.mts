@@ -136,3 +136,33 @@ test("Base: direcciones y montos", () => {
   assert.equal(toUnits("1.1234567", "USDC"), null);
   assert.equal(toUnits("0", "ETH"), null);
 });
+
+import { newLinkKey, parseLinkToken, sweepLink, sweepReserve, linkUrl } from "../lib/send/claim-link";
+
+test("Link: la llave viaja en el # y se reconstruye igual", () => {
+  const k = newLinkKey();
+  const url = linkUrl("https://vandefi.live", k.token);
+  assert.match(url, /^https:\/\/vandefi\.live\/c#[A-Za-z0-9_-]{43}$/);
+  const back = parseLinkToken(url.split("#")[1]);
+  assert.equal(back?.address, k.address);
+  assert.equal(parseLinkToken(k.token.slice(0, 40)), null, "token recortado");
+  assert.equal(parseLinkToken("basura!!"), null);
+});
+
+test("Link: quien reclama recibe el monto completo gracias a la reserva", () => {
+  const k = newLinkKey();
+  const monto = 5000, rate = 4;
+  const fondeo = monto + sweepReserve(rate);
+  for (const destino of [DEST, "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy"]) {
+    const out = sweepLink(k, [utxo(1, fondeo)], destino, rate);
+    const tx = Transaction.fromHex(out.hex);
+    assert.equal(tx.outs.length, 1, "barrido sin cambio: el link queda en cero");
+    assert.deepEqual(Buffer.from(tx.outs[0].script), Buffer.from(outputScript(destino).script));
+    assert.ok(Number(tx.outs[0].value) >= monto - 5, `recibe ${tx.outs[0].value}`);
+  }
+});
+
+test("Link: saldo que no alcanza la comisión se rechaza sin firmar nada", () => {
+  const k = newLinkKey();
+  assert.throws(() => sweepLink(k, [utxo(1, 300)], DEST, 5), /fondos_insuficientes_para_comision/);
+});

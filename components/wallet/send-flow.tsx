@@ -408,6 +408,7 @@ function SendFlowInner() {
       {guest
         ? <PressButton href="/login?redirect_url=/send">Inicia sesión para enviar</PressButton>
         : <PressButton type="submit" disabled={busy === "cotizando"}>{busy === "cotizando" ? "Cotizando la red…" : "Revisar envío"}</PressButton>}
+      {network === "bitcoin" && <Link href="/send/link" className="snd-cta-link">¿No tienes su dirección? Mándale un link por WhatsApp</Link>}
       <p className="snd-foot">La comisión la cobra la red, no VanDeFi. Tú firmas desde este dispositivo; nadie más puede mover tu dinero.</p>
     </form>
   );
