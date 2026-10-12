@@ -50,8 +50,10 @@ export function Logo({
         transform="translate(2 3)"
       />
       <path
+        className="van-logo-beam"
         d="M13 12 49 97 87 12"
         stroke={"url(#" + id + ")"}
+        pathLength="100"
         strokeWidth="12"
         strokeLinecap="round"
         strokeLinejoin="round"

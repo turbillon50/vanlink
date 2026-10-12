@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "@/components/brand/crystal.css";
-import { Atmosphere, BrandEntrance } from "@/components/brand/atmosphere";
+import { Atmosphere } from "@/components/brand/atmosphere";
+import { BrandEntrance } from "@/components/brand/entrance";
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const geistMono = Geist_Mono({
   subsets: ["latin"],

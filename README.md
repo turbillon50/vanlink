@@ -53,11 +53,13 @@ adicionales. No se cambiaron accesos ni se ejecutaron operaciones financieras.
 
 - Repositorio exclusivo: https://github.com/turbillon50/vanlink
 - Proyecto Vercel: septvandefi
-- Producción: https://septvandefi.vercel.app
-- Dominio asociado: vandefi.live (requiere DNS en Name.com)
+- Producción: https://vandefi.live (DNS y HTTPS activos)
+- URL alternativa: https://septvandefi.vercel.app
 - Node 24; npm y package-lock.json para instalaciones reproducibles.
-- Splash decorativo de 1.48 s al abrir, sin retrasar peticiones ni capturar clics; navegación normal sin repetirlo.
+- Entrada de marca de 4.4 s, omitible con Entrar. Trazo de luz, corrientes orbitales, halo y revelado suave. No espera a las APIs; CSS la cierra incluso sin hidratación; no se repite en navegación interna.
 - Movimiento reducido omite la entrada y detiene las animaciones.
+- Campos, filtros, botones, dock y superficies comparten bordes ópticos, estados de foco y microinteracciones.
+- Los cinco CNAME de Clerk están publicados en Name.com con TTL 300; falta verificar en Clerk y conectar la autenticación.
 - Cristal y gráficos vectoriales locales; no hay vídeos pesados ni peticiones de imágenes externas.
 
 Este repositorio contiene exclusivamente el reinicio de septiembre de 2026.
