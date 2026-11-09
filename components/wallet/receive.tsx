@@ -33,12 +33,22 @@ export function ReceivePanel() {
   const [qr, setQr] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [walletVersion, setWalletVersion] = useState(0);
+  const [polygonReady, setPolygonReady] = useState(false);
 
   useEffect(() => {
     const ready = () => setWalletVersion((n) => n + 1);
     window.addEventListener("vandefi:wallet-ready", ready);
     return () => window.removeEventListener("vandefi:wallet-ready", ready);
   }, []);
+
+  useEffect(() => {
+    let live = true;
+    void fetch("/api/chain/polygon", { cache: "no-store" })
+      .then(async r => r.ok ? r.json() as Promise<{ receiveEnabled?: boolean }> : null)
+      .then(result => { if (live) setPolygonReady(result?.receiveEnabled === true); })
+      .catch(() => { if (live) setPolygonReady(false); });
+    return () => { live = false; };
+  }, [walletVersion]);
 
   useEffect(() => {
     void (async () => {
@@ -84,6 +94,13 @@ export function ReceivePanel() {
   }
 
   const current = NETWORKS.find((n) => n.id === network)!;
+  if (network === "polygon" && !polygonReady) {
+    return <div className="snd-gate" role="status">
+      <strong>USDC en Polygon · recepción en preparación</strong>
+      <p>La dirección EVM de tu wallet funciona también en Polygon, pero no habilitaremos depósitos hasta comprobar los envíos y las comisiones. No mandes dinero a Polygon todavía.</p>
+      <p>Las direcciones antiguas de Base y Bitcoin siguen accesibles desde el modo Experto.</p>
+    </div>;
+  }
 
   return (
     <div className="rcv">
