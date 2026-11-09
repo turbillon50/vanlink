@@ -1,5 +1,6 @@
 import "server-only";
 import crypto from "node:crypto";
+import { POLYGON_USDC_ADDRESS } from "@/lib/polygon/asset";
 
 /** Alfabeto sin caracteres confundibles (0/O, 1/l/I) para dictar un link por teléfono. */
 const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
@@ -20,7 +21,12 @@ export const ASSETS = {
 export type AssetKey = keyof typeof ASSETS;
 
 /** URI estándar para que la wallet del pagador prellene todo al escanear. */
-export function paymentUri(asset: AssetKey, address: string, amount?: string | null) {
+export function paymentUri(asset: AssetKey, address: string, amount?: string | null, network?: string) {
+  if (network === "Polygon" && asset === "USDC") {
+    // EIP-681 ERC-20 payment request for Circle native USDC on Polygon.
+    const base = "ethereum:" + POLYGON_USDC_ADDRESS + "@137/transfer?address=" + encodeURIComponent(address);
+    return amount ? base + "&uint256=" + BigInt(Math.round(Number(amount) * 1e6)).toString() : base;
+  }
   if (asset === "BTC") {
     return amount ? `bitcoin:${address}?amount=${amount}` : `bitcoin:${address}`;
   }
