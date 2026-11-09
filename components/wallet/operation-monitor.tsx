@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
+import { authConfigured } from "@/lib/auth-config";
 import { useEffect, useRef, useState } from "react";
 import {
   TRACKING_EVENT, explorerForOperation, isValidTransactionId,
@@ -32,7 +33,7 @@ function formatTime(value: string | null): string {
   return parsed.toLocaleString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-export function OperationMonitor({ compact = false }: { compact?: boolean }) {
+function OperationMonitorInner({ compact = false }: { compact?: boolean }) {
   const { userId, isLoaded } = useAuth();
   const [operations, setOperations] = useState<TrackedOperation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -192,4 +193,9 @@ export function OperationMonitor({ compact = false }: { compact?: boolean }) {
       <p className="vd-operations-disclaimer">Un fallo al consultar la red no significa que el dinero se perdió. No repitas una transferencia pendiente sin verificar el hash.</p>
     </section>
   );
+}
+
+export function OperationMonitor({ compact = false }: { compact?: boolean }) {
+  if (!authConfigured) return null;
+  return <OperationMonitorInner compact={compact}/>;
 }
