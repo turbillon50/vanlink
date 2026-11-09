@@ -10,12 +10,11 @@
 type Activity = { id: string; status: string; result?: Record<string, unknown>; failure?: { message?: string } };
 
 async function client() {
-  const [{ IndexedDbStamper }, { TurnkeyClient }] = await Promise.all([
-    import("@turnkey/indexed-db-stamper"), import("@turnkey/http"),
+  const [{ existingWalletDeviceStamper }, { TurnkeyClient }] = await Promise.all([
+    import("@/lib/wallet/browser"), import("@turnkey/http"),
   ]);
-  const stamper = new IndexedDbStamper();
-  await stamper.init();
-  if (!stamper.getPublicKey()) throw new Error("dispositivo_no_autorizado");
+  const stamper = await existingWalletDeviceStamper();
+  if (!stamper?.getPublicKey()) throw new Error("dispositivo_no_autorizado");
   return new TurnkeyClient({ baseUrl: "https://api.turnkey.com" }, stamper);
 }
 

@@ -17,7 +17,7 @@ export async function GET() {
     return NextResponse.json({ canActivate: walletConfigured(), transfersEnabled: walletConfigured(),
       wallet: wallet ? { organizationId: wallet.organizationId, turnkeyUserId: wallet.turnkeyUserId,
         walletId: wallet.walletId, evmAddress: wallet.evmAddress, bitcoinAddress: wallet.bitcoinAddress,
-        networks: ["Base", "Bitcoin"] } : null }, { headers });
+        networks: ["Polygon", "Base", "Bitcoin"] } : null }, { headers });
   } catch {
     return NextResponse.json({ error: "No pudimos consultar tu wallet. Intenta de nuevo." }, { status: 503, headers });
   }

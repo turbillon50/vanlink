@@ -17,18 +17,21 @@ export function RecoverDevice({ userId, onRecovered, context = "firmar" }: Props
   async function send() {
     setBusy(true); setError("");
     try {
-      const { walletDeviceOwner } = await import("@/lib/wallet/browser");
-      const owner = walletDeviceOwner();
-      if (owner && owner !== userId) {
-        setBlocked(true);
-        throw new Error("Este navegador ya tiene la llave de otra cuenta. Para evitar perder sus fondos, abre esta cuenta en otro navegador.");
-      }
-      const { sendCode } = await import("@/lib/wallet/recovery");
+      const { assertRecoveryDeviceAvailable, sendCode } = await import("@/lib/wallet/recovery");
+      await assertRecoveryDeviceAvailable(userId);
       const r = await sendCode();
       setOtpId(r.otpId); setEmail(r.email); setStep("sent");
     } catch (e) {
       const err = e as Error & { code?: string };
-      setError(err.message); if (err.code === "sin_correo") setBlocked(true);
+      if (err.message === "wallet_device_owner_mismatch" || err.message === "wallet_device_legacy_unknown") {
+        setBlocked(true);
+        setError(err.message === "wallet_device_owner_mismatch"
+          ? "Este navegador conserva la llave de otra cuenta. Para protegerla, recupera esta cuenta en otro navegador."
+          : "Este navegador conserva una llave antigua sin identificar. Para protegerla, recupera tu cuenta en otro navegador.");
+      } else {
+        setError(err.code === "sin_correo" || err.code === "correo_distinto" ? err.message : "No pudimos mandar el código. Intenta de nuevo.");
+        if (err.code === "sin_correo") setBlocked(true);
+      }
     } finally { setBusy(false); }
   }
 
@@ -41,13 +44,15 @@ export function RecoverDevice({ userId, onRecovered, context = "firmar" }: Props
     } catch (e) {
       const message = (e as Error).message;
       setError(message === "wallet_device_owner_mismatch"
-        ? "Este navegador conserva una llave de otra cuenta. Para no sustituirla, usa otro navegador."
-        : message || "No se pudo recuperar.");
+        ? "Este navegador conserva una llave de otra cuenta. Para protegerla, recupera esta cuenta en otro navegador."
+        : message === "wallet_device_legacy_unknown"
+        ? "Este navegador conserva una llave antigua sin identificar. Para protegerla, recupera tu cuenta en otro navegador."
+        : "No se pudo registrar este dispositivo. Revisa el código e intenta de nuevo.");
     }
     finally { setBusy(false); }
   }
 
-  if (step === "done") return <div className="recover-box ok" role="status">Listo. Este dispositivo ya puede {context}.</div>;
+  if (step === "done") return <div className="recover-box ok" role="status">Dispositivo registrado. Comprueba su firma antes de operar.</div>;
 
   return (
     <div className="recover-box" role="region" aria-label="Recuperar acceso">

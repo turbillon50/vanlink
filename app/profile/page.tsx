@@ -22,7 +22,7 @@ function ProfileContent() {
       <p>Administra tu wallet y tu acceso.</p>
     </header>
     <section className="vd-profile-mode" aria-label="Experiencia de la aplicación"><div><strong>Tu experiencia</strong><small>Elige qué tanta información quieres ver</small></div><ModeToggle /></section>
-    <WalletSetup userId={user.id} />
+    <WalletSetup key={user.id} userId={user.id} />
     <div className="account-identity-panel">
       <div className="profile-card">
         <span className="avatar account-initial">{name.charAt(0).toLocaleUpperCase("es")}</span>
