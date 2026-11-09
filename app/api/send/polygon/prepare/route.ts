@@ -41,11 +41,11 @@ export async function GET(request: Request) {
     } catch {
       throw new SendError("simulacion_rechazada", 400, "Polygon rechazó la simulación. Revisa el saldo USDC y el POL para la comisión.");
     }
-    const baseFee = block.baseFeePerGas ? wei(block.baseFeePerGas) : 0n;
+    const baseFee = block.baseFeePerGas ? wei(block.baseFeePerGas) : BigInt(0);
     const feeSuggestion = wei(await polygonRpc<string>("eth_gasPrice", []));
     const tip = wei(tipHex);
-    const maxFee = (baseFee * 2n + tip) > feeSuggestion ? (baseFee * 2n + tip) : (feeSuggestion * 2n);
-    const gas = (gasEstimate * 125n / 100n) + 1n;
+    const maxFee = (baseFee * BigInt(2) + tip) > feeSuggestion ? (baseFee * BigInt(2) + tip) : (feeSuggestion * BigInt(2));
+    const gas = (gasEstimate * BigInt(125) / BigInt(100)) + BigInt(1);
     if (polBalance < gas * maxFee) throw new SendError("sin_pol", 400,
       "Para enviar USDC necesitas un poco de POL para la comisión de Polygon. VanDeFi todavía no patrocina el gas.");
 
