@@ -431,3 +431,101 @@
 @media(max-width:380px){
   .vd-profile-mode{flex-wrap:wrap}
 }
+
+
+/* CARDO PRINCIPAL · VanDeFi Balance (Obsidian III)
+   Material negro pulido; sin halo verde ni cifras inventadas.
+   Encabeza la wallet y deja las operaciones delante del desglose. */
+.vd-wallet-home{gap:21px}
+.vd-wallet-heading{gap:5px}
+.vd-wallet-heading h1{font-size:clamp(23px,6vw,30px);font-weight:550}
+.vd-expert-caption{font-size:11px;margin-top:6px}
+.vd-total-card{
+  position:relative;isolation:isolate;overflow:hidden;display:grid;gap:15px;
+  min-height:208px;border-radius:22px;padding:21px 23px 19px;
+  background:linear-gradient(148deg,#1b1c1e 0%,#111214 37%,#08090b 100%);
+  border:1px solid rgba(255,255,255,.17);
+  border-top-color:rgba(255,255,255,.35);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.13),inset 0 -14px 25px -22px #000,0 13px 28px -17px #000;
+}
+.vd-total-card:before{
+  content:"";position:absolute;inset:6px;pointer-events:none;border:1px solid rgba(255,255,255,.045);border-radius:17px;z-index:-1
+}
+.vd-total-card:after{
+  content:"";position:absolute;top:-34px;right:-47px;pointer-events:none;width:210px;height:140px;
+  background:repeating-linear-gradient(90deg,transparent 0,transparent 16px,rgba(255,255,255,.07) 17px,transparent 18px);
+  transform:rotate(-24deg);mask-image:linear-gradient(90deg,transparent,black);opacity:.45;z-index:-1
+}
+.vd-total-top{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:39px}
+.vd-total-top .wordmark{color:#f4f4f1;font-weight:650}
+.vd-total-top .wordmark>span{letter-spacing:-.05em}
+.vd-total-eye{
+  display:grid;place-items:center;width:38px;height:38px;flex:none;
+  background:rgba(0,0,0,.29);border:1px solid rgba(255,255,255,.11);
+  border-radius:12px;color:#b5b9b9;box-shadow:inset 0 2px 4px #0006
+}
+.vd-total-eye:active{transform:translateY(2px);box-shadow:inset 0 3px 8px #000}
+.vd-total-body{display:grid;gap:7px;margin-top:5px}
+.vd-total-label{font-size:10px;letter-spacing:.13em;font-weight:650;color:#a0a4a6}
+.vd-total-figure{display:flex;align-items:baseline;gap:12px;min-height:59px;max-width:100%}
+.vd-total-figure strong{
+  display:block;min-width:0;overflow-wrap:anywhere;font-size:clamp(39px,10.5vw,56px);
+  font-weight:550;letter-spacing:-.064em;line-height:1.1;color:#fbfbf9;
+  font-variant-numeric:tabular-nums;
+}
+.vd-total-figure>span{font-size:13px;font-weight:580;color:#bec1c0;letter-spacing:.01em}
+.vd-total-equivalents{display:flex;align-items:center;flex-wrap:wrap;gap:8px 20px}
+.vd-total-equivalents span{font-size:12px;color:#babdbc;font-variant-numeric:tabular-nums}
+.vd-total-footer{
+  display:flex;justify-content:space-between;align-items:end;gap:12px;
+  padding-top:12px;border-top:1px solid rgba(255,255,255,.085);
+}
+.vd-total-footer p{font-size:10px;max-width:45ch;color:#888d8e;line-height:1.45}
+.vd-total-stamp{font-size:8px;letter-spacing:.11em;color:#5a5e60;white-space:nowrap}
+.vd-cbbtc-note{font-size:10px;color:#a1a4a4;line-height:1.45}
+.vd-portfolio-gate{
+  display:inline-flex;align-items:center;gap:6px;
+  color:#e4e5e3;font-size:12px;font-weight:600;min-height:36px;
+}
+.vd-breakdown{display:grid;gap:0}
+.vd-breakdown-top{
+  display:flex;justify-content:space-between;align-items:end;gap:12px;
+  padding:9px 1px 10px;
+}
+.vd-breakdown-top h2{font-size:21px;font-weight:560;letter-spacing:-.045em;line-height:1.2;margin-top:5px}
+.vd-breakdown-top .vd-minor-link{font-size:11px;white-space:nowrap}
+.vd-breakdown-list{display:grid;gap:0}
+.vd-breakdown-row{
+  display:flex;align-items:center;gap:12px;
+  min-height:69px;padding:10px 1px;
+  border-bottom:1px solid rgba(255,255,255,.075);
+}
+.vd-breakdown-row:last-child{border-bottom:0}
+.vd-token-mark{
+  display:grid;place-items:center;flex:none;width:35px;height:35px;
+  border-radius:50%;background:#1b1d20;
+  color:#e7e9e7;font-weight:690;font-size:17px;
+  border:1px solid rgba(255,255,255,.1);
+}
+.vd-breakdown-name{display:grid;gap:3px;flex:1;min-width:0}
+.vd-breakdown-name strong{font-size:14px;color:#f2f2f0;font-weight:580}
+.vd-breakdown-name small{font-size:10px;color:#777a7d}
+.vd-breakdown-amount{text-align:right;display:grid;justify-items:end;gap:4px;min-width:0}
+.vd-breakdown-amount strong{
+  font-size:14px;color:#f4f4f1;letter-spacing:-.015em;font-weight:570;
+  font-variant-numeric:tabular-nums;overflow-wrap:anywhere
+}
+.vd-breakdown-amount small{color:#8c9192;font-size:10px;max-width:170px}
+.app-root[data-experience="simple"] .vd-breakdown-name small{display:none}
+.vd-wallet-home>.vd-operation-strip{margin:3px 0 4px}
+.vd-breakdown .bal-note{padding:17px 0;color:#a3a7a9;font-size:12px;line-height:1.5}
+@media(max-width:420px){
+  .vd-total-card{border-radius:18px;padding:17px 18px;min-height:204px;gap:12px}
+  .vd-total-figure strong{font-size:clamp(36px,11vw,46px)}
+  .vd-total-stamp{display:none}
+  .vd-total-footer p{max-width:100%}
+  .vd-breakdown-top h2{font-size:19px}
+}
+@media(prefers-reduced-motion:reduce){
+  .vd-total-eye,.vd-portfolio-gate{transition:none!important}
+}
