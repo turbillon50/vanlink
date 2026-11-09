@@ -86,7 +86,7 @@ export function AppShell({
           <div className="rail-bottom">
             <span className="network-label">
               <i />
-              USDC en Base
+              BTC · USDC
             </span>
             <p>
               Todo empieza con
@@ -169,7 +169,7 @@ export function AppShell({
             </nav>
             <span className="network-label">
               <i />
-              USDC · Base
+              BTC · USDC
             </span>
           </div>
         </dialog>
