@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       if (getAddress(tx.to || "0x0000000000000000000000000000000000000000") !== getAddress(POLYGON_USDC_ADDRESS)) {
         throw new SendError("contrato_incorrecto");
       }
-      if (tx.value !== BigInt(0)) throw new SendError("valor_nativo_no_permitido");
+      if ((tx.value ?? BigInt(0)) !== BigInt(0)) throw new SendError("valor_nativo_no_permitido");
       assertUSDCTransfer(tx.data);
       from = await recoverTransactionAddress({ serializedTransaction: signed as never });
     } catch (error) {
