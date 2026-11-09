@@ -33,7 +33,7 @@ function currentNav(pathname: string): number {
   if (pathname === "/") return 0;
   if (pathname.startsWith("/market")) return 1;
   if (
-    ["/operate", "/up", "/down", "/send", "/receive", "/swap", "/buy", "/vanlink"]
+    ["/operate", "/up", "/down", "/send", "/receive", "/swap", "/buy", "/vanlink", "/vanx"]
       .some((route) => pathname === route || pathname.startsWith(route + "/"))
   ) return 2;
   if (pathname.startsWith("/activity")) return 3;
@@ -58,7 +58,11 @@ export function AppShell({
   const [keyboard, setKeyboard] = useState(false);
   const { mode } = useWalletMode();
   const active = currentNav(pathname);
-  const items = [...navigation, ...extraNavigation];
+  const items = [
+    ...navigation,
+    ...(mode === "expert" ? [{ href: "/vanx", label: "VANX · token", icon: "wallet" as IconName }] : []),
+    ...extraNavigation,
+  ];
 
   useEffect(() => {
     const viewport = window.visualViewport;
