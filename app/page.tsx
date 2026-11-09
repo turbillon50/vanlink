@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { TopBar } from "@/components/top-bar";
 import { Icon } from "@/components/icons";
 import { WalletPortfolio } from "@/components/wallet/portfolio";
+import { SimpleUSDCWallet } from "@/components/wallet/simple-usdc";
 import { MarketPulse } from "@/components/market-pulse";
 import { ModeToggle, useWalletMode } from "@/components/mode/wallet-mode";
 
@@ -25,14 +26,14 @@ export default function HomePage() {
           </div>
           {mode === "expert" && (
             <p className="vd-expert-caption">
-              Bitcoin y activos por red. Cotizaciones, firmas y costos se verifican en cada operación.
+              Playground personalizable para consultar activos, redes y herramientas. Tus saldos históricos siguen disponibles.
             </p>
           )}
         </header>
 
-        <WalletPortfolio />
+        {mode === "simple" ? <SimpleUSDCWallet /> : <WalletPortfolio />}
 
-        <section className="vd-feature-link" aria-label="VanLink">
+        {mode === "expert" && <section className="vd-feature-link" aria-label="VanLink">
           <div className="vd-feature-copy">
             <p className="vd-overline">VANLINK / PAGOS POR WHATSAPP</p>
             <h2>Un enlace.<br/>Muchas posibilidades.</h2>
@@ -42,13 +43,13 @@ export default function HomePage() {
             Preparar VanLink <Icon name="arrow" size={16}/>
           </Link>
           <span className="vd-feature-lines" aria-hidden="true" />
-        </section>
+        </section>}
 
         {mode === "simple" ? (
           <section className="vd-simple-links" aria-label="Accesos rápidos">
             <Link href="/receive" className="vd-flat-link">
               <span className="vd-flat-icon"><Icon name="wallet" size={21}/></span>
-              <span><strong>Mi código para recibir</strong><small>Dirección y QR de la wallet</small></span>
+              <span><strong>Recibir USDC</strong><small>Polygon · misma wallet, sin otra cuenta</small></span>
               <Icon name="chevron" size={16}/>
             </Link>
             <Link href="/v" className="vd-flat-link">
@@ -67,9 +68,9 @@ export default function HomePage() {
               <Link href="/market" className="vd-minor-link">Ver más <Icon name="chevron" size={16}/></Link>
             </div>
             <MarketPulse compact />
-            <Link href="/operate" className="vd-flat-link">
+            <Link href="/expert" className="vd-flat-link">
               <span className="vd-flat-icon"><Icon name="swap" size={21}/></span>
-              <span><strong>Herramientas de operación</strong><small>Enviar, recibir, convertir, redes y costos</small></span>
+              <span><strong>Mi Playground</strong><small>Tokens y redes a tu gusto · Alchemy cuando esté conectado</small></span>
               <Icon name="chevron" size={16}/>
             </Link>
           </section>
