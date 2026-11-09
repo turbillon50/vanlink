@@ -86,6 +86,12 @@ function SendFlowInner() {
   const [wallet, setWallet] = useState<WalletInfo | null>(null);
   const [boot, setBoot] = useState<"cargando" | "sin-sesion" | "sin-wallet" | "listo" | "error">("cargando");
   const [deviceOk, setDeviceOk] = useState<boolean | null>(null);
+  const [walletVersion, setWalletVersion] = useState(0);
+  useEffect(() => {
+    const onReady = () => setWalletVersion((n) => n + 1);
+    window.addEventListener("vandefi:wallet-ready", onReady);
+    return () => window.removeEventListener("vandefi:wallet-ready", onReady);
+  }, []);
   const [prices, setPrices] = useState<Prices>({});
   const [balances, setBalances] = useState<Partial<Record<Asset, string>>>({});
 
@@ -124,7 +130,7 @@ function SendFlowInner() {
       setPrices(p);
     }).catch(() => {});
     return () => { alive = false; };
-  }, [isLoaded, userId]);
+  }, [isLoaded, userId, walletVersion]);
 
   const loadBalances = useCallback(async () => {
     try {
@@ -265,8 +271,8 @@ function SendFlowInner() {
   if (boot === "cargando") return <div className="snd-skeleton" aria-label="Cargando" />;
   if (boot === "sin-wallet") return (
     <div className="snd-gate">
-      <p>Todavía no activas tu wallet. Se hace una sola vez, desde tu cuenta.</p>
-      <PressButton href="/profile">Activar mi wallet</PressButton>
+      <p>Estamos creando automáticamente tu wallet. Revisa el estado de tu cuenta si tarda en aparecer.</p>
+      <PressButton href="/profile">Ver estado de mi wallet</PressButton>
     </div>
   );
   const guest = boot === "sin-sesion";
