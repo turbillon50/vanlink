@@ -10,7 +10,7 @@
  */
 export type RailId = "solana" | "tron" | "ethereum" | "base" | "bitcoin";
 export type RailFamily = "svm" | "tvm" | "evm" | "bitcoin";
-export type RemittanceAsset = "USDC" | "USDT" | "BTC";
+export type RemittanceAsset = "USDC" | "USDT" | "BTC" | "cbBTC";
 export type RailPolicy = Readonly<{
   id: RailId;
   label: string;
@@ -19,6 +19,7 @@ export type RailPolicy = Readonly<{
   purpose: "remittance-candidate" | "legacy-compatible" | "advanced";
   receiveEnabled: boolean;
   sendEnabled: boolean;
+  fiatPayoutEnabled: boolean;
   notes: string;
 }>;
 
@@ -27,31 +28,31 @@ export const REMITTANCE_RAILS: Readonly<Record<RailId, RailPolicy>> = {
   solana: {
     id: "solana", label: "Solana", family: "svm",
     assets: ["USDC", "USDT"], purpose: "remittance-candidate",
-    receiveEnabled: false, sendEnabled: false,
+    receiveEnabled: false, sendEnabled: false, fiatPayoutEnabled: false,
     notes: "Preferred candidate for low-cost transfers; first implement SPL balances, signing and fee sponsorship.",
   },
   tron: {
     id: "tron", label: "TRON", family: "tvm",
     assets: ["USDT"], purpose: "remittance-candidate",
-    receiveEnabled: false, sendEnabled: false,
+    receiveEnabled: false, sendEnabled: false, fiatPayoutEnabled: false,
     notes: "USDT TRC-20, subject to recipient acceptance, TRX Energy, fees and signing tests. Do not offer Circle USDC on TRON.",
   },
   ethereum: {
     id: "ethereum", label: "Ethereum", family: "evm",
     assets: ["USDC", "USDT"], purpose: "advanced",
-    receiveEnabled: false, sendEnabled: false,
+    receiveEnabled: false, sendEnabled: false, fiatPayoutEnabled: false,
     notes: "Existing EVM address may be used on Ethereum, but mainnet asset reading and sending are NOT live.",
   },
   base: {
     id: "base", label: "Base", family: "evm",
-    assets: ["USDC", "USDT", "BTC"], purpose: "legacy-compatible",
-    receiveEnabled: true, sendEnabled: true,
-    notes: "Existing production Base support retained for users with funds; BTC here is wrapped cbBTC, not native BTC.",
+    assets: ["USDC", "USDT", "cbBTC"], purpose: "legacy-compatible",
+    receiveEnabled: true, sendEnabled: true, fiatPayoutEnabled: false,
+    notes: "Existing production Base support retained for users with funds; cbBTC is a separately identified wrapped Bitcoin asset, not native BTC.",
   },
   bitcoin: {
     id: "bitcoin", label: "Bitcoin", family: "bitcoin",
     assets: ["BTC"], purpose: "legacy-compatible",
-    receiveEnabled: true, sendEnabled: true,
+    receiveEnabled: true, sendEnabled: true, fiatPayoutEnabled: false,
     notes: "Native BTC retained; optional funding/holding route, not default for small remittances.",
   },
 } as const;
@@ -109,6 +110,7 @@ export function rankRemittanceQuotes(
     quote.scope === request.scope &&
     allowed.has(quote.destinationRail) &&
     canSend(quote.destinationRail, quote.destinationAsset) &&
+    (request.scope !== "fiat-payout" || REMITTANCE_RAILS[quote.destinationRail].fiatPayoutEnabled) &&
     quote.payeeSupportsRail &&
     quote.approvedProvider &&
     quote.executable &&
