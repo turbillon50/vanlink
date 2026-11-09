@@ -1,10 +1,10 @@
-# VanDeFi Token (VDFI) · contrato ERC-20
+# VanDeFi Token (VANX) · contrato ERC-20
 
 **Estado: código creado y probado localmente; NO desplegado en Polygon ni en Amoy.**
 
-Propuesta de símbolo **VDFI** (no aprobado definitivamente). Nombre **VanDeFi**. Red objetivo: **Polygon PoS** (chainId 137), con **Amoy** (80002) para ensayos.
+Propuesta de símbolo **VANX** (no aprobado definitivamente). Nombre **VanDeFi**. Red objetivo: **Polygon PoS** (chainId 137), con **Amoy** (80002) para ensayos.
 
-Este proyecto está intencionalmente aislado de las API de remesas en `vandefi.live`. **USDC sigue siendo el único activo del modo Simple**. VDFI sería opcional y sólo aparecería tras diseñar sus casos de uso, en recompensas o en el Playground Experto.
+Este proyecto está intencionalmente aislado de las API de remesas en `vandefi.live`. **USDC sigue siendo el único activo del modo Simple**. VANX sería opcional y sólo aparecería tras diseñar sus casos de uso, en recompensas o en el Playground Experto.
 
 ## Contrato y garantías del código
 
@@ -32,8 +32,8 @@ Las pruebas usan `ganache` en memoria, sin fondos ni claves reales. El compilado
 Se debe elegir la tesorería y la emisión exacta. **No hay defaults deliberadamente**.
 
 ```bash
-VDFI_TREASURY=0xDIRECCION_MULTISIG_REAL \
-VDFI_INITIAL_SUPPLY_WHOLE=CANTIDAD_APROBADA \
+VANX_TREASURY=0xDIRECCION_MULTISIG_REAL \
+VANX_INITIAL_SUPPLY_WHOLE=CANTIDAD_APROBADA \
 npm run plan:deployment -- amoy
 ```
 
