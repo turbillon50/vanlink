@@ -57,3 +57,6 @@ export async function signBaseTransaction(organizationId: string, evmAddress: st
   if (!signed) throw new Error("firma_vacia");
   return signed;
 }
+
+/** Generic EVM signer. ChainId is encoded in the user-reviewed unsigned tx. */
+export const signEvmTransaction = signBaseTransaction;
