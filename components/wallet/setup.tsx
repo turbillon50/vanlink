@@ -150,7 +150,7 @@ export function WalletSetupView({ status, error, busy, verified, userId, onRecov
       {status?.wallet?.walletId ? (
         <ExportWallet
           wallet={{ organizationId: status.wallet.organizationId, walletId: status.wallet.walletId }}
-          verified={verified}
+          verified={verified === true}
         ></ExportWallet>
       ) : null}
       {error ? <div className="wallet-error"><Icon name="info" size={17} /><p role="alert">{error}</p></div> : null}
