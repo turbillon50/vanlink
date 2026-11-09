@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { TopBar } from "@/components/top-bar";
 import { Icon } from "@/components/icons";
 import { OperationBar } from "@/components/design/operation-bar";
+import { USDTOperationBar } from "@/components/design/usdc-operations";
 import { ModeToggle, useWalletMode } from "@/components/mode/wallet-mode";
 
 export default function OperatePage() {
@@ -17,11 +18,11 @@ export default function OperatePage() {
         <header className="vd-operate-head">
           <p className="vd-overline">TUS OPERACIONES</p>
           <h1>{mode === "simple" ? "¿Qué quieres hacer?" : "Centro de operaciones."}</h1>
-          <p>Elige una operación. Verás montos, comisiones y la red antes de confirmar un movimiento.</p>
+          <p>{mode === "simple" ? "Comprar, enviar, retirar o cobrar USDT. Una sola red, Polygon." : "Tus herramientas avanzadas, siempre con revisión de red y comisiones."}</p>
           <ModeToggle />
         </header>
 
-        <OperationBar />
+        {mode === "simple" ? <USDTOperationBar /> : <OperationBar />}
 
         <section className="vd-utility-list" aria-label="Más formas de mover dinero">
           <Link href="/receive" className="vd-utility-row">
@@ -47,6 +48,11 @@ export default function OperatePage() {
               <p className="vd-overline">HERRAMIENTAS</p>
               <h2>Datos para decidir.</h2>
             </div>
+            <Link href="/expert" className="vd-utility-row">
+              <span className="vd-utility-icon"><Icon name="wallet" size={23}/></span>
+              <span><strong>Playground de tokens</strong><small>Configura tu tablero ERC-20 en Polygon</small></span>
+              <Icon name="chevron" size={18}/>
+            </Link>
             <Link href="/market" className="vd-utility-row">
               <span className="vd-utility-icon"><Icon name="chart" size={23}/></span>
               <span><strong>Mercado y precios</strong><small>Gráficas y cotizaciones disponibles</small></span>

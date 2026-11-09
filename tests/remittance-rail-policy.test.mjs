@@ -7,7 +7,7 @@ const request = {
   inputAsset: "USDT",
   inputAmount: "10",
   nowMs: now,
-  allowedRails: ["tron", "solana", "base", "bitcoin", "ethereum"],
+  allowedRails: ["polygon", "base", "bitcoin", "ethereum"],
   scope: "crypto-delivery",
 };
 
@@ -30,11 +30,14 @@ function quote(overrides = {}) {
   };
 }
 
-test("Solana y TRON son prioridad de arquitectura, pero no se ofrecen para depósitos antes de QA", () => {
-  assert.equal(REMITTANCE_RAILS.solana.purpose, "remittance-candidate");
-  assert.equal(REMITTANCE_RAILS.tron.purpose, "remittance-candidate");
-  assert.equal(canReceive("solana", "USDC"), false);
-  assert.equal(canSend("tron", "USDT"), false);
+test("Polygon es el único objetivo de remesas USDC, aún deshabilitado mientras falta flujo completo", () => {
+  assert.equal(REMITTANCE_RAILS.polygon.purpose, "remittance-candidate");
+  assert.equal(REMITTANCE_RAILS.polygon.family, "evm");
+  assert.deepEqual(REMITTANCE_RAILS.polygon.assets, ["USDC"]);
+  assert.equal(canReceive("polygon", "USDC"), false);
+  assert.equal(canSend("polygon", "USDC"), false);
+  assert.equal(Object.keys(REMITTANCE_RAILS).includes("tron"), false);
+  assert.equal(Object.keys(REMITTANCE_RAILS).includes("solana"), false);
 });
 
 test("EVM de Base y Ethereum no son sinónimos de red autorizada", () => {
@@ -51,9 +54,10 @@ test("BTC envuelto en Base se registra como cbBTC, no como BTC nativo", () => {
   assert.equal(canReceive("bitcoin", "cbBTC"), false);
 });
 
-test("NO se ofrece USDC en TRON", () => {
-  assert.equal(REMITTANCE_RAILS.tron.assets.includes("USDC"), false);
-  assert.equal(canReceive("tron", "USDC"), false);
+test("Nunca ofrece Polygon USDC como operativa si falta homologación", () => {
+  assert.deepEqual(rankRemittanceQuotes({ ...request, inputAsset: "USDC", allowedRails: ["polygon"] }, [
+    quote({ inputAsset: "USDC", destinationRail: "polygon", destinationAsset: "USDC" }),
+  ]), []);
 });
 
 test("quotes falsos, expirados, no aprobados o sin soporte del destinatario no se usan", () => {
@@ -62,7 +66,7 @@ test("quotes falsos, expirados, no aprobados o sin soporte del destinatario no s
     quote({ quoteId: "no-approval", approvedProvider: false }),
     quote({ quoteId: "not-executable", executable: false }),
     quote({ quoteId: "wrong-dest", payeeSupportsRail: false }),
-    quote({ quoteId: "future-tron", destinationRail: "tron" }),
+    quote({ quoteId: "future-polygon", destinationRail: "polygon" }),
     quote({ quoteId: "wrong-input", inputAmount: "20" }),
     quote({ quoteId: "wrong-asset", inputAsset: "USDC" }),
     quote({ quoteId: "wrong-output", destinationAsset: "USDC", destinationRail: "bitcoin" }),

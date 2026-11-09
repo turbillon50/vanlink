@@ -33,7 +33,7 @@ function currentNav(pathname: string): number {
   if (pathname === "/") return 0;
   if (pathname.startsWith("/market")) return 1;
   if (
-    ["/operate", "/up", "/down", "/send", "/receive", "/swap", "/buy", "/vanlink", "/vanx"]
+    ["/operate", "/expert", "/up", "/down", "/send", "/receive", "/swap", "/buy", "/vanlink", "/vanx"]
       .some((route) => pathname === route || pathname.startsWith(route + "/"))
   ) return 2;
   if (pathname.startsWith("/activity")) return 3;
@@ -60,7 +60,10 @@ export function AppShell({
   const active = currentNav(pathname);
   const items = [
     ...navigation,
-    ...(mode === "expert" ? [{ href: "/vanx", label: "VANX · token", icon: "wallet" as IconName }] : []),
+    ...(mode === "expert" ? [
+      { href: "/expert", label: "Playground", icon: "wallet" as IconName },
+      { href: "/vanx", label: "VANX · token", icon: "wallet" as IconName },
+    ] : []),
     ...extraNavigation,
   ];
 
@@ -101,7 +104,7 @@ export function AppShell({
             ))}
           </nav>
           <div className="rail-bottom">
-            <span className="network-label"><i /> BTC · USDC</span>
+            <span className="network-label"><i /> {mode === "simple" ? "USDC · Polygon" : "Experto · multiactivo"}</span>
             <ModeToggle compact />
             <AccountLink rail />
           </div>
@@ -161,7 +164,7 @@ export function AppShell({
               <span>Tu experiencia</span>
               <ModeToggle />
             </div>
-            <span className="network-label"><i /> Bitcoin y stablecoins</span>
+            <span className="network-label"><i /> {mode === "simple" ? "USDC · Polygon" : "Tokens y redes de tu cartera"}</span>
           </div>
         </dialog>
       </div>

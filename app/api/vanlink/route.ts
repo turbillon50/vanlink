@@ -20,14 +20,26 @@ export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "no_autenticado" }, { status: 401, headers });
 
-  let body: { asset?: string; amount?: string; concept?: string; days?: number };
+  let body: { asset?: string; network?: string; amount?: string; concept?: string; days?: number };
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: "cuerpo_invalido" }, { status: 400, headers });
   }
 
-  const asset = (body.asset || "USDC").toUpperCase() as AssetKey;
-  if (!(asset in ASSETS)) {
+  const asset = (body.asset || "USDT").toUpperCase() as AssetKey;
+  if (!Object.prototype.hasOwnProperty.call(ASSETS, asset)) {
     return NextResponse.json({ error: "activo_no_soportado" }, { status: 400, headers });
+  }
+  // New retail requests target USDT Polygon, but creation remains disabled below.
+  // Explicit Base/Bitcoin requests retain their existing asset and network.
+  const network = body.network || (asset === "USDT" ? "Polygon" : ASSETS[asset].network);
+  const comboValid = (asset === "USDC" && network === "Base")
+    || (asset === "USDT" && (network === "Polygon" || network === "Base"))
+    || (asset === "BTC" && network === "Bitcoin");
+  if (!comboValid) return NextResponse.json({ error: "red_no_soportada" }, { status: 400, headers });
+  if (network === "Polygon") {
+    // ADR-009: Polygon opera sólo USDT. VanLink en USDT aún no está homologado.
+    return NextResponse.json({ error: "polygon_no_habilitado", message: "VanLink en USDT (Polygon) está en preparación. No se generó el cobro ni se movió dinero." },
+      { status: 503, headers });
   }
   if (body.amount && !isValidAmount(body.amount)) {
     return NextResponse.json({ error: "monto_invalido" }, { status: 400, headers });
@@ -44,7 +56,7 @@ export async function POST(req: NextRequest) {
     slug: newSlug(),
     clerkUserId: userId,
     asset,
-    network: ASSETS[asset].network,
+    network,
     address,
     amount: body.amount || null,
     concept: (body.concept || "").slice(0, 80) || null,

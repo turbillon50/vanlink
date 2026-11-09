@@ -14,6 +14,8 @@ import { RecoverDevice } from "@/components/wallet/recover-device";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { keccak256 } from "viem";
+import { trackOperation, reconcileOperation, type TrackedPhase } from "@/lib/operations/tracker";
 import { PressButton } from "@/components/ui/press-button";
 import { SummaryRow } from "@/components/craft";
 import { authConfigured } from "@/lib/auth-config";
@@ -33,10 +35,10 @@ type Speed = "fastest" | "halfHour" | "economy";
 type Prices = { BTC?: number; ETH?: number };
 
 type Review =
-  | { network: "bitcoin"; plan: BtcPlan; fees: BtcFeeRates; utxos: Utxo[] }
-  | { network: "base"; asset: BaseAsset; to: string; value: bigint; quote: BaseQuote; unsigned: `0x${string}`; gasCost: bigint };
+  | { network: "bitcoin"; plan: BtcPlan; fees: BtcFeeRates; utxos: Utxo[]; quotedAt: number }
+  | { network: "base"; asset: BaseAsset; to: string; value: bigint; quote: BaseQuote; unsigned: `0x${string}`; gasCost: bigint; quotedAt: number };
 
-type Sent = { network: Network; id: string; explorer: string; label: string };
+type Sent = { network: Network; id: string; explorer: string; label: string; uncertain?: boolean };
 
 const SPEEDS: { id: Speed; label: string; eta: string }[] = [
   { id: "fastest", label: "Rápida", eta: "~10 min" },
@@ -95,8 +97,8 @@ function SendFlowInner() {
   const [prices, setPrices] = useState<Prices>({});
   const [balances, setBalances] = useState<Partial<Record<Asset, string>>>({});
 
-  const [network, setNetwork] = useState<Network>("bitcoin");
-  const [asset, setAsset] = useState<Asset>("BTC");
+  const [network, setNetwork] = useState<Network>("base");
+  const [asset, setAsset] = useState<Asset>("USDC");
   const [to, setTo] = useState("");
   const [amount, setAmount] = useState("");
   const [isMax, setIsMax] = useState(false);
@@ -105,6 +107,7 @@ function SendFlowInner() {
   const [busy, setBusy] = useState<"" | "cotizando" | "firmando" | "transmitiendo">("");
   const [review, setReview] = useState<Review | null>(null);
   const [sent, setSent] = useState<Sent | null>(null);
+  const [trackingSaved, setTrackingSaved] = useState(true);
   const [status, setStatus] = useState<"pendiente" | "confirmada" | "fallida">("pendiente");
   const inFlight = useRef(false);
 
@@ -143,18 +146,48 @@ function SendFlowInner() {
   }, []);
   useEffect(() => { if (boot === "listo") void loadBalances(); }, [boot, loadBalances]);
 
-  // Seguimiento de la transacción enviada.
+  // Seguimiento en vivo y registro local para retomarlo tras cerrar la PWA.
   useEffect(() => {
     if (!sent || status !== "pendiente") return;
-    const t = setInterval(async () => {
+    let active = true;
+    let checking = false;
+    const check = async () => {
+      if (checking || !active) return;
+      checking = true;
       try {
-        const s = await api<{ confirmed: boolean; failed?: boolean }>(`/api/send/status?network=${sent.network}&id=${sent.id}`);
-        if (s.failed) setStatus("fallida");
-        else if (s.confirmed) { setStatus("confirmada"); void loadBalances(); }
-      } catch { /* reintenta en el siguiente ciclo */ }
-    }, sent.network === "base" ? 3_000 : 20_000);
-    return () => clearInterval(t);
-  }, [sent, status, loadBalances]);
+        const endpoint = "/api/send/status?network=" + sent.network + "&id=" + encodeURIComponent(sent.id);
+        const result = await api<{
+          phase?: TrackedPhase; confirmed: boolean; failed?: boolean;
+          confirmations?: number | null;
+        }>(endpoint);
+        if (!active) return;
+        if (userId) {
+          reconcileOperation(userId, sent.id, sent.network, {
+            phase: result.phase || (result.confirmed ? "confirmed" : result.failed ? "failed" : "pending"),
+            confirmations: result.confirmations ?? null,
+            checkedAt: new Date().toISOString(),
+          });
+        }
+        if (result.failed) setStatus("fallida");
+        else if (result.confirmed) {
+          setStatus("confirmada");
+          setSent(previous => previous ? { ...previous, uncertain: false } : previous);
+          void loadBalances();
+        }
+      } catch {
+        // RPC offline is an UNKNOWN, never proof that a transaction failed.
+      } finally { checking = false; }
+    };
+    void check();
+    const timer = window.setInterval(() => { void check(); }, sent.network === "base" ? 8_000 : 20_000);
+    const onOnline = () => { void check(); };
+    window.addEventListener("online", onOnline);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("online", onOnline);
+    };
+  }, [sent, status, loadBalances, userId]);
 
   const pickNetwork = (n: Network) => {
     setNetwork(n); setAsset(n === "bitcoin" ? "BTC" : "USDC"); setError(""); setIsMax(false); setAmount("");
@@ -194,7 +227,7 @@ function SendFlowInner() {
         if (sats === null) throw new Error("Escribe un monto válido en BTC (hasta 8 decimales).");
         const d = await api<{ utxos: Utxo[]; fees: BtcFeeRates }>("/api/send/btc/prepare");
         const plan = planBtcSend({ utxos: d.utxos, to: dest, amount: sats, feeRate: d.fees[speed], changeAddress: wallet.bitcoinAddress });
-        setReview({ network: "bitcoin", plan, fees: d.fees, utxos: d.utxos });
+        setReview({ network: "bitcoin", plan, fees: d.fees, utxos: d.utxos, quotedAt: Date.now() });
       } else {
         const a = asset as BaseAsset;
         const destN = normalizeEvmAddress(dest)!;
@@ -219,7 +252,7 @@ function SendFlowInner() {
             : `Para mover ${a} en Base necesitas un poco de ETH para la comisión (máx. ${Number(fromUnits(gasCost, "ETH")).toFixed(7)} ETH ${usd(Number(fromUnits(gasCost, "ETH")) * (prices.ETH ?? 0))}). Recíbelo en tu misma dirección de Base.`);
         }
         const { unsigned } = buildBaseUnsigned({ asset: a, to: destN, value, quote: d.quote });
-        setReview({ network: "base", asset: a, to: destN, value, quote: d.quote, unsigned, gasCost });
+        setReview({ network: "base", asset: a, to: destN, value, quote: d.quote, unsigned, gasCost, quotedAt: Date.now() });
       }
     } catch (err) { setError(human(err)); }
     finally { inFlight.current = false; setBusy(""); }
@@ -237,31 +270,81 @@ function SendFlowInner() {
   }
 
   async function confirm() {
-    if (!wallet || !review || inFlight.current) return;
-    inFlight.current = true; setError("");
+    if (!wallet || !review || deviceOk !== true || inFlight.current) return;
+    if (Date.now() - review.quotedAt > 90_000) {
+      setReview(null);
+      setError("La cotización caducó. Revisa monto y comisión antes de firmar.");
+      return;
+    }
+    inFlight.current = true;
+    setError("");
+    let candidate: Sent | null = null;
+    let networkAttempted = false;
     try {
       const signer = await import("@/lib/send/signer");
       if (review.network === "bitcoin") {
         const unsigned = buildBtcUnsigned(review.plan, wallet.bitcoinAddress);
         setBusy("firmando");
-        const sigs = await signer.signBitcoinHashes(wallet.organizationId, wallet.bitcoinAddress, unsigned.sighashes);
-        const done = finalizeBtc(unsigned, sigs);
+        const signatures = await signer.signBitcoinHashes(wallet.organizationId, wallet.bitcoinAddress, unsigned.sighashes);
+        const done = finalizeBtc(unsigned, signatures);
+        candidate = {
+          network: "bitcoin",
+          id: done.txid,
+          explorer: "https://mempool.space/tx/" + done.txid,
+          label: satsToBtc(review.plan.amount) + " BTC",
+        };
+        if (userId) setTrackingSaved(trackOperation(userId, {
+          network: candidate.network, id: candidate.id, label: candidate.label, direction: "out",
+        }));
+        networkAttempted = true;
         setBusy("transmitiendo");
-        const r = await api<{ txid: string; explorer: string }>("/api/send/btc/broadcast", {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hex: done.hex }) });
-        setSent({ network: "bitcoin", id: r.txid, explorer: r.explorer, label: `${satsToBtc(review.plan.amount)} BTC` });
+        const response = await api<{ txid: string; explorer: string }>("/api/send/btc/broadcast", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hex: done.hex }),
+        });
+        if (response.txid.toLowerCase() !== done.txid.toLowerCase()) {
+          throw new Error("El TXID devuelto no coincide con lo firmado.");
+        }
       } else {
         setBusy("firmando");
         const raw = await signer.signBaseTransaction(wallet.organizationId, wallet.evmAddress, review.unsigned);
         const signed = await verifyBaseSigned(raw, { from: wallet.evmAddress, unsigned: review.unsigned });
+        const hash = keccak256(signed);
+        candidate = {
+          network: "base", id: hash,
+          explorer: "https://basescan.org/tx/" + hash,
+          label: fromUnits(review.value, review.asset) + " " + review.asset,
+        };
+        if (userId) setTrackingSaved(trackOperation(userId, {
+          network: candidate.network, id: candidate.id, label: candidate.label, direction: "out",
+        }));
+        networkAttempted = true;
         setBusy("transmitiendo");
-        const r = await api<{ hash: string; explorer: string }>("/api/send/base/broadcast", {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ signed }) });
-        setSent({ network: "base", id: r.hash, explorer: r.explorer, label: `${fromUnits(review.value, review.asset)} ${review.asset}` });
+        const response = await api<{ hash: string; explorer: string }>("/api/send/base/broadcast", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ signed }),
+        });
+        if (response.hash.toLowerCase() !== hash.toLowerCase()) {
+          throw new Error("El hash devuelto no coincide con lo firmado.");
+        }
       }
-      setStatus("pendiente"); setReview(null);
-    } catch (err) { setError(human(err)); }
-    finally { inFlight.current = false; setBusy(""); }
+      if (!candidate) throw new Error("No obtuvimos el identificador de transacción.");
+      setSent({ ...candidate, uncertain: false });
+      setStatus("pendiente");
+      setReview(null);
+    } catch (err) {
+      if (networkAttempted && candidate) {
+        // The RPC may have accepted the signed tx before a timeout.
+        // Retain exact hash; never encourage blind duplicate payments.
+        setSent({ ...candidate, uncertain: true });
+        setStatus("pendiente");
+        setReview(null);
+        setError("La respuesta de la red fue incierta. No repitas el envío. Verifica el hash en el explorador o en Actividad.");
+      } else {
+        setError(human(err));
+      }
+    } finally {
+      inFlight.current = false;
+      setBusy("");
+    }
   }
 
   function reset() { setSent(null); setReview(null); setTo(""); setAmount(""); setIsMax(false); setError(""); }
@@ -283,19 +366,22 @@ function SendFlowInner() {
     return (
       <div className={`snd-done ${status}`}>
         <div className="snd-done-orb" aria-hidden="true">{icon || <span className="snd-spin" />}</div>
-        <h2>{status === "confirmada" ? "Enviado y confirmado" : status === "fallida" ? "La red la rechazó" : "Enviado a la red"}</h2>
+        <h2>{status === "confirmada" ? "Confirmado en la red" : status === "fallida" ? "La red rechazó la ejecución" : sent.uncertain ? "Verificando si llegó a la red" : "Recibido por la red"}</h2>
         <p className="snd-done-amt">{sent.label}</p>
         <p className="snd-done-note">
-          {status === "pendiente" && (sent.network === "bitcoin"
+          {status === "pendiente" && sent.uncertain ? "No repitas este envío todavía. La red podría haberlo recibido aunque su respuesta haya fallado." : null}
+          {status === "pendiente" && !sent.uncertain && (sent.network === "bitcoin"
             ? "Bitcoin confirma por bloques. Suele tardar de 10 a 30 minutos; puedes cerrar esta pantalla."
             : "Base confirma en segundos.")}
-          {status === "confirmada" && "Ya está en la cadena. Es definitivo."}
+          {status === "confirmada" && (sent.network === "base" ? "Ejecución confirmada en Base. Guarda el hash; la liquidación final de la red puede tardar más." : "Bitcoin incluyó el pago en un bloque. Conserva el TXID como comprobante.")}
           {status === "fallida" && "La transacción se incluyó pero falló. Se cobró la comisión; el monto no salió."}
         </p>
         <code className="snd-txid">{short(sent.id)}</code>
+        {!trackingSaved && <p className="rcv-warn">Este dispositivo no pudo guardar el seguimiento. Copia el hash antes de cerrar.</p>}
+        {error && <p role="alert" className="field-error">{error}</p>}
         <div className="snd-actions">
           <PressButton href={sent.explorer} variant="secondary" target="_blank" rel="noopener noreferrer">Ver en el explorador</PressButton>
-          <PressButton onClick={reset}>Hacer otro envío</PressButton>
+          <PressButton onClick={reset} disabled={status === "pendiente"}>Hacer otro envío</PressButton>
         </div>
         <Link href="/activity" className="snd-link">Ir a mi actividad</Link>
       </div>
@@ -340,7 +426,8 @@ function SendFlowInner() {
         <p className="rcv-warn">Los envíos en la cadena no se pueden cancelar ni revertir. Verifica la dirección carácter por carácter.</p>
         {error && <p role="alert" className="field-error">{error}</p>}
         {deviceOk === false && userId && <RecoverDevice userId={userId} context="firmar envíos" onRecovered={() => setDeviceOk(true)} />}
-        <PressButton onClick={confirm} disabled={Boolean(busy) || deviceOk === false}>
+        {deviceOk === null && <p role="status" className="vd-legal-note">Comprobando la autorización del dispositivo…</p>}
+        <PressButton onClick={confirm} disabled={Boolean(busy) || deviceOk !== true}>
           {busy === "firmando" ? "Firmando en tu dispositivo…" : busy === "transmitiendo" ? "Enviando a la red…" : "Confirmar y enviar"}
         </PressButton>
         <PressButton variant="secondary" onClick={() => { setReview(null); setError(""); }} disabled={Boolean(busy)}>Editar</PressButton>

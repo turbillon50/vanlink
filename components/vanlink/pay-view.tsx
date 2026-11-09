@@ -15,7 +15,7 @@ import QRCode from "qrcode";
 type VanLink = {
   slug: string; asset: string; network: string; address: string;
   amount: string | null; concept: string | null; status: string;
-  uri: string; expiresAt: string | null;
+  uri: string; expiresAt: string | null; requiresHashVerification?: boolean;
 };
 type Pago = { tx: string; amount: string; confirmed: boolean } | null;
 type Via = "cripto" | "tarjeta" | "cuenta";
@@ -29,6 +29,9 @@ export function PayView({ slug }: { slug: string }) {
   const [via, setVia] = useState<Via>("cripto");
   const [rampaLista, setRampaLista] = useState<boolean | null>(null);
   const [guia, setGuia] = useState(false);
+  const [txHash, setTxHash] = useState("");
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [verifyError, setVerifyError] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -70,6 +73,31 @@ export function PayView({ slug }: { slug: string }) {
     }).then((u) => { if (active) setQr(u); }).catch(() => undefined);
     return () => { active = false; };
   }, [link]);
+
+  async function verifyPolygonPayment() {
+    if (!link || verifyBusy) return;
+    setVerifyBusy(true); setVerifyError("");
+    try {
+      const response = await fetch("/api/vanlink/" + link.slug + "/verify", {
+        method: "POST", cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ txHash }),
+      });
+      const result = await response.json() as { verified?: boolean; message?: string; reason?: string };
+      if (!response.ok || !result.verified) {
+        const reason = result.reason === "sin_confirmacion"
+          ? "La transacción todavía no está confirmada en Polygon."
+          : result.reason === "transferencia_no_coincide"
+          ? `Ese hash no contiene el pago ${link.asset} de esta solicitud.`
+          : "No pudimos verificar ese movimiento. Confirma la red, el hash y el importe.";
+        throw new Error(result.message || reason);
+      }
+      setTxHash("");
+      await load();
+    } catch (error) {
+      setVerifyError((error as Error).message || "Verificación no disponible.");
+    } finally { setVerifyBusy(false); }
+  }
 
   if (state === "cargando") return <main className="pay-shell"><div className="pay-skeleton" /></main>;
   if (state === "no-existe") {
@@ -136,7 +164,7 @@ export function PayView({ slug }: { slug: string }) {
             </div>
 
             {via === "cripto" ? (<>
-            <div className="pay-network">Red {link.network}</div>
+            <div className="pay-network">Red {link.network}{link.network === "Polygon" ? (link.asset === "USDT" ? " PoS · USDT" : " PoS · USDC legado de Circle") : ""}</div>
 
             {qr ? (
               <img src={qr} alt="Código QR para pagar" className="pay-qr" />
@@ -159,15 +187,15 @@ export function PayView({ slug }: { slug: string }) {
             </button>
 
             <button type="button" className="pay-guide-toggle" onClick={() => setGuia((g) => !g)}>
-              {guia ? "Ocultar" : "¿Cómo pago desde Binance?"}
+              {guia ? "Ocultar" : "¿Cómo pago desde mi wallet?"}
             </button>
             {guia ? (
               <ol className="pay-guide">
-                <li>Abre Binance y entra a <b>Billetera → Retirar</b>.</li>
+                <li>Abre tu wallet o exchange y busca la opción <b>Enviar / Retirar</b>.</li>
                 <li>Elige <b>{link.asset}</b>.</li>
                 <li>Pega la dirección de arriba.</li>
-                <li>En red elige <b>{link.network === "Base" ? "Base" : "BTC (Bitcoin)"}</b>. Si eliges otra, el dinero se pierde.</li>
-                <li>Pon el monto y confirma. Llega en unos minutos.</li>
+                <li>En red elige <b>{link.network === "Polygon" ? "Polygon PoS" : link.network === "Base" ? "Base" : "BTC (Bitcoin)"}</b>. Si eliges otra, puedes perder tus fondos.</li>
+                <li>Pon el monto y confirma. Guarda el hash o comprobante de la transacción.</li>
               </ol>
             ) : null}
 
@@ -175,6 +203,20 @@ export function PayView({ slug }: { slug: string }) {
               <p className="pay-pending">Vimos un pago de {pago.amount}. Esperando confirmación de la red…</p>
             ) : (
               <p className="pay-waiting"><i aria-hidden="true" />Esperando el pago…</p>
+            )}
+            {link.requiresHashVerification && link.network === "Polygon" && (
+              <div className="vd-verify-box">
+                <strong>¿Ya pagaste desde tu wallet?</strong>
+                <p>Copia el hash (TXID) de la transferencia {link.asset} Polygon y comprueba que fue recibida. No necesitas compartir claves ni tu cuenta.</p>
+                <label htmlFor="vd-link-tx">Hash de transacción Polygon</label>
+                <input id="vd-link-tx" value={txHash} onChange={e => setTxHash(e.target.value.trim())}
+                  placeholder="0x…" autoCapitalize="none" autoCorrect="off" spellCheck={false}/>
+                <button type="button" onClick={() => { void verifyPolygonPayment(); }}
+                  disabled={verifyBusy || !/^0x[0-9a-fA-F]{64}$/.test(txHash)}>
+                  {verifyBusy ? "Verificando…" : "Verificar mi pago"}
+                </button>
+                {verifyError && <p role="alert" className="field-error">{verifyError}</p>}
+              </div>
             )}
 
             <p className="pay-warn">

@@ -38,3 +38,15 @@ export const vanlinks = pgTable("vanlinks", {
   expiresAt: timestamp("expires_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/** Public transaction metadata persisted before broadcast; never store signatures. */
+export const walletOperations = pgTable("wallet_operations", {
+  id: text("id").primaryKey(),
+  clerkUserId: text("clerk_user_id").notNull().references(() => wallets.clerkUserId, { onDelete: "cascade" }),
+  walletAddress: text("wallet_address").notNull(),
+  network: text("network").notNull(),
+  txHash: text("tx_hash").notNull(),
+  recipient: text("recipient").notNull(),
+  amountRaw: text("amount_raw").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
