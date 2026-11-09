@@ -125,7 +125,10 @@ test("la caja no permite liberar antes de 365 días ni acreditar sin contrato de
   await provider.send("evm_mine", []);
 
   // Anyone may trigger release, but ONLY the immutable beneficiary receives USDC.
-  await (await vault.connect(outsider).release([unlockAt])).wait();
+  // Ganache's estimateGas may cache a revert from the previous (still locked)
+  // simulation. Submit the mature transaction with explicit gas limit and
+  // validate actual EVM execution in wait(), not merely an estimation.
+  await (await vault.connect(outsider).release([unlockAt], { gasLimit: 500000n })).wait();
   assert.equal(await USDC.balanceOf(await reserveBeneficiary.getAddress()), 10000n);
   assert.equal(await vault.lockedOutstanding(), 0n);
   assert.equal(await vault.totalReleased(), 10000n);
