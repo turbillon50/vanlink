@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,17 +13,39 @@ import {
 import { Wordmark } from "@/components/brand/logo";
 import { Icon, type IconName } from "@/components/icons";
 import { AccountLink } from "@/components/auth/account-link";
+import { ModeToggle, useWalletMode } from "@/components/mode/wallet-mode";
+
 const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "Inicio", icon: "home" },
   { href: "/market", label: "Mercado", icon: "chart" },
-  { href: "/vanlink", label: "VanLink", icon: "link" },
+  { href: "/operate", label: "Operar", icon: "swap" },
   { href: "/activity", label: "Actividad", icon: "activity" },
-  { href: "/v", label: "Asistente", icon: "chat" },
+  { href: "/profile", label: "Cuenta", icon: "user" },
 ];
+
+const extraNavigation: { href: string; label: string; icon: IconName }[] = [
+  { href: "/vanlink", label: "Mis VanLinks", icon: "link" },
+  { href: "/v", label: "Asistente", icon: "chat" },
+  { href: "/welcome", label: "Conoce VanDeFi", icon: "globe" },
+];
+
+function currentNav(pathname: string): number {
+  if (pathname === "/") return 0;
+  if (pathname.startsWith("/market")) return 1;
+  if (
+    ["/operate", "/up", "/down", "/send", "/receive", "/swap", "/buy", "/vanlink"]
+      .some((route) => pathname === route || pathname.startsWith(route + "/"))
+  ) return 2;
+  if (pathname.startsWith("/activity")) return 3;
+  if (pathname.startsWith("/profile")) return 4;
+  return -1;
+}
+
 const MenuContext = createContext<(() => void) | null>(null);
 export function useAppMenu() {
   return useContext(MenuContext);
 }
+
 export function AppShell({
   children,
   wide = false,
@@ -30,147 +53,111 @@ export function AppShell({
   children: ReactNode;
   wide?: boolean;
 }) {
-  const pathname = usePathname(),
-    dialog = useRef<HTMLDialogElement>(null),
-    [keyboard, setKeyboard] = useState(false);
-  const active = navigation.findIndex((n) =>
-    n.href === "/"
-      ? pathname === "/"
-      : pathname === n.href || pathname.startsWith(n.href + "/"),
-  );
+  const pathname = usePathname() || "/";
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [keyboard, setKeyboard] = useState(false);
+  const { mode } = useWalletMode();
+  const active = currentNav(pathname);
+  const items = [...navigation, ...extraNavigation];
+
   useEffect(() => {
-    const v = window.visualViewport;
-    const update = () =>
-      setKeyboard(Boolean(v && window.innerHeight - v.height > 150));
-    v?.addEventListener("resize", update);
-    return () => v?.removeEventListener("resize", update);
+    const viewport = window.visualViewport;
+    const update = () => setKeyboard(Boolean(viewport && window.innerHeight - viewport.height > 150));
+    update();
+    viewport?.addEventListener("resize", update);
+    return () => viewport?.removeEventListener("resize", update);
   }, []);
-  const items = [
-    ...navigation,
-    { href: "/profile", label: "Mi cuenta", icon: "user" as const },
-    { href: "/welcome", label: "Conoce VanDeFi", icon: "globe" as const },
-  ];
+
+  useEffect(() => {
+    dialog.current?.close();
+  }, [pathname]);
+
   return (
     <MenuContext.Provider value={() => dialog.current?.showModal()}>
-      <div className="app-root" data-keyboard={keyboard}>
-        <a className="skip-link" href="#main">
-          Ir al contenido
-        </a>
-        <aside className="desktop-rail">
+      <div className="app-root" data-keyboard={keyboard} data-experience={mode}>
+        <a className="skip-link" href="#main">Ir al contenido</a>
+        <aside className="desktop-rail" aria-label="Menú de escritorio">
           <Link href="/" aria-label="VanDeFi, inicio">
             <Wordmark size={30} />
           </Link>
           <p className="rail-label">TU DINERO. TU CONTROL.</p>
           <nav aria-label="Navegación principal">
-            {items.slice(0, 6).map((n) => (
+            {navigation.map((item, i) => (
               <Link
-                key={n.href} data-central={n.label === "VanLink" ? "true" : undefined}
-                href={n.href}
-                aria-current={pathname === n.href ? "page" : undefined}
-                className={
-                  (
-                    n.href === "/"
-                      ? pathname === "/"
-                      : pathname.startsWith(n.href)
-                  )
-                    ? "rail-link active"
-                    : "rail-link"
-                }
+                key={item.href}
+                href={item.href}
+                data-central={item.href === "/operate" ? "true" : undefined}
+                aria-current={active === i ? "page" : undefined}
+                className={active === i ? "rail-link active" : "rail-link"}
               >
-                <Icon name={n.icon} />
-                {n.label}
+                <Icon name={item.icon} />
+                {item.label}
                 <Icon name="chevron" size={15} />
               </Link>
             ))}
           </nav>
           <div className="rail-bottom">
-            <span className="network-label">
-              <i />
-              BTC · USDC
-            </span>
-            <p>
-              Todo empieza con
-              <br />
-              un simple link.
-            </p>
+            <span className="network-label"><i /> BTC · USDC</span>
+            <ModeToggle compact />
             <AccountLink rail />
           </div>
         </aside>
+
         <div className="workspace">
-          <main
-            id="main"
-            className={wide ? "page-content wide-page" : "page-content"}
-          >
+          <main id="main" className={wide ? "page-content wide-page" : "page-content"}>
             {children}
           </main>
         </div>
-        <nav
-          className="dock-wrap"
-          aria-label="Navegación móvil"
-          data-vulcano-bottomnav
-        >
+
+        <nav className="dock-wrap" aria-label="Navegación móvil" data-vulcano-bottomnav>
           <div className="dock">
             <span
-              aria-hidden="true"
               className="dock-selection"
-              style={{
-                transform: "translateX(" + Math.max(active, 0) * 100 + "%)",
-                opacity: active < 0 ? 0 : 1,
-              }}
+              aria-hidden="true"
+              style={{ transform: "translateX(" + Math.max(active, 0) * 100 + "%)", opacity: active < 0 ? 0 : 1 }}
             />
-            {navigation.map((n, i) => (
+            {navigation.map((item, i) => (
               <Link
-                href={n.href}
-                key={n.href}
+                href={item.href}
+                key={item.href}
                 aria-current={active === i ? "page" : undefined}
                 className={active === i ? "dock-item selected" : "dock-item"}
               >
-                <Icon name={n.icon} size={n.label === "Asistente" ? 20 : n.label === "VanLink" ? 25 : 22} />
-                <span>{n.label}</span>
+                <Icon name={item.icon} size={item.href === "/operate" ? 23 : 20} />
+                <span>{item.label}</span>
               </Link>
             ))}
           </div>
         </nav>
+
         <dialog
           ref={dialog}
           className="menu-dialog"
           aria-labelledby="menu-title"
-          onClick={(e) => {
-            if (e.target === dialog.current) dialog.current?.close();
-          }}
+          onClick={(event) => { if (event.target === dialog.current) dialog.current?.close(); }}
         >
           <div className="menu-body">
             <div className="section-heading">
-              <h2 id="menu-title">
-                <Wordmark size={28} />
-              </h2>
-              <button
-                className="icon-button"
-                aria-label="Cerrar menú"
-                onClick={() => dialog.current?.close()}
-              >
+              <h2 id="menu-title"><Wordmark size={28} /></h2>
+              <button type="button" className="icon-button" aria-label="Cerrar menú" onClick={() => dialog.current?.close()}>
                 <Icon name="close" />
               </button>
             </div>
             <p className="eyebrow">Todo, a la mano</p>
-            <nav aria-label="Menú">
-              {items.map((n) => (
-                <Link
-                  key={n.href}
-                  href={n.href}
-                  className="menu-row"
-                  onClick={() => dialog.current?.close()}
-                >
-                  <Icon name={n.icon} />
-                  <span>{n.label}</span>
+            <nav aria-label="Menú completo">
+              {items.map((item) => (
+                <Link key={item.href} href={item.href} className="menu-row" onClick={() => dialog.current?.close()}>
+                  <Icon name={item.icon} />
+                  <span>{item.label}</span>
                   <Icon name="chevron" size={17} />
                 </Link>
               ))}
             </nav>
-            <span className="network-label">
-              <i />
-              BTC · USDC
-            </span>
+            <div className="vd-menu-mode">
+              <span>Tu experiencia</span>
+              <ModeToggle />
+            </div>
+            <span className="network-label"><i /> Bitcoin y stablecoins</span>
           </div>
         </dialog>
       </div>
