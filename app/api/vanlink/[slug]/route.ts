@@ -29,8 +29,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
   const estado = link.status === "activo" && expirado ? "expirado" : link.status;
 
   // Detección de pago: solo si sigue activo. Nunca inventa un cobro.
-  let pago: { tx: string; amount: string; confirmed: boolean } | null = null;
-  if (estado === "activo") {
+  let pago: { tx: string; amount: string; confirmed: boolean } | null =
+    link.network === "Polygon" && link.status === "pagado" && link.paidTx
+      ? { tx: link.paidTx, amount: link.amount || "", confirmed: true } : null;
+  if (estado === "activo" && link.network !== "Polygon") {
     try {
       const movs = link.asset === "BTC"
         ? await bitcoinMovements(link.address)
@@ -65,8 +67,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
       amount: link.amount,
       concept: link.concept,
       status: pago?.confirmed ? "pagado" : estado,
-      uri: paymentUri(link.asset as AssetKey, link.address, link.amount),
+      uri: paymentUri(link.asset as AssetKey, link.address, link.amount, link.network),
       expiresAt: link.expiresAt,
+      requiresHashVerification: link.network === "Polygon" && estado === "activo",
     },
     pago,
   }, { headers });
