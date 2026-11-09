@@ -32,7 +32,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ slug: stri
     const raw = await request.text();
     if (raw.length > 512) return Response.json({ error: "solicitud_grande" }, { status: 400, headers: noStore });
     const body = JSON.parse(raw) as { txHash?: string };
-    const hash = body.txHash?.trim() || "";
+    const hash = (body.txHash?.trim() || "").toLowerCase();
     if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) return Response.json({ error: "hash_invalido" }, { status: 400, headers: noStore });
 
     const [link] = await db().select().from(vanlinks).where(eq(vanlinks.slug, slug));
