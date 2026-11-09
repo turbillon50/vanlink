@@ -1,15 +1,15 @@
 /**
- * VanDeFi Remittance Rail Policy v2
+ * VanDeFi Remittance Rail Policy v3 — Polygon USDC only as retail target
  *
  * IMPORTANT: This registry describes both current capabilities and future
  * candidates. "Candidate" is never a deposit or transfer feature. The client
  * MUST NOT show a receiving address unless receiveEnabled is true.
  *
- * Base is a network that uses the existing Ethereum/EVM address, not a special
+ * Polygon and Base are networks that use the existing Ethereum/EVM address, not separate
  * Turnkey private-key curve. Turnkey supports Ethereum/EVM, Solana, TRON and BTC.
  */
-export type RailId = "solana" | "tron" | "ethereum" | "base" | "bitcoin";
-export type RailFamily = "svm" | "tvm" | "evm" | "bitcoin";
+export type RailId = "polygon" | "ethereum" | "base" | "bitcoin";
+export type RailFamily = "evm" | "bitcoin";
 export type RemittanceAsset = "USDC" | "USDT" | "BTC" | "cbBTC";
 export type RailPolicy = Readonly<{
   id: RailId;
@@ -25,17 +25,11 @@ export type RailPolicy = Readonly<{
 
 /** This represents the CURRENT audited production behavior, not the vision. */
 export const REMITTANCE_RAILS: Readonly<Record<RailId, RailPolicy>> = {
-  solana: {
-    id: "solana", label: "Solana", family: "svm",
-    assets: ["USDC", "USDT"], purpose: "remittance-candidate",
+  polygon: {
+    id: "polygon", label: "Polygon PoS", family: "evm",
+    assets: ["USDC"], purpose: "remittance-candidate",
     receiveEnabled: false, sendEnabled: false, fiatPayoutEnabled: false,
-    notes: "Preferred candidate for low-cost transfers; first implement SPL balances, signing and fee sponsorship.",
-  },
-  tron: {
-    id: "tron", label: "TRON", family: "tvm",
-    assets: ["USDT"], purpose: "remittance-candidate",
-    receiveEnabled: false, sendEnabled: false, fiatPayoutEnabled: false,
-    notes: "USDT TRC-20, subject to recipient acceptance, TRX Energy, fees and signing tests. Do not offer Circle USDC on TRON.",
+    notes: "Only Circle-native USDC, contract 0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359, chainId 137. POL is required for gas. Gate until transfer end-to-end is audited.",
   },
   ethereum: {
     id: "ethereum", label: "Ethereum", family: "evm",
