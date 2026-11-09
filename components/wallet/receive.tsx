@@ -10,6 +10,8 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
+import Link from "next/link";
 import QRCode from "qrcode";
 
 type Wallet = { evmAddress: string; bitcoinAddress: string };
@@ -24,11 +26,13 @@ function chunk(address: string) {
 }
 
 export function ReceivePanel() {
+  const { userId, isLoaded } = useAuth();
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [state, setState] = useState<"cargando" | "listo" | "sin-wallet" | "error">("cargando");
+  const [state, setState] = useState<"cargando" | "listo" | "sin-sesion" | "sin-wallet" | "error">("cargando");
   const [network, setNetwork] = useState<"base" | "bitcoin">("base");
   const [qr, setQr] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [clipboardError, setClipboardError] = useState(false);
   const [walletVersion, setWalletVersion] = useState(0);
 
   useEffect(() => {
@@ -38,18 +42,42 @@ export function ReceivePanel() {
   }, []);
 
   useEffect(() => {
+    if (!isLoaded) return;
+    if (!userId) {
+      setWallet(null);
+      setState("sin-sesion");
+      setQr("");
+      return;
+    }
+    let active = true;
+    setWallet(null);
+    setState("cargando");
+    setQr("");
     void (async () => {
       try {
-        const r = await fetch("/api/chain/balance", { cache: "no-store" });
-        if (r.status === 401) { setState("sin-wallet"); return; }
-        if (!r.ok) throw new Error("wallet");
-        const data = (await r.json()) as { wallet: Wallet | null };
-        if (!data.wallet) { setState("sin-wallet"); return; }
+        const response = await fetch("/api/chain/balance", { cache: "no-store" });
+        if (response.status === 401) {
+          if (active) setState("sin-sesion");
+          return;
+        }
+        if (!response.ok) throw new Error("wallet");
+        const data = await response.json() as { wallet: Wallet | null };
+        if (!active) return;
+        if (!data.wallet) {
+          setState("sin-wallet");
+          return;
+        }
+        const evmValid = /^0x[0-9a-fA-F]{40}$/.test(data.wallet.evmAddress);
+        const btcValid = /^(bc1|[13])/.test(data.wallet.bitcoinAddress);
+        if (!evmValid || !btcValid) throw new Error("invalid_wallet_addresses");
         setWallet(data.wallet);
         setState("listo");
-      } catch { setState("error"); }
+      } catch {
+        if (active) setState("error");
+      }
     })();
-  }, [walletVersion]);
+    return () => { active = false; };
+  }, [walletVersion, isLoaded, userId]);
 
   const address = useMemo(() => {
     if (!wallet) return "";
@@ -57,18 +85,20 @@ export function ReceivePanel() {
   }, [wallet, network]);
 
   useEffect(() => {
-    if (!address) { setQr(""); return; }
+    setQr("");
+    if (!address) return;
     let active = true;
     void QRCode.toDataURL(address, {
-      margin: 1,
+      margin: 4,
       width: 512,
       errorCorrectionLevel: "M",
-      color: { dark: "#f7fbff", light: "#00000000" },
+      color: { dark: "#09090b", light: "#ffffff" },
     }).then((url) => { if (active) setQr(url); }).catch(() => { if (active) setQr(""); });
     return () => { active = false; };
   }, [address]);
 
   if (state === "cargando") return <div className="rcv-skeleton" aria-label="Cargando" />;
+  if (state === "sin-sesion") return <div className="snd-gate"><p>Entra con tu cuenta para ver el QR de tu wallet.</p><Link href="/login" className="vd-small-outline">Iniciar sesión</Link></div>;
   if (state === "sin-wallet") {
     return <p className="bal-note">Estamos generando tu wallet. Podrás recibir cuando aparezcan tus direcciones.</p>;
   }
@@ -88,7 +118,7 @@ export function ReceivePanel() {
             type="button"
             aria-selected={network === n.id}
             className={network === n.id ? "rcv-tab active" : "rcv-tab"}
-            onClick={() => { setNetwork(n.id); setCopied(false); }}
+            onClick={() => { setQr(""); setNetwork(n.id); setCopied(false); setClipboardError(false); }}
           >
             {n.label}
           </button>
@@ -115,7 +145,7 @@ export function ReceivePanel() {
             navigator.clipboard?.writeText(address).then(() => {
               setCopied(true);
               window.setTimeout(() => setCopied(false), 1900);
-            }).catch(() => undefined);
+            }).catch(() => setClipboardError(true));
           }}
         >
           {copied ? "Dirección copiada" : "Copiar dirección"}
@@ -133,7 +163,9 @@ export function ReceivePanel() {
         )}
       </div>
 
+      {clipboardError && <p role="alert" className="rcv-warn">No se pudo copiar automáticamente. Mantén pulsada la dirección para copiarla.</p>}
       <p className="rcv-warn">{current.warn}</p>
+      {network === "base" && <p className="vd-legal-note">Puedes recibir USDC sin ETH. Para enviarlo después necesitarás ETH en Base para la comisión. Nunca compartas tus claves ni códigos.</p>}
     </div>
   );
 }
