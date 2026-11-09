@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Wordmark } from "@/components/brand/logo";
 import { Icon } from "@/components/icons";
 import { useWalletMode } from "@/components/mode/wallet-mode";
+import { USDCOperationBar } from "@/components/design/usdc-operations";
 
 type ViewState = "loading" | "ready" | "guest" | "no-wallet" | "error";
 type PolygonBalance = {
@@ -56,12 +57,6 @@ export function SimpleUSDCWallet() {
       : state === "error" ? "No pudimos comprobar tu saldo. No mostraremos un cero falso."
       : "USDC nativo de Circle · Polygon PoS. Valor en USD aproximado.";
 
-  const actions = [
-    { label: "Comprar", href: "/up", icon: "down" as const },
-    { label: "Enviar", href: "/send?network=polygon", icon: "send" as const },
-    { label: "Retirar", href: "/down", icon: "up" as const },
-    { label: "VanLink", href: "/vanlink/create", icon: "link" as const },
-  ];
 
   return (
     <>
@@ -94,16 +89,7 @@ export function SimpleUSDCWallet() {
         {state === "no-wallet" && <Link href="/profile" className="vd-portfolio-gate">Ver mi wallet <Icon name="chevron" size={15}/></Link>}
       </section>
 
-      <nav className="vd-operation-strip vd-remittance-operations" aria-label="Operaciones con USDC">
-        {actions.map((action) => (
-          <Link key={action.label} href={action.href} className="vd-operation">
-            <span className="vd-operation-key"><Icon name={action.icon} size={20}/></span>
-            <span className="vd-operation-label">{action.label}</span>
-          </Link>
-        ))}
-      </nav>
-
-      <div className="vd-simple-information">
+      <USDCOperationBar />      <div className="vd-simple-information">
         <div>
           <p className="vd-overline">UN DÓLAR DIGITAL</p>
           <h2>Compra. Envía. Retira.</h2>
