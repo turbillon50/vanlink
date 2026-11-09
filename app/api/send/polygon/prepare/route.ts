@@ -2,6 +2,7 @@ import { encodeFunctionData, erc20Abi } from "viem";
 import { polygonRpc, POLYGON_USDC } from "@/lib/chain/polygon";
 import { POLYGON_USDC_DECIMALS } from "@/lib/polygon/asset";
 import { currentWallet, errorResponse, noStore, SendError } from "@/lib/send/server";
+import { polygonUsdcMoneyEnabled } from "@/lib/polygon/capabilities";
 import { normalizePolygonAddress } from "@/lib/send/polygon-tx";
 
 export const runtime = "nodejs";
@@ -10,6 +11,7 @@ const wei = (hex: string) => BigInt(hex);
 
 export async function GET(request: Request) {
   try {
+    if (!polygonUsdcMoneyEnabled()) throw new SendError("polygon_no_habilitado", 503, "Estamos validando los envíos USDC Polygon. Todavía no muevas fondos a esta red.");
     const wallet = await currentWallet();
     const url = new URL(request.url);
     const to = normalizePolygonAddress(url.searchParams.get("to") || "");
