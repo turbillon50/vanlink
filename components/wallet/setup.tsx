@@ -6,6 +6,8 @@ import { Icon } from "@/components/icons";
 import { Logo } from "@/components/brand/logo";
 import { CryptoMark } from "@/components/brand/crypto-mark";
 import { ExportWallet } from "@/components/wallet/export-wallet";
+import { RecoverDevice } from "@/components/wallet/recover-device";
+import { WALLET_READY_EVENT, WALLET_ENROLLMENT_ERROR_EVENT } from "@/components/wallet/auto-enrollment";
 
 type WalletStatus = { canActivate: boolean; transfersEnabled: boolean;
   wallet: null | { organizationId: string; turnkeyUserId: string; walletId?: string; evmAddress?: string;
@@ -34,10 +36,9 @@ export function WalletSetup({ userId }: { userId: string }) {
   const [status, setStatus] = useState<WalletStatus | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [verified, setVerified] = useState(false);
+  const [verified, setVerified] = useState<boolean | null>(null);
   const [retry, setRetry] = useState(0);
   const activating = useRef(false);
-  const automaticAttempted = useRef(false);
 
   const connect = useCallback(async () => {
     if (activating.current) return;
@@ -60,9 +61,6 @@ export function WalletSetup({ userId }: { userId: string }) {
     }
   }, [userId]);
 
-  useEffect(() => {
-    automaticAttempted.current = false;
-  }, [userId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -74,7 +72,7 @@ export function WalletSetup({ userId }: { userId: string }) {
       if (callbackMessages[result]) setError(callbackMessages[result]);
     }
     setStatus(null);
-    setVerified(false);
+    setVerified(null);
     (async () => {
       try {
         const response = await fetch("/api/wallet", { cache: "no-store", signal: controller.signal });
@@ -82,13 +80,8 @@ export function WalletSetup({ userId }: { userId: string }) {
         if (!response.ok) throw new Error(data.error || "No pudimos consultar tu wallet.");
         if (controller.signal.aborted) return;
         setStatus(data);
-        // Registration redirects here. Enrollment happens automatically only after
-        // Clerk has authenticated the user and this browser has made its local key.
-        if (!data.wallet && data.canActivate && !automaticAttempted.current) {
-          automaticAttempted.current = true;
-          void connect();
-          return;
-        }
+        // La creación ya ocurre globalmente al iniciar sesión. No iniciamos
+        // una segunda provisión desde el perfil ni generamos llaves duplicadas.
         if (data.wallet) {
           const { verifyWalletDevice } = await import("@/lib/wallet/browser");
           const ok = await verifyWalletDevice(userId, data.wallet.organizationId, data.wallet.turnkeyUserId).catch(() => false);
@@ -101,23 +94,46 @@ export function WalletSetup({ userId }: { userId: string }) {
     return () => controller.abort();
   }, [connect, userId, retry]);
 
-  return <WalletSetupView status={status} error={error} busy={busy} verified={verified} onConnect={connect}
+  useEffect(() => {
+    const onReady = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId?: string }>).detail;
+      if (detail?.userId === userId) {
+        setError("");
+        setRetry((n) => n + 1);
+      }
+    };
+    const onError = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId?: string; message?: string }>).detail;
+      if (detail?.userId === userId) setError(detail.message || "No pudimos generar tu wallet.");
+    };
+    window.addEventListener(WALLET_READY_EVENT, onReady);
+    window.addEventListener(WALLET_ENROLLMENT_ERROR_EVENT, onError);
+    return () => {
+      window.removeEventListener(WALLET_READY_EVENT, onReady);
+      window.removeEventListener(WALLET_ENROLLMENT_ERROR_EVENT, onError);
+    };
+  }, [userId]);
+
+  return <WalletSetupView status={status} error={error} busy={busy} verified={verified} userId={userId}
+    onRecovered={() => { setVerified(true); setError(""); }}
+    onConnect={connect}
     onRetry={() => { setError(""); setRetry(n => n + 1); }} />;
 }
 
 /** Presentation only, shared by real account states and isolated visual review. */
-export function WalletSetupView({ status, error, busy, verified, onConnect, onRetry }: {
-  status: WalletStatus | null; error: string; busy: boolean; verified: boolean;
+export function WalletSetupView({ status, error, busy, verified, userId, onRecovered, onConnect, onRetry }: {
+  status: WalletStatus | null; error: string; busy: boolean; verified: boolean | null;
+  userId: string; onRecovered: () => void;
   onConnect: () => void; onRetry: () => void;
 }) {
   return <section className="access-status wallet-setup" aria-busy={busy} aria-labelledby="wallet-title">
-    <div className="wallet-status-line"><span className="eyebrow">MI WALLET</span><span className={"wallet-state" + (verified ? " connected" : "")}><i aria-hidden="true" />{status?.wallet ? verified ? "Dispositivo conectado" : "Wallet creada" : status ? "Por activar" : error ? "Sin conexión" : "Consultando"}</span></div>
+    <div className="wallet-status-line"><span className="eyebrow">MI WALLET</span><span className={"wallet-state" + (verified ? " connected" : "")}><i aria-hidden="true" />{status?.wallet ? verified ? "Dispositivo autorizado" : verified === null ? "Verificando acceso" : "Recuperar acceso" : status ? "Creación automática" : error ? "Sin conexión" : "Consultando"}</span></div>
     <div className="wallet-emblem" aria-hidden="true"><Logo size={58} /><span /></div>
-    <div className="wallet-copy"><h2 id="wallet-title">{status?.wallet ? "Tu wallet" : "Activa tu wallet"}</h2>
+    <div className="wallet-copy"><h2 id="wallet-title">{status?.wallet ? "Tu wallet" : "Tu wallet se crea automáticamente"}</h2>
     {status ? <p>{status.wallet
       ? verified ? "Tu wallet ya está vinculada a esta cuenta y a este dispositivo."
-        : "Esta wallet se activó desde otro dispositivo. La conexión de un segundo dispositivo llegará antes de habilitar movimientos."
-      : status.canActivate ? "La estamos creando en este dispositivo. Tu llave privada no sale de tu navegador."
+        : "Tu wallet ya existe. Para autorizar movimientos desde este dispositivo, recupera el acceso con tu correo."
+      : status.canActivate ? "La generamos al registrar tu cuenta. La clave de firma se guarda en este dispositivo, no en la aplicación."
         : "Tu cuenta está lista. Estamos preparando la activación de tu wallet."}</p>
       : !error ? <p role="status">Consultando tu wallet…</p> : null}
     </div>
@@ -138,13 +154,16 @@ export function WalletSetupView({ status, error, busy, verified, onConnect, onRe
         ></ExportWallet>
       ) : null}
       {error ? <div className="wallet-error"><Icon name="info" size={17} /><p role="alert">{error}</p></div> : null}
+      {status.wallet && verified === false && <RecoverDevice userId={userId} onRecovered={onRecovered} context="autorizar tu wallet" />}
       <div className="wallet-action-area">
         {status.canActivate && !verified && !status.wallet && error ? <PressButton onClick={onConnect} disabled={busy}>
           {busy ? <span className="button-spinner" aria-hidden="true" /> : null}
           {busy ? "Activando…" : "Reintentar activación"}
           {!busy ? <Icon name="arrow" size={17} /> : null}
         </PressButton> : !status.wallet ? <PressButton href="/vanlink" variant="secondary">Ver mis VanLinks <Icon name="arrow" size={17} /></PressButton> : null}
-        <p className="wallet-activation-note"><Icon name="shield" size={13} />Los depósitos y envíos todavía no están disponibles.</p>
+        <p className="wallet-activation-note"><Icon name="shield" size={13} />{status.wallet
+          ? verified ? "Tu dispositivo puede firmar operaciones que tú confirmes." : "Puedes recibir con la dirección de tu wallet. Para enviar, recupera este dispositivo."
+          : "Al entrar generamos tu wallet automáticamente. No necesitas vincular una wallet externa."}</p>
       </div>
     </> : error ? <div className="wallet-error wallet-load-error"><Icon name="info" size={17} /><div><p role="alert">{error}</p><PressButton variant="secondary" onClick={onRetry}>Reintentar</PressButton></div></div> : <div className="wallet-loading-line" aria-hidden="true" />}
   </section>;
