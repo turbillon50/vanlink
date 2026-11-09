@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { enrollWalletIfMissing, type WalletLookup } from "@/lib/wallet/onboarding";
 
 export const WALLET_READY_EVENT = "vandefi:wallet-ready";
+export const WALLET_RETRY_EVENT = "vandefi:wallet-retry";
 export const WALLET_ENROLLMENT_ERROR_EVENT = "vandefi:wallet-enrollment-error";
 
 // One job per user in this tab. React StrictMode, navigation and two mounted
@@ -19,11 +20,20 @@ async function lookup(): Promise<WalletLookup> {
   return data as WalletLookup;
 }
 
+async function withDeviceLock<T>(operation: () => Promise<T>): Promise<T> {
+  // IndexedDbStamper shares one browser key. Two registration tabs must not
+  // reset that key concurrently. Web Locks are supported on modern browsers.
+  if (typeof navigator !== "undefined" && navigator.locks?.request) {
+    return navigator.locks.request("vandefi.wallet.enrollment", { mode: "exclusive" }, operation);
+  }
+  return operation();
+}
+
 async function enroll(userId: string): Promise<void> {
   const job = inFlight.get(userId);
   if (job) return job;
 
-  const pending = enrollWalletIfMissing({
+  const pending = withDeviceLock(() => enrollWalletIfMissing({
     lookup,
     prepareDevice: async () => {
       const { prepareWalletDevice } = await import("@/lib/wallet/browser");
@@ -41,7 +51,7 @@ async function enroll(userId: string): Promise<void> {
       if (!response.ok) throw new Error(data.error || "No pudimos crear tu wallet.");
       if (data.connected !== true) throw new Error("wallet_not_confirmed");
     },
-  }).then(() => undefined);
+  })).then(() => undefined);
 
   inFlight.set(userId, pending);
   // Cleanup is explicit to avoid unhandled promise rejections from finally().
@@ -97,6 +107,16 @@ export function AutoWalletEnrollment() {
     });
     return () => { active = false; };
   }, [isLoaded, userId, attempt]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const retry = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId?: string }>).detail;
+      if (detail?.userId === userId) setAttempt((n) => n + 1);
+    };
+    window.addEventListener(WALLET_RETRY_EVENT, retry);
+    return () => window.removeEventListener(WALLET_RETRY_EVENT, retry);
+  }, [userId]);
 
   if (!isLoaded || !userId || !error) return null;
   return (
