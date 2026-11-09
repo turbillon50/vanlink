@@ -22,7 +22,13 @@ export async function POST(request: NextRequest) {
     if (!validPublicKey(publicKey)) return NextResponse.json({ error: "No pudimos preparar este dispositivo." }, { status: 400, headers });
     // Recuperación no custodiada: toda wallet nueva debe asociarse al correo
     // de Clerk para permitir agregar un dispositivo si el original se pierde.
-    const email = await primaryEmail(userId).catch(() => null);
+    let email: string | null;
+    try {
+      email = await primaryEmail(userId);
+    } catch {
+      return NextResponse.json({ error: "No pudimos verificar tu correo. Intenta de nuevo." },
+        { status: 503, headers });
+    }
     if (!email) {
       return NextResponse.json({ error: "Confirma un correo en tu cuenta para crear y recuperar tu wallet.", code: "email_required" },
         { status: 409, headers });
