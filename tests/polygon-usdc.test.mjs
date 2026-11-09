@@ -40,7 +40,7 @@ test("transacción USDC tiene to=contrato Circle, no mueve POL y conserva el des
   const tx = parseTransaction(result.unsigned);
   assert.equal(tx.chainId, 137);
   assert.equal(tx.to?.toLowerCase(), POLYGON_USDC_ADDRESS.toLowerCase());
-  assert.equal(tx.value, BigInt(0));
+  assert.equal(tx.value ?? BigInt(0), BigInt(0));
   assert.equal(tx.type, "eip1559");
   const args = decodeFunctionData({ abi: erc20Abi, data: tx.data, functionName: "transfer" });
   assert.equal(args.args[0].toLowerCase(), recipient.toLowerCase());
