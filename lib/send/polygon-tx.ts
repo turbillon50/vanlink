@@ -29,7 +29,7 @@ export function polygonUSDCUnits(value: string): bigint | null {
   const input = value.replace(",", ".").trim();
   if (!/^\d+(?:\.\d{1,6})?$/.test(input)) return null;
   const parsed = parseUnits(input, POLYGON_USDC_DECIMALS);
-  return parsed > 0n ? parsed : null;
+  return parsed > BigInt(0) ? parsed : null;
 }
 
 export const formatPolygonUSDC = (value: bigint) => formatUnits(value, POLYGON_USDC_DECIMALS);
@@ -39,7 +39,7 @@ export function buildPolygonUSDCUnsigned(params: {
   to: string; amount: bigint; quote: PolygonTransferQuote;
 }) {
   const to = normalizePolygonAddress(params.to);
-  if (!to || params.amount <= 0n) throw new Error("polygon_invalid_transfer");
+  if (!to || params.amount <= BigInt(0)) throw new Error("polygon_invalid_transfer");
   const q = params.quote;
   const data = encodeFunctionData({
     abi: erc20Abi,
@@ -51,7 +51,7 @@ export function buildPolygonUSDCUnsigned(params: {
     chainId: POLYGON_CHAIN_ID,
     nonce: q.nonce,
     to: getAddress(POLYGON_USDC_ADDRESS),
-    value: 0n,
+    value: BigInt(0),
     gas: BigInt(q.gas),
     maxFeePerGas: BigInt(q.maxFeePerGas),
     maxPriorityFeePerGas: BigInt(q.maxPriorityFeePerGas),
