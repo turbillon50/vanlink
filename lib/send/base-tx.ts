@@ -20,7 +20,7 @@ export const BASE_ASSETS = {
   ETH: { kind: "native", address: null, decimals: 18, label: "ETH" },
 } as const;
 export type BaseAsset = keyof typeof BASE_ASSETS;
-export const isBaseAsset = (v: string): v is BaseAsset => v in BASE_ASSETS;
+export const isBaseAsset = (v: string): v is BaseAsset => Object.prototype.hasOwnProperty.call(BASE_ASSETS, v);
 
 /** Dirección válida de Base; rechaza la dirección cero y checksums mal escritos. */
 export function normalizeEvmAddress(value: string): `0x${string}` | null {
@@ -71,7 +71,7 @@ export async function verifyBaseSigned(signed: string, expected: { from: string;
   const s = (signed.startsWith("0x") ? signed : "0x" + signed) as Hex;
   const parsed = parseTransaction(s);
   const original = parseTransaction(expected.unsigned);
-  for (const k of ["to", "value", "data", "nonce", "gas", "maxFeePerGas", "chainId"] as const) {
+  for (const k of ["type", "to", "value", "data", "nonce", "gas", "maxFeePerGas", "maxPriorityFeePerGas", "chainId"] as const) {
     if (String(parsed[k] ?? "") !== String(original[k] ?? "")) throw new Error("firma_altero_" + k);
   }
   const from = await recoverTransactionAddress({ serializedTransaction: s as never });
