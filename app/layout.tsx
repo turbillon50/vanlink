@@ -6,6 +6,7 @@ import "@/components/design/vliving-finance.css";
 import { Atmosphere } from "@/components/brand/atmosphere";
 import { BrandEntrance } from "@/components/brand/entrance";
 import { AuthProvider } from "@/components/auth/provider";
+import { WalletModeProvider } from "@/components/mode/wallet-mode";
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const geistMono = Geist_Mono({
   subsets: ["latin"],
@@ -39,7 +40,7 @@ export default function RootLayout({
       <body
         className={geistSans.variable + " " + geistMono.variable + " font-sans"}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider><WalletModeProvider>{children}</WalletModeProvider></AuthProvider>
         <Atmosphere />
         <BrandEntrance />
       </body>
