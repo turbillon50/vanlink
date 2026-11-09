@@ -11,12 +11,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
+import { useWalletMode } from "@/components/mode/wallet-mode";
 
 type Wallet = { evmAddress: string; bitcoinAddress: string };
 
 const NETWORKS = [
-  { id: "base", label: "Base", hint: "USDC, USDT y tokens de Base", warn: "Solo envía activos de la red Base. Otra red implica pérdida total." },
-  { id: "bitcoin", label: "Bitcoin", hint: "BTC en la red Bitcoin", warn: "Solo envía BTC de la red Bitcoin. No envíes desde otra red." },
+  { id: "polygon", label: "Polygon", hint: "Sólo USDC nativo (Circle) en Polygon PoS", warn: "Tu QR recibe USDC de Polygon PoS (chain ID 137). No envíes USDC.e, USDC de Base ni de otra red." },
+  { id: "base", label: "Base · legado", hint: "Activos existentes en Base", warn: "Sólo red Base. No se convierte automáticamente a Polygon." },
+  { id: "bitcoin", label: "Bitcoin · legado", hint: "Bitcoin nativo", warn: "Sólo BTC de la red Bitcoin. No envíes desde otra red." },
 ] as const;
 
 function chunk(address: string) {
@@ -24,9 +26,10 @@ function chunk(address: string) {
 }
 
 export function ReceivePanel() {
+  const { mode } = useWalletMode();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [state, setState] = useState<"cargando" | "listo" | "sin-wallet" | "error">("cargando");
-  const [network, setNetwork] = useState<"base" | "bitcoin">("base");
+  const [network, setNetwork] = useState<"polygon" | "base" | "bitcoin">("polygon");
   const [qr, setQr] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [walletVersion, setWalletVersion] = useState(0);
@@ -51,9 +54,13 @@ export function ReceivePanel() {
     })();
   }, [walletVersion]);
 
+  useEffect(() => {
+    if (mode === "simple" && network !== "polygon") setNetwork("polygon");
+  }, [mode, network]);
+
   const address = useMemo(() => {
     if (!wallet) return "";
-    return network === "base" ? wallet.evmAddress : wallet.bitcoinAddress;
+    return network === "bitcoin" ? wallet.bitcoinAddress : wallet.evmAddress;
   }, [wallet, network]);
 
   useEffect(() => {
@@ -81,7 +88,7 @@ export function ReceivePanel() {
   return (
     <div className="rcv">
       <div className="rcv-tabs" role="tablist" aria-label="Red">
-        {NETWORKS.map((n) => (
+        {(mode === "simple" ? NETWORKS.filter((n) => n.id === "polygon") : NETWORKS).map((n) => (
           <button
             key={n.id}
             role="tab"
