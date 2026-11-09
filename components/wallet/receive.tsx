@@ -11,6 +11,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { authConfigured } from "@/lib/auth-config";
 import Link from "next/link";
 import QRCode from "qrcode";
 
@@ -25,7 +26,7 @@ function chunk(address: string) {
   return address.replace(/(.{4})/g, "$1 ").trim();
 }
 
-export function ReceivePanel() {
+function ReceivePanelInner() {
   const { userId, isLoaded } = useAuth();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [state, setState] = useState<"cargando" | "listo" | "sin-sesion" | "sin-wallet" | "error">("cargando");
@@ -168,4 +169,9 @@ export function ReceivePanel() {
       {network === "base" && <p className="vd-legal-note">Puedes recibir USDC sin ETH. Para enviarlo después necesitarás ETH en Base para la comisión. Nunca compartas tus claves ni códigos.</p>}
     </div>
   );
+}
+
+export function ReceivePanel() {
+  if (!authConfigured) return <p className="bal-note">Para recibir debes iniciar sesión en VanDeFi.</p>;
+  return <ReceivePanelInner />;
 }
