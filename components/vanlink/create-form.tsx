@@ -42,7 +42,15 @@ export function CreateVanLinkForm() {
         }),
       });
       const result = await response.json() as { error?: string; vanlink?: { slug: string } };
-      if (!response.ok || !result.vanlink) throw new Error(result.error || "No pudimos crear el cobro.");
+      if (!response.ok || !result.vanlink) {
+        throw new Error(result.error === "polygon_no_habilitado"
+          ? "VanLink USDC Polygon se está validando. Aún no podemos publicar cobros en esa red."
+          : result.error === "sin_wallet"
+          ? "Tu wallet todavía se está generando. Revisa tu cuenta."
+          : result.error === "monto_polygon_invalido"
+          ? "Escribe un monto de USDC con máximo seis decimales."
+          : result.error || "No pudimos crear el cobro.");
+      }
       setLink(window.location.origin + "/l/" + result.vanlink.slug);
     } catch (error) {
       setMessage((error as Error).message || "No pudimos crear el cobro.");
