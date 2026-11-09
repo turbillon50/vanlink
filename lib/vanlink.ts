@@ -26,7 +26,7 @@ export function paymentUri(asset: AssetKey, address: string, amount?: string | n
     // EIP-681 ERC-20 payment request for Circle native USDC on Polygon.
     const base = "ethereum:" + POLYGON_USDC_ADDRESS + "@137/transfer?address=" + encodeURIComponent(address);
     if (!amount) return base;
-    if (!/^(?:0|[1-9]\\d{0,11})(?:\\.\\d{1,6})?$/.test(amount) || Number(amount) <= 0) throw new Error("invalid_polygon_usdc_amount");
+    if (!/^(?:0|[1-9]\d{0,11})(?:\.\d{1,6})?$/.test(amount) || Number(amount) <= 0) throw new Error("invalid_polygon_usdc_amount");
     const [whole, fraction = ""] = amount.split(".");
     const units = BigInt(whole) * 1_000_000n + BigInt(fraction.padEnd(6, "0"));
     return base + "&uint256=" + units.toString();
