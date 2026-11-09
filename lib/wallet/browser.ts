@@ -14,7 +14,11 @@ export async function prepareWalletDevice(userId: string) {
   await stamper.init();
   // The P-256 private key remains non-extractable in this browser. Reuse it on
   // a retry so an interrupted request cannot create a second device identity.
-  if (localStorage.getItem(OWNER) !== userId || !stamper.getPublicKey()) await stamper.resetKeyPair();
+  const owner = localStorage.getItem(OWNER);
+  // Never silently overwrite an unextractable signing key from another
+  // account: without email recovery this could strand real funds.
+  if (owner && owner !== userId) throw new Error("wallet_device_owner_mismatch");
+  if (!owner || !stamper.getPublicKey()) await stamper.resetKeyPair();
   localStorage.setItem(OWNER, userId);
   const publicKey = stamper.getPublicKey();
   if (!publicKey) throw new Error("Device key unavailable");
