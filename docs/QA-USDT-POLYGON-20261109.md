@@ -30,8 +30,13 @@ Migración aplicada a producción con lock_timeout 3s. user_wallets=5 y vanlinks
 - Alchemy privado Polygon Mainnet, lectura real de saldos/transferencias y variable de habilitación.
 - Política OTP Turnkey: auditada ausente; dos wallets antiguas no tienen correo registrado. Probar recuperación de la wallet concreta en un navegador limpio antes de fondear.
 - Despliegue explícito en proyecto institucional vandefi, equipo team_NoWzQnv9LwuPKxGKQxZZq0mJ; automatismo Git deshabilitado. Verificar commit servido en vandefi.live.
-- QA de navegador de la versión desplegada y canario con fondos de Luis, según PLAN-PRUEBA-E2E-USDT.md.
+- QA con sesión y canario con fondos de Luis, según PLAN-PRUEBA-E2E-USDT.md; los recorridos sin sesión ya están comprobados abajo.
 
 ## Límites conocidos de esta beta
 
 Confirmada significa inclusión observada desde un bloque. El tracker no reconcilia reorganizaciones de operaciones ya confirmadas; no equivale a finalidad ni acreditación del exchange. El historial del indexador consulta hasta 50 movimientos por dirección, sin paginación. Ninguno habilita automáticamente el canario.
+
+
+## Navegador y preview verificados
+
+Preview READY del código cd2830c: https://vandefi-hqtej9dd7-luisdelator-oss-projects.vercel.app . WebKit: 24 casos, rutas /, /send, /receive, /activity, /vanlink/create y /expert en 375/390/430/1440 px, sin sesión. Todos HTTP 200, desbordamiento máximo 0 px, pageerror 0. Captura de /send a390 px inspeccionada: USDT Polygon, acceso a cuenta y navegación legibles. Los flujos autenticados, firma con dispositivo real, OTP y canario siguen pendientes; estos resultados no los sustituyen.
