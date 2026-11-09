@@ -5,72 +5,98 @@ import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { TopBar } from "@/components/top-bar";
 import { Icon } from "@/components/icons";
-import { MarketPulse } from "@/components/market-pulse";
 import { WalletBalances } from "@/components/wallet/balances";
-
-const actions = [
-  { label: "Up", href: "/up", icon: "up" as const },
-  { label: "Down", href: "/down", icon: "down" as const },
-  { label: "Enviar", href: "/send", icon: "send" as const },
-  { label: "Recibir", href: "/receive", icon: "wallet" as const },
-  { label: "Cambiar", href: "/swap", icon: "swap" as const },
-];
+import { MarketPulse } from "@/components/market-pulse";
+import { OperationBar } from "@/components/design/operation-bar";
+import { ModeToggle, useWalletMode } from "@/components/mode/wallet-mode";
 
 export default function HomePage() {
   const [hidden, setHidden] = useState(false);
+  const { mode } = useWalletMode();
+
   return (
     <AppShell wide>
       <TopBar brand />
-      <section className="van-home v-folio">
-        <div className="van-home-intro">
-          <div>
-            <p className="eyebrow">TU ESPACIO FINANCIERO</p>
-            <h1>Muévete<br /><span>con ventaja.</span></h1>
+      <div className="vd-wallet-home">
+        <header className="vd-wallet-heading">
+          <div className="vd-heading-row">
+            <div>
+              <p className="vd-overline">MI WALLET</p>
+              <h1>{mode === "simple" ? "Tus activos" : "Tu cartera digital"}</h1>
+            </div>
+            <ModeToggle compact />
           </div>
-          <Link href="/v" className="v-corner" aria-label="Abrir asistente de VanDeFi"><Icon name="chat" size={26} /><small>AYUDA</small></Link>
-        </div>
+          {mode === "expert" && (
+            <p className="vd-expert-caption">
+              Bitcoin y activos por red. Cotizaciones, firmas y costos se verifican en cada operación.
+            </p>
+          )}
+        </header>
 
-        <div className="van-balance">
-          <div className="balance-topline">
-            <span>VALOR DE TU WALLET</span>
-            <button type="button" onClick={() => setHidden((value) => !value)} aria-label={hidden ? "Mostrar saldo" : "Ocultar saldo"}>
-              <Icon name="eye" size={17} />
+        <section className="vd-assets" aria-label="Saldos de tu wallet">
+          <div className="vd-assets-top">
+            <span>ACTIVOS DISPONIBLES</span>
+            <button
+              type="button"
+              className="vd-visibility"
+              aria-label={hidden ? "Mostrar saldos" : "Ocultar saldos"}
+              aria-pressed={hidden}
+              onClick={() => setHidden((value) => !value)}
+            >
+              <Icon name="eye" size={19} />
             </button>
           </div>
           <WalletBalances hidden={hidden} />
-          <span className="balance-rim" aria-hidden="true" />
-        </div>
+          <Link href="/activity" className="vd-minor-link">
+            Ver movimientos <Icon name="chevron" size={15}/>
+          </Link>
+        </section>
 
-        <div className="van-actions" aria-label="Acciones rápidas">
-          {actions.map(({ label, href, icon }) => (
-            <Link href={href} key={label}>
-              <span><Icon name={icon} size={21} /></span>
-              <small>{label}</small>
-            </Link>
-          ))}
-        </div>
+        <OperationBar />
 
-        <section className="vanlink-command">
-          <div className="vanlink-threads" aria-hidden="true"><i /><i /><i /></div>
-          <div className="vanlink-copy">
-            <p className="eyebrow">VANLINK / REMESAS</p>
-            <h2>Envía un link.<br /><span>La otra persona cobra.</span></h2>
-            <p>Prepara una ruta, compártela y deja que el receptor complete sus datos para recibir localmente.</p>
+        <section className="vd-feature-link" aria-label="VanLink">
+          <div className="vd-feature-copy">
+            <p className="vd-overline">VANLINK / PAGOS POR WHATSAPP</p>
+            <h2>Un enlace.<br/>Muchas posibilidades.</h2>
+            <p>Prepara tu solicitud de cobro y compártela cuando el enlace esté habilitado.</p>
           </div>
-          <Link href="/vanlink/create" className="vanlink-action">Crear VanLink <Icon name="arrow" size={17} /></Link>
+          <Link href="/vanlink/create" className="vd-feature-action">
+            Preparar VanLink <Icon name="arrow" size={16}/>
+          </Link>
+          <span className="vd-feature-lines" aria-hidden="true" />
         </section>
 
-        <section className="van-market-section">
-          <div className="market-heading"><div><p className="eyebrow">MERCADO</p><h2>Pulso vivo.</h2></div><Link href="/market">Ver mercado <Icon name="arrow" size={14} /></Link></div>
-          <MarketPulse compact />
-        </section>
-
-        <Link href="/v" className="v-assistant-card">
-          <div className="v-assistant-mark"><Icon name="chat" size={26} /></div>
-          <div><p className="eyebrow">ASISTENTE</p><h2>¿Qué quieres hacer?</h2><p>Te ayuda a entender rutas, activos y tus siguientes pasos.</p></div>
-          <Icon name="arrow" size={18} />
-        </Link>
-      </section>
+        {mode === "simple" ? (
+          <section className="vd-simple-links" aria-label="Accesos rápidos">
+            <Link href="/receive" className="vd-flat-link">
+              <span className="vd-flat-icon"><Icon name="wallet" size={21}/></span>
+              <span><strong>Mi código para recibir</strong><small>Dirección y QR de la wallet</small></span>
+              <Icon name="chevron" size={16}/>
+            </Link>
+            <Link href="/v" className="vd-flat-link">
+              <span className="vd-flat-icon"><Icon name="chat" size={21}/></span>
+              <span><strong>¿Necesitas ayuda?</strong><small>Asistente VanDeFi</small></span>
+              <Icon name="chevron" size={16}/>
+            </Link>
+          </section>
+        ) : (
+          <section className="vd-expert-home" aria-label="Información avanzada">
+            <div className="vd-expert-heading">
+              <div>
+                <p className="vd-overline">MERCADOS</p>
+                <h2>Información de mercado</h2>
+              </div>
+              <Link href="/market" className="vd-minor-link">Ver más <Icon name="chevron" size={16}/></Link>
+            </div>
+            <MarketPulse compact />
+            <Link href="/operate" className="vd-flat-link">
+              <span className="vd-flat-icon"><Icon name="swap" size={21}/></span>
+              <span><strong>Herramientas de operación</strong><small>Enviar, recibir, convertir, redes y costos</small></span>
+              <Icon name="chevron" size={16}/>
+            </Link>
+          </section>
+        )}
+      </div>
     </AppShell>
   );
 }

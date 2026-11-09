@@ -2,9 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "@/components/brand/crystal.css";
+import "@/components/design/vliving-finance.css";
 import { Atmosphere } from "@/components/brand/atmosphere";
 import { BrandEntrance } from "@/components/brand/entrance";
 import { AuthProvider } from "@/components/auth/provider";
+import { WalletModeProvider } from "@/components/mode/wallet-mode";
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const geistMono = Geist_Mono({
   subsets: ["latin"],
@@ -12,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 export const metadata: Metadata = {
   title: "VanDeFi · Tu dinero. Tu control.",
-  description: "Tu wallet y tus links de pago en un mismo lugar. USDC en Base.",
+  description: "Tu wallet con Bitcoin, USDC y links de pago en un mismo lugar.",
   applicationName: "VanDeFi",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -38,7 +40,7 @@ export default function RootLayout({
       <body
         className={geistSans.variable + " " + geistMono.variable + " font-sans"}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider><WalletModeProvider>{children}</WalletModeProvider></AuthProvider>
         <Atmosphere />
         <BrandEntrance />
       </body>

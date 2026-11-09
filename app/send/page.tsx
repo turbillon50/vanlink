@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { TopBar } from "@/components/top-bar";
-import { PageIntro } from "@/components/craft";
+import { SendIntro } from "@/components/design/send-intro";
 import { SendFlow } from "@/components/wallet/send-flow";
 
 export const metadata = { title: "Enviar · VanDeFi" };
@@ -8,12 +8,8 @@ export const metadata = { title: "Enviar · VanDeFi" };
 export default function SendPage() {
   return (
     <AppShell>
-      <TopBar title="Enviar" backHref="/" />
-      <PageIntro
-        eyebrow="BITCOIN Y BASE"
-        title="Envía directo, sin intermediarios"
-        description="Cotizamos la comisión real de la red, tú revisas y firmas desde tu dispositivo."
-      />
+      <TopBar title="Enviar" backHref="/operate" />
+      <SendIntro />
       <SendFlow />
     </AppShell>
   );
