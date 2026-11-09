@@ -65,6 +65,7 @@ async function enroll(userId: string): Promise<void> {
 function describeError(error: unknown): string {
   const message = error instanceof Error ? error.message : "";
   if (message === "wallet_not_available") return "El servicio de wallets no está habilitado en este momento.";
+  if (message === "wallet_device_legacy_unknown") return "Este navegador conserva una llave anterior. Entra en la cuenta donde la creaste para comprobarla, o usa otro navegador para esta cuenta.";
   if (message === "wallet_device_owner_mismatch") return "Este navegador conserva una llave de otra cuenta. No la reemplazamos para evitar perder fondos. Abre esta cuenta en otro navegador o contacta soporte.";
   if (message === "wallet_not_confirmed" || message === "wallet_accounts_missing")
     return "Turnkey no confirmó todas las direcciones. Puedes reintentar sin crear una wallet duplicada.";
