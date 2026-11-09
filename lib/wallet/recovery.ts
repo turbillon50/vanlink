@@ -20,6 +20,10 @@ export function sendCode() {
 }
 
 export async function recoverWithCode(userId: string, otpId: string, code: string) {
+  // No sobrescribir la clave no extraíble de otra cuenta en este navegador.
+  // Una wallet antigua podría no tener todavía recuperación por correo.
+  const owner = localStorage.getItem(OWNER);
+  if (owner && owner !== userId) throw new Error("wallet_device_owner_mismatch");
   const [{ generateP256KeyPair, decryptCredentialBundle, getPublicKey }, { uint8ArrayFromHexString, uint8ArrayToHexString }, { ApiKeyStamper }, { TurnkeyClient }, { IndexedDbStamper }] = await Promise.all([
     import("@turnkey/crypto"), import("@turnkey/encoding"), import("@turnkey/api-key-stamper"),
     import("@turnkey/http"), import("@turnkey/indexed-db-stamper"),
