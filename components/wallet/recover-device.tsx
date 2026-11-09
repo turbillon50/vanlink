@@ -17,6 +17,12 @@ export function RecoverDevice({ userId, onRecovered, context = "firmar" }: Props
   async function send() {
     setBusy(true); setError("");
     try {
+      const { walletDeviceOwner } = await import("@/lib/wallet/browser");
+      const owner = walletDeviceOwner();
+      if (owner && owner !== userId) {
+        setBlocked(true);
+        throw new Error("Este navegador ya tiene la llave de otra cuenta. Para evitar perder sus fondos, abre esta cuenta en otro navegador.");
+      }
       const { sendCode } = await import("@/lib/wallet/recovery");
       const r = await sendCode();
       setOtpId(r.otpId); setEmail(r.email); setStep("sent");
@@ -32,7 +38,12 @@ export function RecoverDevice({ userId, onRecovered, context = "firmar" }: Props
       const { recoverWithCode } = await import("@/lib/wallet/recovery");
       await recoverWithCode(userId, otpId, code.trim());
       setStep("done"); onRecovered();
-    } catch (e) { setError((e as Error).message || "No se pudo recuperar."); }
+    } catch (e) {
+      const message = (e as Error).message;
+      setError(message === "wallet_device_owner_mismatch"
+        ? "Este navegador conserva una llave de otra cuenta. Para no sustituirla, usa otro navegador."
+        : message || "No se pudo recuperar.");
+    }
     finally { setBusy(false); }
   }
 
