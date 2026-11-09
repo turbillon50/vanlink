@@ -7,7 +7,7 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "compile": "node scripts/compile.mjs",
-    "prepare": "node scripts/prepare-deployment.mjs"
+    "plan:deployment": "node scripts/prepare-deployment.mjs"
   },
   "dependencies": {
     "@openzeppelin/contracts": "5.4.0"
