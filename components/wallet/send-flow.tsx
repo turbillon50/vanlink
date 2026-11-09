@@ -146,18 +146,48 @@ function SendFlowInner() {
   }, []);
   useEffect(() => { if (boot === "listo") void loadBalances(); }, [boot, loadBalances]);
 
-  // Seguimiento de la transacción enviada.
+  // Seguimiento en vivo y registro local para retomarlo tras cerrar la PWA.
   useEffect(() => {
     if (!sent || status !== "pendiente") return;
-    const t = setInterval(async () => {
+    let active = true;
+    let checking = false;
+    const check = async () => {
+      if (checking || !active) return;
+      checking = true;
       try {
-        const s = await api<{ confirmed: boolean; failed?: boolean }>(`/api/send/status?network=${sent.network}&id=${sent.id}`);
-        if (s.failed) setStatus("fallida");
-        else if (s.confirmed) { setStatus("confirmada"); void loadBalances(); }
-      } catch { /* reintenta en el siguiente ciclo */ }
-    }, sent.network === "base" ? 3_000 : 20_000);
-    return () => clearInterval(t);
-  }, [sent, status, loadBalances]);
+        const endpoint = "/api/send/status?network=" + sent.network + "&id=" + encodeURIComponent(sent.id);
+        const result = await api<{
+          phase?: TrackedPhase; confirmed: boolean; failed?: boolean;
+          confirmations?: number | null;
+        }>(endpoint);
+        if (!active) return;
+        if (userId) {
+          reconcileOperation(userId, sent.id, sent.network, {
+            phase: result.phase || (result.confirmed ? "confirmed" : result.failed ? "failed" : "pending"),
+            confirmations: result.confirmations ?? null,
+            checkedAt: new Date().toISOString(),
+          });
+        }
+        if (result.failed) setStatus("fallida");
+        else if (result.confirmed) {
+          setStatus("confirmada");
+          setSent(previous => previous ? { ...previous, uncertain: false } : previous);
+          void loadBalances();
+        }
+      } catch {
+        // RPC offline is an UNKNOWN, never proof that a transaction failed.
+      } finally { checking = false; }
+    };
+    void check();
+    const timer = window.setInterval(() => { void check(); }, sent.network === "base" ? 8_000 : 20_000);
+    const onOnline = () => { void check(); };
+    window.addEventListener("online", onOnline);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("online", onOnline);
+    };
+  }, [sent, status, loadBalances, userId]);
 
   const pickNetwork = (n: Network) => {
     setNetwork(n); setAsset(n === "bitcoin" ? "BTC" : "USDC"); setError(""); setIsMax(false); setAmount("");
@@ -336,19 +366,22 @@ function SendFlowInner() {
     return (
       <div className={`snd-done ${status}`}>
         <div className="snd-done-orb" aria-hidden="true">{icon || <span className="snd-spin" />}</div>
-        <h2>{status === "confirmada" ? "Enviado y confirmado" : status === "fallida" ? "La red la rechazó" : "Enviado a la red"}</h2>
+        <h2>{status === "confirmada" ? "Confirmado en la red" : status === "fallida" ? "La red rechazó la ejecución" : sent.uncertain ? "Verificando si llegó a la red" : "Recibido por la red"}</h2>
         <p className="snd-done-amt">{sent.label}</p>
         <p className="snd-done-note">
-          {status === "pendiente" && (sent.network === "bitcoin"
+          {status === "pendiente" && sent.uncertain ? "No repitas este envío todavía. La red podría haberlo recibido aunque su respuesta haya fallado." : null}
+          {status === "pendiente" && !sent.uncertain && (sent.network === "bitcoin"
             ? "Bitcoin confirma por bloques. Suele tardar de 10 a 30 minutos; puedes cerrar esta pantalla."
             : "Base confirma en segundos.")}
           {status === "confirmada" && "Ya está en la cadena. Es definitivo."}
           {status === "fallida" && "La transacción se incluyó pero falló. Se cobró la comisión; el monto no salió."}
         </p>
         <code className="snd-txid">{short(sent.id)}</code>
+        {!trackingSaved && <p className="rcv-warn">Este dispositivo no pudo guardar el seguimiento. Copia el hash antes de cerrar.</p>}
+        {error && <p role="alert" className="field-error">{error}</p>}
         <div className="snd-actions">
           <PressButton href={sent.explorer} variant="secondary" target="_blank" rel="noopener noreferrer">Ver en el explorador</PressButton>
-          <PressButton onClick={reset}>Hacer otro envío</PressButton>
+          <PressButton onClick={reset} disabled={status === "pendiente"}>Hacer otro envío</PressButton>
         </div>
         <Link href="/activity" className="snd-link">Ir a mi actividad</Link>
       </div>
@@ -393,7 +426,8 @@ function SendFlowInner() {
         <p className="rcv-warn">Los envíos en la cadena no se pueden cancelar ni revertir. Verifica la dirección carácter por carácter.</p>
         {error && <p role="alert" className="field-error">{error}</p>}
         {deviceOk === false && userId && <RecoverDevice userId={userId} context="firmar envíos" onRecovered={() => setDeviceOk(true)} />}
-        <PressButton onClick={confirm} disabled={Boolean(busy) || deviceOk === false}>
+        {deviceOk === null && <p role="status" className="vd-legal-note">Comprobando la autorización del dispositivo…</p>}
+        <PressButton onClick={confirm} disabled={Boolean(busy) || deviceOk !== true}>
           {busy === "firmando" ? "Firmando en tu dispositivo…" : busy === "transmitiendo" ? "Enviando a la red…" : "Confirmar y enviar"}
         </PressButton>
         <PressButton variant="secondary" onClick={() => { setReview(null); setError(""); }} disabled={Boolean(busy)}>Editar</PressButton>
