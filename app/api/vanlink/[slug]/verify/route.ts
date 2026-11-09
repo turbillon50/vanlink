@@ -48,11 +48,11 @@ export async function POST(request: Request, ctx: { params: Promise<{ slug: stri
     }
     const recipient = getAddress(link.address);
     const transfers = (receipt.logs || []).map(log => creditedTo(log, recipient)).filter((x): x is bigint => x !== null);
-    const received = transfers.reduce((total, x) => total + x, 0n);
-    const min = link.amount ? parseUnits(link.amount, 6) : 1n;
+    const received = transfers.reduce((total, x) => total + x, BigInt(0));
+    const min = link.amount ? parseUnits(link.amount, 6) : BigInt(1);
     if (received < min) return Response.json({ verified: false, reason: "transferencia_no_coincide" }, { status: 409, headers: noStore });
     const block = await polygonRpc<{ timestamp?: string }>("eth_getBlockByNumber", [receipt.blockNumber, false]);
-    if (!block.timestamp || Number(BigInt(block.timestamp) * 1000n) < link.createdAt.getTime()) {
+    if (!block.timestamp || Number(BigInt(block.timestamp) * BigInt(1000)) < link.createdAt.getTime()) {
       return Response.json({ verified: false, reason: "pago_anterior_al_link" }, { status: 409, headers: noStore });
     }
 
