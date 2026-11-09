@@ -1,8 +1,8 @@
 {
   "name": "VanDeFi",
   "short_name": "VanDeFi",
-  "description": "Wallet de activos digitales: recibe, envía y sigue el mercado en Base y Bitcoin.",
-  "start_url": "/welcome",
+  "description": "VanDeFi: tu wallet y VanLink, para recibir, enviar y administrar dinero digital.",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

@@ -671,4 +671,126 @@
   .vd-simple-information{align-items:flex-start;flex-direction:column;gap:12px}
   .vd-playground-form>div{flex-wrap:wrap}
   .vd-playground-form button{width:100%}
+/* VANX identity page: approved graphite / titanium / gold brand.
+   Token-specific colors do not recolor the USDC remittance wallet. */
+.vanx-brand-page {
+  --vanx-gold: #f9c536;
+  --vanx-silver: #f3f3f2;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 5px 0 34px;
+  display: grid;
+  gap: 24px;
+  color: var(--vanx-silver);
+}
+.vanx-brand-intro { display: grid; gap: 9px; text-align: center; }
+.vanx-eyebrow {
+  color: #aeaeaa;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: .21em;
+}
+.vanx-brand-intro h1 {
+  font-size: clamp(68px, 18vw, 105px);
+  letter-spacing: -.1em;
+  line-height: 1;
+  font-weight: 760;
+  color: #f6f7f4;
+  margin-left: -.08em;
+}
+.vanx-brand-intro h1 span {
+  color: var(--vanx-gold);
+}
+.vanx-brand-intro > p:last-child {
+  color: #9c9e9d;
+  font-size: 12px;
+}
+.vanx-medallion {
+  display: grid;
+  place-items: center;
+  width: min(68vw, 252px);
+  height: min(68vw, 252px);
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 221, 124, .25);
+  background: #050506;
+  box-shadow: 0 0 0 7px rgba(255, 255, 255, .017), 0 20px 45px -20px #000;
+}
+.vanx-medallion img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.vanx-identity-info {
+  display: grid;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 17px;
+  background: #0c0d0f;
+  padding: 4px 18px;
+}
+.vanx-identity-info p {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 0;
+  color: #f1f1ed;
+  font-size: 13px;
+  font-weight: 620;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+.vanx-identity-info p:last-child { border-bottom: none; }
+.vanx-identity-info span {
+  color: #929596;
+  font-size: 11px;
+  font-weight: 450;
+  text-align: right;
+}
+.vanx-identity-copy {
+  display: grid;
+  gap: 12px;
+  padding: 5px 1px;
+}
+.vanx-identity-copy h2 {
+  font-size: 25px;
+  letter-spacing: -.045em;
+  font-weight: 550;
+  line-height: 1.14;
+}
+.vanx-identity-copy p {
+  font-size: 12px;
+  line-height: 1.75;
+  color: #9c9e9f;
+}
+.vanx-notice {
+  padding: 17px 19px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 203, 92, .22);
+  background: #0f0e0a;
+}
+.vanx-notice strong {
+  color: #f6d078;
+  font-size: 12px;
+  font-weight: 650;
+}
+.vanx-notice p {
+  color: #aaa69d;
+  font-size: 11px;
+  line-height: 1.65;
+  margin-top: 7px;
+}
+.vanx-return {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 46px;
+  padding: 10px 15px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 650;
+  border: 1px solid rgba(255, 255, 255, .22);
+  color: #f3f4f1;
+  background: #111214;
 }
