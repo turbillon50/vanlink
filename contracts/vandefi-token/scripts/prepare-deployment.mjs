@@ -2,7 +2,7 @@
  * PREPARA la operación de despliegue SIN enviarla a blockchain.
  *
  * Uso:
- *   VDFI_TREASURY=0x... VDFI_INITIAL_SUPPLY_WHOLE=... npm run plan:deployment -- amoy
+ *   VANX_TREASURY=0x... VANX_INITIAL_SUPPLY_WHOLE=... npm run plan:deployment -- amoy
  *
  * Ningún valor tiene default. No se leen claves privadas, mnemonics ni firmas.
  * El usuario debe revisar emisión, tesorería y chainId antes de autorizar
@@ -23,10 +23,10 @@ const network = process.argv[2] || "amoy";
 if (!(network in networks)) {
   throw new Error("Red no soportada. Usa amoy o polygon.");
 }
-const treasuryRaw = process.env.VDFI_TREASURY;
-const wholeRaw = process.env.VDFI_INITIAL_SUPPLY_WHOLE;
+const treasuryRaw = process.env.VANX_TREASURY;
+const wholeRaw = process.env.VANX_INITIAL_SUPPLY_WHOLE;
 if (!treasuryRaw || !wholeRaw) {
-  throw new Error("Debes definir VDFI_TREASURY y VDFI_INITIAL_SUPPLY_WHOLE. Nunca usamos valores automáticos.");
+  throw new Error("Debes definir VANX_TREASURY y VANX_INITIAL_SUPPLY_WHOLE. Nunca usamos valores automáticos.");
 }
 const treasury = getAddress(treasuryRaw);
 if (treasury === ZeroAddress) throw new Error("La tesorería no puede ser la dirección cero.");
@@ -44,7 +44,7 @@ const outputFile = path.join(directory, "artifacts", "deployment-review-" + netw
 const manifest = {
   status: "DRAFT_NOT_DEPLOYED",
   name: "VanDeFi",
-  symbol: "VDFI",
+  symbol: "VANX",
   standard: "ERC-20",
   network: network,
   chainId: networks[network].chainId,
@@ -64,5 +64,5 @@ fs.writeFileSync(outputFile, JSON.stringify(manifest, null, 2) + "\n");
 console.log("Plan generado SIN desplegar ni firmar.");
 console.log("Red:", network, "chainId:", manifest.chainId);
 console.log("Tesorería:", treasury);
-console.log("Emisión:", whole.toString(), "VDFI");
+console.log("Emisión:", whole.toString(), "VANX");
 console.log("Revisar localmente:", outputFile);
