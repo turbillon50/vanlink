@@ -20,7 +20,14 @@ export async function POST(request: NextRequest) {
     if (raw.length > 512) return NextResponse.json({ error: "Solicitud demasiado grande." }, { status: 400, headers });
     const { publicKey } = JSON.parse(raw);
     if (!validPublicKey(publicKey)) return NextResponse.json({ error: "No pudimos preparar este dispositivo." }, { status: 400, headers });
-    await provisionWallet(userId, publicKey, await primaryEmail(userId).catch(() => null));
+    // Recuperación no custodiada: toda wallet nueva debe asociarse al correo
+    // de Clerk para permitir agregar un dispositivo si el original se pierde.
+    const email = await primaryEmail(userId).catch(() => null);
+    if (!email) {
+      return NextResponse.json({ error: "Confirma un correo en tu cuenta para crear y recuperar tu wallet.", code: "email_required" },
+        { status: 409, headers });
+    }
+    await provisionWallet(userId, publicKey, email);
     return NextResponse.json({ connected: true }, { headers });
   } catch (error) {
     console.error("wallet_activation_failed", { stage: "wallet", ...walletDiagnostic(error) });
