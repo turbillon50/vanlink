@@ -12,7 +12,7 @@ export default function VanxPage() {
   return (
     <AppShell wide>
       <TopBar title="VANX" backHref="/operate" />
-      <main className="vanx-brand-page">
+      <div className="vanx-brand-page">
         <header className="vanx-brand-intro">
           <p className="vanx-eyebrow">VANDEFI · TOKEN · POLYGON</p>
           <h1>VAN<span>X</span></h1>
@@ -60,7 +60,7 @@ export default function VanxPage() {
           </p>
         </div>
         <Link className="vanx-return" href="/">Volver a mi wallet USDC</Link>
-      </main>
+      </div>
     </AppShell>
   );
 }
