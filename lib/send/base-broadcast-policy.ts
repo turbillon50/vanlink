@@ -30,7 +30,7 @@ export async function validateBaseBroadcast(
   if (!isAddress(userEvmAddress, { strict: false })) throw new Error("wallet_invalida");
   const tx = parseTransaction(signed as Hex);
   if (tx.type !== "eip1559" || tx.chainId !== 8453) throw new Error("red_incorrecta");
-  const sender = await recoverTransactionAddress({ serializedTransaction: signed as Hex });
+  const sender = await recoverTransactionAddress({ serializedTransaction: signed as never });
   if (sender.toLowerCase() !== userEvmAddress.toLowerCase()) throw new Error("tx_ajena");
   if (!tx.to || !isAddress(tx.to)) throw new Error("destino_invalido");
   const recipient = getAddress(tx.to);
