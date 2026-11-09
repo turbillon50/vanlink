@@ -1,17 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { TopBar } from "@/components/top-bar";
 import { Icon } from "@/components/icons";
-import { WalletBalances } from "@/components/wallet/balances";
+import { WalletPortfolio } from "@/components/wallet/portfolio";
 import { MarketPulse } from "@/components/market-pulse";
-import { OperationBar } from "@/components/design/operation-bar";
 import { ModeToggle, useWalletMode } from "@/components/mode/wallet-mode";
 
 export default function HomePage() {
-  const [hidden, setHidden] = useState(false);
   const { mode } = useWalletMode();
 
   return (
@@ -22,7 +19,7 @@ export default function HomePage() {
           <div className="vd-heading-row">
             <div>
               <p className="vd-overline">MI WALLET</p>
-              <h1>{mode === "simple" ? "Tus activos" : "Tu cartera digital"}</h1>
+              <h1>{mode === "simple" ? "Mi dinero" : "Mi cartera"}</h1>
             </div>
             <ModeToggle compact />
           </div>
@@ -33,26 +30,7 @@ export default function HomePage() {
           )}
         </header>
 
-        <section className="vd-assets" aria-label="Saldos de tu wallet">
-          <div className="vd-assets-top">
-            <span>ACTIVOS DISPONIBLES</span>
-            <button
-              type="button"
-              className="vd-visibility"
-              aria-label={hidden ? "Mostrar saldos" : "Ocultar saldos"}
-              aria-pressed={hidden}
-              onClick={() => setHidden((value) => !value)}
-            >
-              <Icon name="eye" size={19} />
-            </button>
-          </div>
-          <WalletBalances hidden={hidden} />
-          <Link href="/activity" className="vd-minor-link">
-            Ver movimientos <Icon name="chevron" size={15}/>
-          </Link>
-        </section>
-
-        <OperationBar />
+        <WalletPortfolio />
 
         <section className="vd-feature-link" aria-label="VanLink">
           <div className="vd-feature-copy">
