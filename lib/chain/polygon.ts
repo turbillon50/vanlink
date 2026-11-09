@@ -1,10 +1,9 @@
 import "server-only";
 import { formatUnits, getAddress, isAddress } from "viem";
+import { POLYGON_CHAIN_ID, POLYGON_USDC_ADDRESS, POLYGON_USDC_DECIMALS } from "@/lib/polygon/asset";
 
 /** Circle native USDC, NOT bridged USDC.e (0x2791...). */
-export const POLYGON_CHAIN_ID = 137;
-export const POLYGON_USDC = getAddress("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359");
-export const POLYGON_USDC_DECIMALS = 6;
+export const POLYGON_USDC = getAddress(POLYGON_USDC_ADDRESS);
 const PUBLIC_RPC = "https://polygon-bor-rpc.publicnode.com";
 
 function endpoint() {
