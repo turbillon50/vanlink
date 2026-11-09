@@ -14,6 +14,8 @@ import { RecoverDevice } from "@/components/wallet/recover-device";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { keccak256 } from "viem";
+import { trackOperation, reconcileOperation, type TrackedPhase } from "@/lib/operations/tracker";
 import { PressButton } from "@/components/ui/press-button";
 import { SummaryRow } from "@/components/craft";
 import { authConfigured } from "@/lib/auth-config";
@@ -33,10 +35,10 @@ type Speed = "fastest" | "halfHour" | "economy";
 type Prices = { BTC?: number; ETH?: number };
 
 type Review =
-  | { network: "bitcoin"; plan: BtcPlan; fees: BtcFeeRates; utxos: Utxo[] }
-  | { network: "base"; asset: BaseAsset; to: string; value: bigint; quote: BaseQuote; unsigned: `0x${string}`; gasCost: bigint };
+  | { network: "bitcoin"; plan: BtcPlan; fees: BtcFeeRates; utxos: Utxo[]; quotedAt: number }
+  | { network: "base"; asset: BaseAsset; to: string; value: bigint; quote: BaseQuote; unsigned: `0x${string}`; gasCost: bigint; quotedAt: number };
 
-type Sent = { network: Network; id: string; explorer: string; label: string };
+type Sent = { network: Network; id: string; explorer: string; label: string; uncertain?: boolean };
 
 const SPEEDS: { id: Speed; label: string; eta: string }[] = [
   { id: "fastest", label: "Rápida", eta: "~10 min" },
@@ -95,8 +97,8 @@ function SendFlowInner() {
   const [prices, setPrices] = useState<Prices>({});
   const [balances, setBalances] = useState<Partial<Record<Asset, string>>>({});
 
-  const [network, setNetwork] = useState<Network>("bitcoin");
-  const [asset, setAsset] = useState<Asset>("BTC");
+  const [network, setNetwork] = useState<Network>("base");
+  const [asset, setAsset] = useState<Asset>("USDC");
   const [to, setTo] = useState("");
   const [amount, setAmount] = useState("");
   const [isMax, setIsMax] = useState(false);
@@ -105,6 +107,7 @@ function SendFlowInner() {
   const [busy, setBusy] = useState<"" | "cotizando" | "firmando" | "transmitiendo">("");
   const [review, setReview] = useState<Review | null>(null);
   const [sent, setSent] = useState<Sent | null>(null);
+  const [trackingSaved, setTrackingSaved] = useState(true);
   const [status, setStatus] = useState<"pendiente" | "confirmada" | "fallida">("pendiente");
   const inFlight = useRef(false);
 
@@ -194,7 +197,7 @@ function SendFlowInner() {
         if (sats === null) throw new Error("Escribe un monto válido en BTC (hasta 8 decimales).");
         const d = await api<{ utxos: Utxo[]; fees: BtcFeeRates }>("/api/send/btc/prepare");
         const plan = planBtcSend({ utxos: d.utxos, to: dest, amount: sats, feeRate: d.fees[speed], changeAddress: wallet.bitcoinAddress });
-        setReview({ network: "bitcoin", plan, fees: d.fees, utxos: d.utxos });
+        setReview({ network: "bitcoin", plan, fees: d.fees, utxos: d.utxos, quotedAt: Date.now() });
       } else {
         const a = asset as BaseAsset;
         const destN = normalizeEvmAddress(dest)!;
@@ -219,7 +222,7 @@ function SendFlowInner() {
             : `Para mover ${a} en Base necesitas un poco de ETH para la comisión (máx. ${Number(fromUnits(gasCost, "ETH")).toFixed(7)} ETH ${usd(Number(fromUnits(gasCost, "ETH")) * (prices.ETH ?? 0))}). Recíbelo en tu misma dirección de Base.`);
         }
         const { unsigned } = buildBaseUnsigned({ asset: a, to: destN, value, quote: d.quote });
-        setReview({ network: "base", asset: a, to: destN, value, quote: d.quote, unsigned, gasCost });
+        setReview({ network: "base", asset: a, to: destN, value, quote: d.quote, unsigned, gasCost, quotedAt: Date.now() });
       }
     } catch (err) { setError(human(err)); }
     finally { inFlight.current = false; setBusy(""); }
