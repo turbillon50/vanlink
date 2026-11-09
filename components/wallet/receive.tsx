@@ -29,6 +29,13 @@ export function ReceivePanel() {
   const [network, setNetwork] = useState<"base" | "bitcoin">("base");
   const [qr, setQr] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [walletVersion, setWalletVersion] = useState(0);
+
+  useEffect(() => {
+    const ready = () => setWalletVersion((n) => n + 1);
+    window.addEventListener("vandefi:wallet-ready", ready);
+    return () => window.removeEventListener("vandefi:wallet-ready", ready);
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -42,7 +49,7 @@ export function ReceivePanel() {
         setState("listo");
       } catch { setState("error"); }
     })();
-  }, []);
+  }, [walletVersion]);
 
   const address = useMemo(() => {
     if (!wallet) return "";
@@ -63,7 +70,7 @@ export function ReceivePanel() {
 
   if (state === "cargando") return <div className="rcv-skeleton" aria-label="Cargando" />;
   if (state === "sin-wallet") {
-    return <p className="bal-note">Activa tu wallet para recibir fondos.</p>;
+    return <p className="bal-note">Estamos generando tu wallet. Podrás recibir cuando aparezcan tus direcciones.</p>;
   }
   if (state === "error" || !wallet) {
     return <p className="bal-note">No pudimos cargar tus direcciones. Intenta de nuevo.</p>;
