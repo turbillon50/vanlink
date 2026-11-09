@@ -42,18 +42,18 @@ test("compila con Solidity + OpenZeppelin y expone solo ERC-20 estándar", () =>
   assert.ok(!functions.includes("owner"));
 });
 
-test("crea VanDeFi VDFI con 18 decimales y emisión fija en la tesorería", async () => {
+test("crea VanDeFi VANX con 18 decimales y emisión fija en la tesorería", async () => {
   const { token, treasury } = await createToken();
   const supply = ethers.parseUnits("1000", 18);
   assert.equal(await token.name(), "VanDeFi");
-  assert.equal(await token.symbol(), "VDFI");
+  assert.equal(await token.symbol(), "VANX");
   assert.equal(await token.decimals(), 18n);
   assert.equal(await token.initialTreasury(), await treasury.getAddress());
   assert.equal(await token.totalSupply(), supply);
   assert.equal(await token.balanceOf(await treasury.getAddress()), supply);
 });
 
-test("permite transferir VDFI entre wallets y no altera la emisión", async () => {
+test("permite transferir VANX entre wallets y no altera la emisión", async () => {
   const { token, treasury, recipient } = await createToken();
   const before = await token.totalSupply();
   const value = ethers.parseUnits("25", 18);

@@ -1,8 +1,8 @@
 {
-  "name": "@vandefi/vdfi-token",
+  "name": "@vandefi/vanx-token",
   "version": "0.1.0",
   "private": true,
-  "description": "VanDeFi VDFI ERC-20 fixed-supply token contract; isolated from remittance payment logic",
+  "description": "VanDeFi VANX ERC-20 fixed-supply token contract; isolated from remittance payment logic",
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",

@@ -28,7 +28,7 @@ contract VanDeFiToken is ERC20 {
      *        18 decimales agregados por el contrato. No hay valor predefinido.
      */
     constructor(address treasury_, uint256 initialSupplyWholeTokens_)
-        ERC20("VanDeFi", "VDFI")
+        ERC20("VanDeFi", "VANX")
     {
         if (treasury_ == address(0)) revert TreasuryAddressRequired();
         if (initialSupplyWholeTokens_ == 0) revert InitialSupplyRequired();
