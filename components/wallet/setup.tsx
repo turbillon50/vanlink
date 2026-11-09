@@ -7,7 +7,7 @@ import { Logo } from "@/components/brand/logo";
 import { CryptoMark } from "@/components/brand/crypto-mark";
 import { ExportWallet } from "@/components/wallet/export-wallet";
 import { RecoverDevice } from "@/components/wallet/recover-device";
-import { WALLET_READY_EVENT, WALLET_ENROLLMENT_ERROR_EVENT } from "@/components/wallet/auto-enrollment";
+import { WALLET_READY_EVENT, WALLET_ENROLLMENT_ERROR_EVENT, WALLET_RETRY_EVENT } from "@/components/wallet/auto-enrollment";
 
 type WalletStatus = { canActivate: boolean; transfersEnabled: boolean;
   wallet: null | { organizationId: string; turnkeyUserId: string; walletId?: string; evmAddress?: string;
@@ -40,25 +40,14 @@ export function WalletSetup({ userId }: { userId: string }) {
   const [retry, setRetry] = useState(0);
   const activating = useRef(false);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(() => {
     if (activating.current) return;
     activating.current = true;
     setBusy(true);
     setError("");
-    try {
-      const { prepareWalletDevice } = await import("@/lib/wallet/browser");
-      const publicKey = await prepareWalletDevice(userId);
-      const response = await fetch("/api/wallet/start", { method: "POST",
-        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicKey }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "No pudimos activar tu wallet.");
-      setRetry(n => n + 1);
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "No pudimos preparar este dispositivo.");
-    } finally {
-      activating.current = false;
-      setBusy(false);
-    }
+    // El perfil NO administra su propia llave ni manda un segundo POST.
+    // Reutiliza el mismo hook global, con bloqueo entre pestañas.
+    window.dispatchEvent(new CustomEvent(WALLET_RETRY_EVENT, { detail: { userId } }));
   }, [userId]);
 
 
@@ -98,13 +87,15 @@ export function WalletSetup({ userId }: { userId: string }) {
     const onReady = (event: Event) => {
       const detail = (event as CustomEvent<{ userId?: string }>).detail;
       if (detail?.userId === userId) {
+        activating.current = false;
+        setBusy(false);
         setError("");
         setRetry((n) => n + 1);
       }
     };
     const onError = (event: Event) => {
       const detail = (event as CustomEvent<{ userId?: string; message?: string }>).detail;
-      if (detail?.userId === userId) setError(detail.message || "No pudimos generar tu wallet.");
+      if (detail?.userId === userId) { activating.current = false; setBusy(false); setError(detail.message || "No pudimos generar tu wallet."); }
     };
     window.addEventListener(WALLET_READY_EVENT, onReady);
     window.addEventListener(WALLET_ENROLLMENT_ERROR_EVENT, onError);
