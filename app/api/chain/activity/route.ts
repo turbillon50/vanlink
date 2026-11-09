@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { wallets } from "@/lib/db/schema";
-import { baseMovements, bitcoinMovements, type Movement } from "@/lib/chain/history";
+import { baseMovementsWithCoverage, bitcoinMovements, type Movement } from "@/lib/chain/history";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,12 +26,12 @@ export async function GET() {
   if (!wallet) return NextResponse.json({ wallet: null, movements: [] }, { headers });
 
   const [base, btc] = await Promise.allSettled([
-    baseMovements(wallet.evmAddress),
+    baseMovementsWithCoverage(wallet.evmAddress),
     bitcoinMovements(wallet.bitcoinAddress),
   ]);
 
   const movements: Movement[] = [
-    ...(base.status === "fulfilled" ? base.value : []),
+    ...(base.status === "fulfilled" ? base.value.movements : []),
     ...(btc.status === "fulfilled" ? btc.value : []),
   ].sort((a, b) => (b.at ?? "").localeCompare(a.at ?? ""));
 
@@ -39,6 +39,8 @@ export async function GET() {
     {
       wallet: { evmAddress: wallet.evmAddress, bitcoinAddress: wallet.bitcoinAddress },
       movements,
+      baseRecentOnly: base.status === "fulfilled" ? base.value.limited : false,
+      baseScannedBlocks: base.status === "fulfilled" ? base.value.scannedBlocks : null,
       // Se declara qué red no se pudo leer: nunca un vacío que parezca "sin movimientos".
       unavailable: [
         base.status === "rejected" ? "Base" : null,
