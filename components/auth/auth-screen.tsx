@@ -26,7 +26,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
       <div className="auth-intro">
         <p className="eyebrow">TU ESPACIO EN VANDEFI</p>
         <h1>{signUp ? "Todo empieza contigo." : "Qué bueno verte."}</h1>
-        <p>{signUp ? "Crea tu cuenta y hazla tuya." : "Entra a tu cuenta. Así de simple."}</p>
+        <p>{signUp ? "Crea tu cuenta y generamos tu wallet automáticamente." : "Entra a tu cuenta. Así de simple."}</p>
       </div>
       {authConfigured ? <div className="auth-form">
         <ClerkLoading><AccessLoading /></ClerkLoading>
@@ -34,7 +34,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
         <ClerkLoaded>{signUp ? <SignUp routing="path" path="/sign-up" signInUrl="/login" /> : <SignIn routing="path" path="/login" signUpUrl="/sign-up" />}</ClerkLoaded>
       </div> : <section className="access-status"><h2>El acceso está en preparación</h2><p>Puedes explorar VanDeFi y preparar borradores. El registro estará disponible al conectar esta instalación.</p></section>}
       <PressButton variant="ghost" href="/">Seguir explorando</PressButton>
-      <p className="auth-note">Crear tu cuenta todavía no crea una wallet ni mueve dinero.</p>
+      <p className="auth-note">Al registrarte generamos direcciones de Bitcoin y Base automáticamente. La llave del dispositivo permanece protegida en tu navegador. No movemos dinero por registrarte.</p>
     </main>
   );
 }
