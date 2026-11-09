@@ -32,6 +32,7 @@ export function SendPolygonUSDC() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [deviceOk, setDeviceOk] = useState<boolean | null>(null);
   const [balance, setBalance] = useState<string | null>(null);
+  const [sendEnabled, setSendEnabled] = useState(false);
   const [destination, setDestination] = useState("");
   const [amount, setAmount] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -59,10 +60,10 @@ export function SendPolygonUSDC() {
         setPhase("ready");
         const [{ verifyWalletDevice }, polygon] = await Promise.all([
           import("@/lib/wallet/browser"),
-          request<{ polygon: { amount: string } }>("/api/chain/polygon").catch(() => null),
+          request<{ polygon: { amount: string }; sendEnabled: boolean }>("/api/chain/polygon").catch(() => null),
         ]);
         const verified = await verifyWalletDevice(userId, found.organizationId, found.turnkeyUserId).catch(() => false);
-        if (live) { setDeviceOk(verified); setBalance(polygon?.polygon.amount ?? null); }
+        if (live) { setDeviceOk(verified); setBalance(polygon?.polygon.amount ?? null); setSendEnabled(polygon?.sendEnabled === true); }
       } catch {
         if (live) setPhase("error");
       }
@@ -138,6 +139,13 @@ export function SendPolygonUSDC() {
     <PressButton href="/profile">Ver mi cuenta</PressButton>
   </div>;
   if (phase === "error" || !wallet) return <p className="field-error">No pudimos consultar tu wallet.</p>;
+  if (!sendEnabled) return (
+    <div className="snd-gate">
+      <p><strong>USDC Polygon · en habilitación.</strong> La nueva red está siendo probada. Todavía no están activados los envíos ni los depósitos.</p>
+      <p>La opción Experto mantiene el acceso a tus activos históricos de Base y Bitcoin.</p>
+      <PressButton href="/expert" variant="secondary">Abrir herramientas expertas</PressButton>
+    </div>
+  );
 
   if (sent) return (
     <div className="form-stack">
