@@ -2,6 +2,7 @@ import { getAddress, parseTransaction, recoverTransactionAddress, type Hex } fro
 import { polygonRpc } from "@/lib/chain/polygon";
 import { POLYGON_CHAIN_ID, POLYGON_EXPLORER, POLYGON_USDC_ADDRESS } from "@/lib/polygon/asset";
 import { currentWallet, errorResponse, noStore, SendError } from "@/lib/send/server";
+import { polygonUsdcMoneyEnabled } from "@/lib/polygon/capabilities";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ function assertUSDCTransfer(data: string | undefined): void {
 
 export async function POST(request: Request) {
   try {
+    if (!polygonUsdcMoneyEnabled()) throw new SendError("polygon_no_habilitado", 503, "Estamos validando los envíos USDC Polygon. Todavía no muevas fondos a esta red.");
     const wallet = await currentWallet();
     const body = await request.json().catch(() => ({})) as { signed?: unknown };
     const hex = typeof body.signed === "string" ? body.signed.replace(/^0x/, "") : "";
