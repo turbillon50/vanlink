@@ -1,0 +1,123 @@
+/**
+ * VanDeFi Remittance Rail Policy v2
+ *
+ * IMPORTANT: This registry describes both current capabilities and future
+ * candidates. "Candidate" is never a deposit or transfer feature. The client
+ * MUST NOT show a receiving address unless receiveEnabled is true.
+ *
+ * Base is a network that uses the existing Ethereum/EVM address, not a special
+ * Turnkey private-key curve. Turnkey supports Ethereum/EVM, Solana, TRON and BTC.
+ */
+export type RailId = "solana" | "tron" | "ethereum" | "base" | "bitcoin";
+export type RailFamily = "svm" | "tvm" | "evm" | "bitcoin";
+export type RemittanceAsset = "USDC" | "USDT" | "BTC";
+export type RailPolicy = Readonly<{
+  id: RailId;
+  label: string;
+  family: RailFamily;
+  assets: readonly RemittanceAsset[];
+  purpose: "remittance-candidate" | "legacy-compatible" | "advanced";
+  receiveEnabled: boolean;
+  sendEnabled: boolean;
+  notes: string;
+}>;
+
+/** This represents the CURRENT audited production behavior, not the vision. */
+export const REMITTANCE_RAILS: Readonly<Record<RailId, RailPolicy>> = {
+  solana: {
+    id: "solana", label: "Solana", family: "svm",
+    assets: ["USDC", "USDT"], purpose: "remittance-candidate",
+    receiveEnabled: false, sendEnabled: false,
+    notes: "Preferred candidate for low-cost transfers; first implement SPL balances, signing and fee sponsorship.",
+  },
+  tron: {
+    id: "tron", label: "TRON", family: "tvm",
+    assets: ["USDT"], purpose: "remittance-candidate",
+    receiveEnabled: false, sendEnabled: false,
+    notes: "USDT TRC-20, subject to recipient acceptance, TRX Energy, fees and signing tests. Do not offer Circle USDC on TRON.",
+  },
+  ethereum: {
+    id: "ethereum", label: "Ethereum", family: "evm",
+    assets: ["USDC", "USDT"], purpose: "advanced",
+    receiveEnabled: false, sendEnabled: false,
+    notes: "Existing EVM address may be used on Ethereum, but mainnet asset reading and sending are NOT live.",
+  },
+  base: {
+    id: "base", label: "Base", family: "evm",
+    assets: ["USDC", "USDT", "BTC"], purpose: "legacy-compatible",
+    receiveEnabled: true, sendEnabled: true,
+    notes: "Existing production Base support retained for users with funds; BTC here is wrapped cbBTC, not native BTC.",
+  },
+  bitcoin: {
+    id: "bitcoin", label: "Bitcoin", family: "bitcoin",
+    assets: ["BTC"], purpose: "legacy-compatible",
+    receiveEnabled: true, sendEnabled: true,
+    notes: "Native BTC retained; optional funding/holding route, not default for small remittances.",
+  },
+} as const;
+
+/** Never expose an unsupported deposit network as receiving-ready. */
+export function canReceive(id: RailId, asset: RemittanceAsset): boolean {
+  const rail = REMITTANCE_RAILS[id];
+  return rail.receiveEnabled && rail.assets.includes(asset);
+}
+
+/** Never broadcast to a chain with no audited send implementation. */
+export function canSend(id: RailId, asset: RemittanceAsset): boolean {
+  const rail = REMITTANCE_RAILS[id];
+  return rail.sendEnabled && rail.assets.includes(asset);
+}
+
+export type RemittanceQuote = Readonly<{
+  quoteId: string;
+  providerId: string;
+  inputAsset: RemittanceAsset;
+  inputAmount: string;
+  destinationRail: RailId;
+  destinationAsset: RemittanceAsset;
+  /** Amount equivalent in USD reaching recipient AFTER all disclosed fees. */
+  netRecipientUsd: number;
+  /** Full cost, including network fee, provider spread and gas/energy. */
+  totalFeeUsd: number;
+  /** Does not include subsequent local P2P unless provider explicitly quotes it. */
+  scope: "crypto-delivery" | "fiat-payout";
+  expiresAtMs: number;
+  executable: boolean;
+  payeeSupportsRail: boolean;
+  approvedProvider: boolean;
+}>;
+
+export type RoutingRequest = Readonly<{
+  inputAsset: RemittanceAsset;
+  inputAmount: string;
+  nowMs: number;
+  allowedRails: readonly RailId[];
+  scope: RemittanceQuote["scope"];
+}>;
+
+/** Selects only a verified, executable route; never invents a bridge quote. */
+export function rankRemittanceQuotes(
+  request: RoutingRequest,
+  quotes: readonly RemittanceQuote[],
+): RemittanceQuote[] {
+  if (!/^(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(request.inputAmount) || Number(request.inputAmount) <= 0) return [];
+  const allowed = new Set(request.allowedRails);
+
+  return quotes.filter((quote) =>
+    quote.inputAsset === request.inputAsset &&
+    quote.inputAmount === request.inputAmount &&
+    quote.scope === request.scope &&
+    allowed.has(quote.destinationRail) &&
+    canSend(quote.destinationRail, quote.destinationAsset) &&
+    quote.payeeSupportsRail &&
+    quote.approvedProvider &&
+    quote.executable &&
+    quote.expiresAtMs > request.nowMs &&
+    Number.isFinite(quote.netRecipientUsd) && quote.netRecipientUsd >= 0 &&
+    Number.isFinite(quote.totalFeeUsd) && quote.totalFeeUsd >= 0
+  ).sort((a, b) =>
+    b.netRecipientUsd - a.netRecipientUsd ||
+    a.totalFeeUsd - b.totalFeeUsd ||
+    a.quoteId.localeCompare(b.quoteId)
+  );
+}
