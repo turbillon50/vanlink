@@ -14,7 +14,7 @@ function assertUSDCTransfer(data: string | undefined): void {
     throw new SendError("destino_invalido");
   }
   const value = BigInt("0x" + data.slice(74, 138));
-  if (value <= 0n) throw new SendError("monto_invalido");
+  if (value <= BigInt(0)) throw new SendError("monto_invalido");
 }
 
 export async function POST(request: Request) {
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       if (getAddress(tx.to || "0x0000000000000000000000000000000000000000") !== getAddress(POLYGON_USDC_ADDRESS)) {
         throw new SendError("contrato_incorrecto");
       }
-      if (tx.value !== 0n) throw new SendError("valor_nativo_no_permitido");
+      if (tx.value !== BigInt(0)) throw new SendError("valor_nativo_no_permitido");
       assertUSDCTransfer(tx.data);
       from = await recoverTransactionAddress({ serializedTransaction: signed as never });
     } catch (error) {
