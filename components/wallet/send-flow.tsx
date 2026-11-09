@@ -240,31 +240,81 @@ function SendFlowInner() {
   }
 
   async function confirm() {
-    if (!wallet || !review || inFlight.current) return;
-    inFlight.current = true; setError("");
+    if (!wallet || !review || deviceOk !== true || inFlight.current) return;
+    if (Date.now() - review.quotedAt > 90_000) {
+      setReview(null);
+      setError("La cotización caducó. Revisa monto y comisión antes de firmar.");
+      return;
+    }
+    inFlight.current = true;
+    setError("");
+    let candidate: Sent | null = null;
+    let networkAttempted = false;
     try {
       const signer = await import("@/lib/send/signer");
       if (review.network === "bitcoin") {
         const unsigned = buildBtcUnsigned(review.plan, wallet.bitcoinAddress);
         setBusy("firmando");
-        const sigs = await signer.signBitcoinHashes(wallet.organizationId, wallet.bitcoinAddress, unsigned.sighashes);
-        const done = finalizeBtc(unsigned, sigs);
+        const signatures = await signer.signBitcoinHashes(wallet.organizationId, wallet.bitcoinAddress, unsigned.sighashes);
+        const done = finalizeBtc(unsigned, signatures);
+        candidate = {
+          network: "bitcoin",
+          id: done.txid,
+          explorer: "https://mempool.space/tx/" + done.txid,
+          label: satsToBtc(review.plan.amount) + " BTC",
+        };
+        if (userId) setTrackingSaved(trackOperation(userId, {
+          network: candidate.network, id: candidate.id, label: candidate.label, direction: "out",
+        }));
+        networkAttempted = true;
         setBusy("transmitiendo");
-        const r = await api<{ txid: string; explorer: string }>("/api/send/btc/broadcast", {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hex: done.hex }) });
-        setSent({ network: "bitcoin", id: r.txid, explorer: r.explorer, label: `${satsToBtc(review.plan.amount)} BTC` });
+        const response = await api<{ txid: string; explorer: string }>("/api/send/btc/broadcast", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hex: done.hex }),
+        });
+        if (response.txid.toLowerCase() !== done.txid.toLowerCase()) {
+          throw new Error("El TXID devuelto no coincide con lo firmado.");
+        }
       } else {
         setBusy("firmando");
         const raw = await signer.signBaseTransaction(wallet.organizationId, wallet.evmAddress, review.unsigned);
         const signed = await verifyBaseSigned(raw, { from: wallet.evmAddress, unsigned: review.unsigned });
+        const hash = keccak256(signed);
+        candidate = {
+          network: "base", id: hash,
+          explorer: "https://basescan.org/tx/" + hash,
+          label: fromUnits(review.value, review.asset) + " " + review.asset,
+        };
+        if (userId) setTrackingSaved(trackOperation(userId, {
+          network: candidate.network, id: candidate.id, label: candidate.label, direction: "out",
+        }));
+        networkAttempted = true;
         setBusy("transmitiendo");
-        const r = await api<{ hash: string; explorer: string }>("/api/send/base/broadcast", {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ signed }) });
-        setSent({ network: "base", id: r.hash, explorer: r.explorer, label: `${fromUnits(review.value, review.asset)} ${review.asset}` });
+        const response = await api<{ hash: string; explorer: string }>("/api/send/base/broadcast", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ signed }),
+        });
+        if (response.hash.toLowerCase() !== hash.toLowerCase()) {
+          throw new Error("El hash devuelto no coincide con lo firmado.");
+        }
       }
-      setStatus("pendiente"); setReview(null);
-    } catch (err) { setError(human(err)); }
-    finally { inFlight.current = false; setBusy(""); }
+      if (!candidate) throw new Error("No obtuvimos el identificador de transacción.");
+      setSent({ ...candidate, uncertain: false });
+      setStatus("pendiente");
+      setReview(null);
+    } catch (err) {
+      if (networkAttempted && candidate) {
+        // The RPC may have accepted the signed tx before a timeout.
+        // Retain exact hash; never encourage blind duplicate payments.
+        setSent({ ...candidate, uncertain: true });
+        setStatus("pendiente");
+        setReview(null);
+        setError("La respuesta de la red fue incierta. No repitas el envío. Verifica el hash en el explorador o en Actividad.");
+      } else {
+        setError(human(err));
+      }
+    } finally {
+      inFlight.current = false;
+      setBusy("");
+    }
   }
 
   function reset() { setSent(null); setReview(null); setTo(""); setAmount(""); setIsMax(false); setError(""); }
