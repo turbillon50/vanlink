@@ -93,8 +93,14 @@ export function WalletPortfolio() {
     };
 
     void refresh();
+    const onReady = () => { void refresh(); };
+    window.addEventListener("vandefi:wallet-ready", onReady);
     const interval = window.setInterval(() => { void refresh(); }, 60_000);
-    return () => { active = false; window.clearInterval(interval); };
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener("vandefi:wallet-ready", onReady);
+    };
   }, []);
 
   const valuation = state === "ready" && wallet ? valueWallet(wallet, market) : null;
@@ -104,7 +110,7 @@ export function WalletPortfolio() {
   const statusMessage =
     state === "loading" ? "Consultando tus saldos…"
     : state === "no-session" ? "Inicia sesión para ver tu saldo."
-    : state === "no-wallet" ? "Activa tu wallet para consultar tus activos."
+    : state === "no-wallet" ? "Estamos preparando automáticamente tu wallet."
     : state === "error" ? "No pudimos consultar tu wallet. Vuelve a intentarlo."
     : hasMissing ? "Falta información de una red o cotización. No mostramos un total incompleto."
     : valuation?.estimatedStablecoinPeg ? "Valor aproximado: USDC y USDT se estiman próximos a 1 USD."
@@ -166,7 +172,7 @@ export function WalletPortfolio() {
         </div>
         {(state === "no-session" || state === "no-wallet") && (
           <Link className="vd-portfolio-gate" href={state === "no-session" ? "/login" : "/profile"}>
-            {state === "no-session" ? "Entrar a mi cuenta" : "Activar wallet"} <Icon name="chevron" size={15}/>
+            {state === "no-session" ? "Entrar a mi cuenta" : "Ver estado de mi wallet"} <Icon name="chevron" size={15}/>
           </Link>
         )}
         {valuation?.estimatedCbbtcPeg && !hidden && (

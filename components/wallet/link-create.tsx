@@ -40,6 +40,12 @@ function Inner() {
   const [wallet, setWallet] = useState<WalletInfo | null>(null);
   const [boot, setBoot] = useState<"cargando" | "sin-sesion" | "sin-wallet" | "listo" | "error">("cargando");
   const [deviceOk, setDeviceOk] = useState<boolean | null>(null);
+  const [walletVersion, setWalletVersion] = useState(0);
+  useEffect(() => {
+    const onReady = () => setWalletVersion((n) => n + 1);
+    window.addEventListener("vandefi:wallet-ready", onReady);
+    return () => window.removeEventListener("vandefi:wallet-ready", onReady);
+  }, []);
   const [available, setAvailable] = useState<number | null>(null);
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
@@ -72,7 +78,7 @@ function Inner() {
       } catch { if (alive) setBoot("error"); }
     })();
     return () => { alive = false; };
-  }, [isLoaded, userId]);
+  }, [isLoaded, userId, walletVersion]);
 
   const refreshStatuses = useCallback(async (list: Saved[]) => {
     const entries = await Promise.all(list.map(async l => {
@@ -168,7 +174,7 @@ function Inner() {
       <PressButton href="/login?redirect_url=/send/link">Inicia sesión para crear un link</PressButton>
     </div>
   );
-  if (boot === "sin-wallet") return <div className="snd-gate"><p>Primero activa tu wallet.</p><PressButton href="/profile">Activar mi wallet</PressButton></div>;
+  if (boot === "sin-wallet") return <div className="snd-gate"><p>Estamos generando tu wallet automáticamente.</p><PressButton href="/profile">Ver estado de mi wallet</PressButton></div>;
   if (boot === "error" || !wallet) return <p className="field-error" role="alert">No pudimos cargar tu wallet. Recarga la página.</p>;
 
   const list = (
