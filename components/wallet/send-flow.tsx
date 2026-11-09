@@ -373,7 +373,7 @@ function SendFlowInner() {
           {status === "pendiente" && !sent.uncertain && (sent.network === "bitcoin"
             ? "Bitcoin confirma por bloques. Suele tardar de 10 a 30 minutos; puedes cerrar esta pantalla."
             : "Base confirma en segundos.")}
-          {status === "confirmada" && "Ya está en la cadena. Es definitivo."}
+          {status === "confirmada" && (sent.network === "base" ? "Ejecución confirmada en Base. Guarda el hash; la liquidación final de la red puede tardar más." : "Bitcoin incluyó el pago en un bloque. Conserva el TXID como comprobante.")}
           {status === "fallida" && "La transacción se incluyó pero falló. Se cobró la comisión; el monto no salió."}
         </p>
         <code className="snd-txid">{short(sent.id)}</code>
