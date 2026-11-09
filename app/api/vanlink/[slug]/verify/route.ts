@@ -3,26 +3,18 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { vanlinks } from "@/lib/db/schema";
 import { polygonRpc } from "@/lib/chain/polygon";
-import { POLYGON_EXPLORER, POLYGON_USDC_ADDRESS } from "@/lib/polygon/asset";
+import { POLYGON_EXPLORER, POLYGON_USDT_ADDRESS, POLYGON_USDT_DECIMALS } from "@/lib/polygon/asset";
+import { decodePolygonUsdtTransfer, type PolygonLog } from "@/lib/polygon/transfer-log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const noStore = { "Cache-Control": "no-store" };
-const TOPIC_TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a3df523b3ef";
-
-type PolygonLog = { address?: string; topics?: string[]; data?: string };
 type Receipt = { status?: string; blockNumber?: string; logs?: PolygonLog[] } | null;
 
 function creditedTo(log: PolygonLog, recipient: string): bigint | null {
-  if (!log.address || log.address.toLowerCase() !== POLYGON_USDC_ADDRESS.toLowerCase()) return null;
-  if (log.topics?.length !== 3 || log.topics[0]?.toLowerCase() !== TOPIC_TRANSFER) return null;
-  const to = log.topics[2];
-  if (!to || !/^0x[0-9a-fA-F]{64}$/.test(to)) return null;
-  if (!/^0{24}[0-9a-fA-F]{40}$/.test(to.slice(2))) return null;
-  const embedded = "0x" + to.slice(-40);
-  if (embedded.toLowerCase() !== recipient.toLowerCase()) return null;
-  if (!log.data || !/^0x[0-9a-fA-F]{64}$/.test(log.data)) return null;
-  return BigInt(log.data);
+  const transfer = decodePolygonUsdtTransfer(log, POLYGON_USDT_ADDRESS);
+  if (!transfer || transfer.to.toLowerCase() !== recipient.toLowerCase()) return null;
+  return transfer.value;
 }
 
 export async function POST(request: Request, ctx: { params: Promise<{ slug: string }> }) {
@@ -37,7 +29,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ slug: stri
 
     const [link] = await db().select().from(vanlinks).where(eq(vanlinks.slug, slug));
     if (!link) return Response.json({ error: "no_encontrado" }, { status: 404, headers: noStore });
-    if (link.network !== "Polygon" || link.asset !== "USDC") return Response.json({ error: "red_no_soportada" }, { status: 400, headers: noStore });
+    if (link.network !== "Polygon" || link.asset !== "USDT") return Response.json({ error: "red_no_soportada" }, { status: 400, headers: noStore });
     if (link.status === "pagado" && link.paidTx?.endsWith(hash)) return Response.json({ verified: true, explorer: link.paidTx }, { headers: noStore });
     if (link.status !== "activo" || (link.expiresAt && link.expiresAt <= new Date()))
       return Response.json({ error: "cobro_no_vigente" }, { status: 409, headers: noStore });
@@ -49,7 +41,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ slug: stri
     const recipient = getAddress(link.address);
     const transfers = (receipt.logs || []).map(log => creditedTo(log, recipient)).filter((x): x is bigint => x !== null);
     const received = transfers.reduce((total, x) => total + x, BigInt(0));
-    const min = link.amount ? parseUnits(link.amount, 6) : BigInt(1);
+    const min = link.amount ? parseUnits(link.amount, POLYGON_USDT_DECIMALS) : BigInt(1);
     if (received < min) return Response.json({ verified: false, reason: "transferencia_no_coincide" }, { status: 409, headers: noStore });
     const block = await polygonRpc<{ timestamp?: string }>("eth_getBlockByNumber", [receipt.blockNumber, false]);
     if (!block.timestamp || Number(BigInt(block.timestamp) * BigInt(1000)) < link.createdAt.getTime()) {

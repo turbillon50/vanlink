@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useWalletMode } from "@/components/mode/wallet-mode";
 
 const CHOICES = [
-  { id: "polygon-usdc", asset: "USDC", network: "Polygon", label: "USDC", note: "Polygon" },
+  { id: "polygon-usdt", asset: "USDT", network: "Polygon", label: "USDT", note: "Polygon · en preparación" },
   { id: "base-usdc", asset: "USDC", network: "Base", label: "USDC", note: "Base · legado" },
   { id: "base-usdt", asset: "USDT", network: "Base", label: "USDT", note: "Base · legado" },
   { id: "bitcoin-btc", asset: "BTC", network: "Bitcoin", label: "BTC", note: "Bitcoin · legado" },
@@ -14,7 +14,7 @@ const CHOICES = [
 export function CreateVanLinkForm() {
   const router = useRouter();
   const { mode } = useWalletMode();
-  const [choiceId, setChoiceId] = useState<(typeof CHOICES)[number]["id"]>("polygon-usdc");
+  const [choiceId, setChoiceId] = useState<(typeof CHOICES)[number]["id"]>("polygon-usdt");
   const [amount, setAmount] = useState("");
   const [concept, setConcept] = useState("");
   const [days, setDays] = useState("7");
@@ -26,11 +26,11 @@ export function CreateVanLinkForm() {
 
   const create = async () => {
     setMessage("");
-    const clean = amount.trim().replace(",", ".");
-    if (choice.network === "Polygon" && (!/^[0-9]+(?:\.[0-9]{1,6})?$/.test(clean) || !(Number(clean) > 0))) {
-      setMessage("Para cobrar USDC en Polygon escribe un monto positivo con máximo seis decimales.");
+    if (choice.network === "Polygon") {
+      setMessage("VanLink USDT Polygon está en preparación. Aún no podemos publicar cobros en esa red.");
       return;
     }
+    const clean = amount.trim().replace(",", ".");
     setState("creating");
     try {
       const response = await fetch("/api/vanlink", {
@@ -44,11 +44,11 @@ export function CreateVanLinkForm() {
       const result = await response.json() as { error?: string; vanlink?: { slug: string } };
       if (!response.ok || !result.vanlink) {
         throw new Error(result.error === "polygon_no_habilitado"
-          ? "VanLink USDC Polygon se está validando. Aún no podemos publicar cobros en esa red."
+          ? "VanLink USDT Polygon se está validando. Aún no podemos publicar cobros en esa red."
           : result.error === "sin_wallet"
           ? "Tu wallet todavía se está generando. Revisa tu cuenta."
           : result.error === "monto_polygon_invalido"
-          ? "Escribe un monto de USDC con máximo seis decimales."
+          ? "Escribe un monto de USDT con máximo seis decimales."
           : result.error || "No pudimos crear el cobro.");
       }
       setLink(window.location.origin + "/l/" + result.vanlink.slug);
@@ -66,7 +66,7 @@ export function CreateVanLinkForm() {
       <div className="vl-done-actions">
         <button type="button" className="dev-action" onClick={() => { void navigator.clipboard?.writeText(link); }}>Copiar link</button>
         <button type="button" className="dev-deny" onClick={() => {
-          if (navigator.share) void navigator.share({ title: "VanLink · USDC", url: link });
+          if (navigator.share) void navigator.share({ title: "VanLink · " + choice.asset, url: link });
           else window.open("https://wa.me/?text=" + encodeURIComponent("Te comparto mi VanLink de pago: " + link), "_blank", "noopener");
         }}>Compartir por WhatsApp</button>
       </div>
@@ -103,13 +103,14 @@ export function CreateVanLinkForm() {
         <option value="30">30 días</option>
         <option value="90">90 días</option>
       </select>
-      <button type="button" className="dev-action" onClick={() => { void create(); }} disabled={state === "creating"}>
+      <button type="button" className="dev-action" onClick={() => { void create(); }} disabled={state === "creating" || choice.network === "Polygon"}>
         {state === "creating" ? "Creando cobro…" : "Crear VanLink"}
       </button>
+      {choice.network === "Polygon" && <p role="status" className="vl-note">VanLink USDT Polygon está en preparación. La creación de cobros en esta red sigue deshabilitada.</p>}
       {message && <p role="alert" className="dev-error">{message}</p>}
       <p className="vl-note">
         VanLink no custodia: la persona paga directamente a tu dirección de {choice.network}.
-        {choice.network === "Polygon" ? " Para confirmar el cobro, el pagador deberá compartir el hash de su transferencia." : ""}
+        {choice.network === "Polygon" ? " No publiques solicitudes de pago en esta red todavía." : ""}
       </p>
     </div>
   );

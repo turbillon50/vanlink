@@ -5,10 +5,11 @@
  */
 import "server-only";
 import { BASE_TOKENS, formatUnits } from "./rpc";
+import { recentBaseMovements } from "@/lib/chain/base-audit-rpc";
 
 export type Movement = {
   id: string;
-  network: "Base" | "Bitcoin";
+  network: "Polygon" | "Base" | "Bitcoin";
   direction: "in" | "out";
   token: string;
   amount: string;
@@ -70,6 +71,25 @@ export async function baseMovements(address: string): Promise<Movement[]> {
     });
 
   return [...map(received, "in"), ...map(sent, "out")];
+}
+
+/**
+ * The production BASE_RPC_URL can be a generic JSON-RPC without Alchemy's
+ * proprietary getAssetTransfers. Use a clearly LIMITED on-chain window
+ * instead of falsely claiming that the user has no activity.
+ *
+ * VanLink proof-of-payment deliberately continues using the full-indexer
+ * function, so old links cannot be marked paid using a partial scan.
+ */
+export async function baseMovementsWithCoverage(address: string): Promise<{
+  movements: Movement[]; limited: boolean; scannedBlocks: number | null;
+}> {
+  try {
+    return { movements: await baseMovements(address), limited: false, scannedBlocks: null };
+  } catch {
+    const recent = await recentBaseMovements(address);
+    return { movements: recent.movements, limited: true, scannedBlocks: recent.scannedBlocks };
+  }
 }
 
 export async function bitcoinMovements(address: string): Promise<Movement[]> {

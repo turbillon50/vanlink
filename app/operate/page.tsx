@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { TopBar } from "@/components/top-bar";
 import { Icon } from "@/components/icons";
 import { OperationBar } from "@/components/design/operation-bar";
-import { USDCOperationBar } from "@/components/design/usdc-operations";
+import { USDTOperationBar } from "@/components/design/usdc-operations";
 import { ModeToggle, useWalletMode } from "@/components/mode/wallet-mode";
 
 export default function OperatePage() {
@@ -18,11 +18,11 @@ export default function OperatePage() {
         <header className="vd-operate-head">
           <p className="vd-overline">TUS OPERACIONES</p>
           <h1>{mode === "simple" ? "¿Qué quieres hacer?" : "Centro de operaciones."}</h1>
-          <p>{mode === "simple" ? "Comprar, enviar, retirar o cobrar USDC. Una sola red, Polygon." : "Tus herramientas avanzadas, siempre con revisión de red y comisiones."}</p>
+          <p>{mode === "simple" ? "Comprar, enviar, retirar o cobrar USDT. Una sola red, Polygon." : "Tus herramientas avanzadas, siempre con revisión de red y comisiones."}</p>
           <ModeToggle />
         </header>
 
-        {mode === "simple" ? <USDCOperationBar /> : <OperationBar />}
+        {mode === "simple" ? <USDTOperationBar /> : <OperationBar />}
 
         <section className="vd-utility-list" aria-label="Más formas de mover dinero">
           <Link href="/receive" className="vd-utility-row">

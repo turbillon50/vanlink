@@ -1,6 +1,6 @@
 import "server-only";
 import crypto from "node:crypto";
-import { POLYGON_USDC_ADDRESS } from "@/lib/polygon/asset";
+import { POLYGON_USDT_ADDRESS } from "@/lib/polygon/asset";
 
 /** Alfabeto sin caracteres confundibles (0/O, 1/l/I) para dictar un link por teléfono. */
 const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
@@ -12,6 +12,9 @@ export function newSlug(length = 9) {
   return out;
 }
 
+/** Circle native USDC retained only for existing Polygon links. Never migrate their token. */
+const LEGACY_POLYGON_USDC_ADDRESS = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359";
+
 export const ASSETS = {
   BTC: { network: "Bitcoin", decimals: 8, scheme: "bitcoin" },
   USDC: { network: "Base", decimals: 6, scheme: "ethereum" },
@@ -22,11 +25,13 @@ export type AssetKey = keyof typeof ASSETS;
 
 /** URI estándar para que la wallet del pagador prellene todo al escanear. */
 export function paymentUri(asset: AssetKey, address: string, amount?: string | null, network?: string) {
-  if (network === "Polygon" && asset === "USDC") {
-    // EIP-681 ERC-20 payment request for Circle native USDC on Polygon.
-    const base = "ethereum:" + POLYGON_USDC_ADDRESS + "@137/transfer?address=" + encodeURIComponent(address);
+  if (network === "Polygon") {
+    if (asset !== "USDT" && asset !== "USDC") throw new Error("unsupported_polygon_asset");
+    // Existing USDC links keep Circle; new USDT requests use only Tether.
+    const contract = asset === "USDT" ? POLYGON_USDT_ADDRESS : LEGACY_POLYGON_USDC_ADDRESS;
+    const base = "ethereum:" + contract + "@137/transfer?address=" + encodeURIComponent(address);
     if (!amount) return base;
-    if (!/^(?:0|[1-9]\d{0,11})(?:\.\d{1,6})?$/.test(amount) || Number(amount) <= 0) throw new Error("invalid_polygon_usdc_amount");
+    if (!/^(?:0|[1-9]\d{0,11})(?:\.\d{1,6})?$/.test(amount) || Number(amount) <= 0) throw new Error("invalid_polygon_amount");
     const [whole, fraction = ""] = amount.split(".");
     const units = BigInt(whole) * BigInt(1000000) + BigInt(fraction.padEnd(6, "0"));
     return base + "&uint256=" + units.toString();

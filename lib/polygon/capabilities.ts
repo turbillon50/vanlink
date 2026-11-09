@@ -5,10 +5,10 @@ import "server-only";
  * movement. Activating Polygon requires the operator to set BOTH the release
  * flag and a dedicated private RPC connection after mainnet testing.
  */
-export function polygonUsdcMoneyEnabled() {
+export function polygonUsdtMoneyEnabled() {
   const privateRpc = Boolean(
     (process.env.POLYGON_RPC_URL || "").startsWith("https://") ||
     process.env.ALCHEMY_API_KEY
   );
-  return process.env.POLYGON_USDC_MAINNET_ENABLED === "true" && privateRpc;
+  return process.env.POLYGON_USDT_MAINNET_ENABLED === "true" && privateRpc;
 }

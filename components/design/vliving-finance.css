@@ -562,7 +562,7 @@
 }
 
 
-/* VanDeFi Retail: Polygon-native USDC, one money rail, no neon. */
+/* VanDeFi Retail: Polygon USDT, one money rail, no neon. */
 .vd-remittance-operations{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:1px}
 .vd-simple-usdc-card{min-height:214px}
 .vd-network-chip{
@@ -671,6 +671,7 @@
   .vd-simple-information{align-items:flex-start;flex-direction:column;gap:12px}
   .vd-playground-form>div{flex-wrap:wrap}
   .vd-playground-form button{width:100%}
+}
 /* VANX identity page: approved graphite / titanium / gold brand.
    Token-specific colors do not recolor the USDC remittance wallet. */
 .vanx-brand-page {
@@ -793,4 +794,103 @@
   border: 1px solid rgba(255, 255, 255, .22);
   color: #f3f4f1;
   background: #111214;
+}
+
+
+/* VANDEFI · Operaciones con hash verificable, sin depender del historial Alchemy. */
+.vd-activity-verified-heading {
+  display:grid;gap:5px;margin:24px 0 15px;
+}
+.vd-activity-verified-heading h2 {
+  font-size:clamp(19px,5vw,26px);font-weight:550;letter-spacing:-.045em;
+}
+.vd-operations-monitor {
+  display:grid;gap:17px;margin:16px 0 26px;padding:clamp(18px,4vw,24px);
+  border:1px solid rgba(255,255,255,.16);
+  border-top-color:rgba(255,255,255,.29);
+  background:linear-gradient(160deg,#111214,#08090a);
+  border-radius:19px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.055);
+}
+.vd-operations-heading {
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.vd-operations-heading h2 {
+  margin-top:6px;font-size:clamp(18px,4vw,24px);font-weight:550;letter-spacing:-.04em;
+}
+.vd-operations-count {
+  flex:none;border-radius:999px;padding:6px 9px;
+  font-size:10px;color:#d3cec6;border:1px solid rgba(255,255,255,.16);
+  background:#171717;
+}
+.vd-operations-explainer, .vd-operations-disclaimer {
+  font-size:11px;color:#9fa3a5;line-height:1.65;
+}
+.vd-operations-lookup {display:grid;gap:9px}
+.vd-operations-lookup label {font-size:11px;font-weight:550;color:#c5c6c4}
+.vd-operations-lookup>div {display:flex;align-items:stretch;gap:8px}
+.vd-operations-lookup input {
+  width:100%;flex:1;min-width:0;height:44px;padding:9px 11px;
+  border:1px solid rgba(255,255,255,.2);border-radius:11px;
+  color:#f5f5f2;background:#050607;font-family:monospace;font-size:11px;
+}
+.vd-operations-lookup input:focus {outline:2px solid #e2e3de;outline-offset:1px}
+.vd-operations-lookup button{
+  flex:none;border-radius:11px;padding:10px 15px;
+  background:#dedfdb;border:1px solid #f2f2ef;color:#101213;
+  font-size:11px;font-weight:650;
+}
+.vd-operations-lookup button:disabled {opacity:.4;cursor:not-allowed}
+.vd-operations-lookup p {font-size:11px;line-height:1.5;color:#d3d2ce}
+.vd-operations-list {display:grid;border-top:1px solid rgba(255,255,255,.09)}
+.vd-operations-entry {
+  display:flex;align-items:center;gap:11px;padding:15px 0;
+  border-bottom:1px solid rgba(255,255,255,.09);
+  min-height:64px;color:#f4f4f1;
+}
+.vd-operations-entry>svg:last-child{flex:none;color:#85898c}
+.vd-operation-dot {
+  display:block;width:9px;height:9px;flex:none;border-radius:50%;
+  background:#949799;
+}
+.vd-operation-dot.confirmed{background:#a2d4bc}
+.vd-operation-dot.failed{background:#dd8585}
+.vd-operation-dot.pending{background:#e5bc70}
+.vd-operation-details {display:grid;gap:5px;flex:1;min-width:0}
+.vd-operation-details strong {
+  font-size:13px;font-weight:600;color:#f1f2ef;overflow-wrap:anywhere;
+}
+.vd-operation-details small {font-size:10px;color:#999d9f;overflow-wrap:anywhere}
+.vd-no-operations{font-size:11px;line-height:1.65;color:#95999a;padding:12px 0}
+.vd-operations-older {
+  width:fit-content;min-height:42px;text-align:left;color:#c4c6c6;
+  font-size:12px;background:transparent;padding:8px 0;
+}
+.vd-operations-monitor.compact{padding:16px;gap:12px}
+.vd-operations-monitor.compact .vd-operations-explainer{display:none}
+@media(max-width:390px) {
+  .vd-operations-monitor{padding:16px}
+  .vd-operations-lookup>div{flex-direction:column}
+  .vd-operations-lookup button{width:100%;min-height:44px}
+}
+
+
+/* QR estándar: módulos oscuros sobre blanco, quiet zone real para cámaras. */
+.app-root .rcv-qr-wrap {
+  background:#fefefe;
+  border:1px solid rgba(255,255,255,.4);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.04),0 12px 28px -20px #000;
+  border-radius:18px;
+  width:fit-content;max-width:100%;margin-left:auto;margin-right:auto;
+}
+.app-root .rcv-qr {
+  background:#fff;
+  border-radius:6px;
+  display:block;width:min(54vw,218px);height:auto;aspect-ratio:1;
+  image-rendering:auto;
+}
+.app-root .rcv-qr-loading {
+  min-width:175px;min-height:175px;
+  background:repeating-linear-gradient(45deg,#eee,#eee 8px,#fff 8px,#fff 16px);
+  opacity:.7;
 }

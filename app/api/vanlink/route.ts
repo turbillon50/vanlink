@@ -11,7 +11,6 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { vanlinks, wallets } from "@/lib/db/schema";
 import { ASSETS, isValidAmount, newSlug, type AssetKey } from "@/lib/vanlink";
-import { polygonUsdcMoneyEnabled } from "@/lib/polygon/capabilities";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,26 +25,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "cuerpo_invalido" }, { status: 400, headers });
   }
 
-  const asset = (body.asset || "USDC").toUpperCase() as AssetKey;
+  const asset = (body.asset || "USDT").toUpperCase() as AssetKey;
   if (!Object.prototype.hasOwnProperty.call(ASSETS, asset)) {
     return NextResponse.json({ error: "activo_no_soportado" }, { status: 400, headers });
   }
-  // New retail links default to Polygon native USDC. Legacy links remain
-  // explicit and are NEVER silently migrated.
-  const network = body.network || (asset === "USDC" ? "Polygon" : ASSETS[asset].network);
-  const comboValid = (asset === "USDC" && (network === "Polygon" || network === "Base"))
-    || (asset === "USDT" && network === "Base")
+  // New retail requests target USDT Polygon, but creation remains disabled below.
+  // Explicit Base/Bitcoin requests retain their existing asset and network.
+  const network = body.network || (asset === "USDT" ? "Polygon" : ASSETS[asset].network);
+  const comboValid = (asset === "USDC" && network === "Base")
+    || (asset === "USDT" && (network === "Polygon" || network === "Base"))
     || (asset === "BTC" && network === "Bitcoin");
   if (!comboValid) return NextResponse.json({ error: "red_no_soportada" }, { status: 400, headers });
-  if (network === "Polygon" && !polygonUsdcMoneyEnabled()) {
-    return NextResponse.json({ error: "polygon_no_habilitado", message: "Estamos habilitando VanLink USDC en Polygon. No se generó el cobro ni se movió dinero." },
+  if (network === "Polygon") {
+    // ADR-009: Polygon opera sólo USDT. VanLink en USDT aún no está homologado.
+    return NextResponse.json({ error: "polygon_no_habilitado", message: "VanLink en USDT (Polygon) está en preparación. No se generó el cobro ni se movió dinero." },
       { status: 503, headers });
   }
   if (body.amount && !isValidAmount(body.amount)) {
     return NextResponse.json({ error: "monto_invalido" }, { status: 400, headers });
-  }
-  if (network === "Polygon" && (!body.amount || !/^(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,6})?$/.test(body.amount) || Number(body.amount) <= 0)) {
-    return NextResponse.json({ error: "monto_polygon_invalido" }, { status: 400, headers });
   }
 
   const wallet = (await db().select().from(wallets).where(eq(wallets.clerkUserId, userId)))[0];

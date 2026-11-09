@@ -88,7 +88,7 @@ export function PayView({ slug }: { slug: string }) {
         const reason = result.reason === "sin_confirmacion"
           ? "La transacción todavía no está confirmada en Polygon."
           : result.reason === "transferencia_no_coincide"
-          ? "Ese hash no contiene el pago USDC de esta solicitud."
+          ? `Ese hash no contiene el pago ${link.asset} de esta solicitud.`
           : "No pudimos verificar ese movimiento. Confirma la red, el hash y el importe.";
         throw new Error(result.message || reason);
       }
@@ -164,7 +164,7 @@ export function PayView({ slug }: { slug: string }) {
             </div>
 
             {via === "cripto" ? (<>
-            <div className="pay-network">Red {link.network}{link.network === "Polygon" ? " PoS · USDC nativo de Circle" : ""}</div>
+            <div className="pay-network">Red {link.network}{link.network === "Polygon" ? (link.asset === "USDT" ? " PoS · USDT" : " PoS · USDC legado de Circle") : ""}</div>
 
             {qr ? (
               <img src={qr} alt="Código QR para pagar" className="pay-qr" />
@@ -207,7 +207,7 @@ export function PayView({ slug }: { slug: string }) {
             {link.requiresHashVerification && link.network === "Polygon" && (
               <div className="vd-verify-box">
                 <strong>¿Ya pagaste desde tu wallet?</strong>
-                <p>Copia el hash (TXID) de la transferencia USDC Polygon y comprueba que fue recibida. No necesitas compartir claves ni tu cuenta.</p>
+                <p>Copia el hash (TXID) de la transferencia {link.asset} Polygon y comprueba que fue recibida. No necesitas compartir claves ni tu cuenta.</p>
                 <label htmlFor="vd-link-tx">Hash de transacción Polygon</label>
                 <input id="vd-link-tx" value={txHash} onChange={e => setTxHash(e.target.value.trim())}
                   placeholder="0x…" autoCapitalize="none" autoCorrect="off" spellCheck={false}/>

@@ -82,7 +82,7 @@ function Playground() {
         <header className="vd-playground-header">
           <p className="vd-overline">TU ESPACIO CONFIGURABLE</p>
           <h1>Tu wallet. Tus herramientas.</h1>
-          <p>Agrega los tokens ERC-20 que quieras observar en Polygon, sin mezclar sus saldos con tu cuenta USDC principal.</p>
+          <p>Agrega los tokens ERC-20 que quieras observar en Polygon, sin mezclar sus saldos con tu cuenta USDT principal.</p>
         </header>
         {mode === "simple" ? (
           <section className="vd-expert-gate">

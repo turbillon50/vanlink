@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Wordmark } from "@/components/brand/logo";
 import { Icon } from "@/components/icons";
 import { useWalletMode } from "@/components/mode/wallet-mode";
-import { USDCOperationBar } from "@/components/design/usdc-operations";
+import { USDTOperationBar } from "@/components/design/usdc-operations";
 
 type ViewState = "loading" | "ready" | "guest" | "no-wallet" | "error";
 type PolygonBalance = {
@@ -13,13 +13,13 @@ type PolygonBalance = {
   polygon?: { network: string; token: string; contract: string; amount: string; polGasBalance: string; observedAt: string };
 };
 
-function formatUSDC(amount: string) {
+function formatUSDT(amount: string) {
   const value = Number(amount);
   if (!Number.isFinite(value) || value < 0) return "—";
   return new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: value > 0 && value < 0.01 ? 6 : 2 }).format(value);
 }
 
-export function SimpleUSDCWallet() {
+export function SimpleUSDTWallet() {
   const { setMode } = useWalletMode();
   const [state, setState] = useState<ViewState>("loading");
   const [data, setData] = useState<PolygonBalance | null>(null);
@@ -48,19 +48,19 @@ export function SimpleUSDCWallet() {
     return () => { live = false; clearInterval(interval); window.removeEventListener("vandefi:wallet-ready", onReady); };
   }, []);
 
-  const ready = state === "ready" && data?.polygon?.token === "USDC";
+  const ready = state === "ready" && data?.polygon?.token === "USDT";
   const quantity = data?.polygon?.amount ?? "";
   const message =
     state === "loading" ? "Leyendo saldo en Polygon…"
-      : state === "guest" ? "Inicia sesión para consultar tu USDC."
+      : state === "guest" ? "Inicia sesión para consultar tu USDT."
       : state === "no-wallet" ? "Estamos generando tu wallet automáticamente."
       : state === "error" ? "No pudimos comprobar tu saldo. No mostraremos un cero falso."
-      : "USDC nativo de Circle · Polygon PoS. Valor en USD aproximado.";
+      : "USDT de Tether · Polygon PoS. Valor en USD aproximado.";
 
 
   return (
     <>
-      <section className="vd-total-card vd-simple-usdc-card" aria-label="USDC real en Polygon">
+      <section className="vd-total-card vd-simple-usdc-card" aria-label="USDT real en Polygon">
         <div className="vd-total-top">
           <Wordmark size={19}/>
           <button type="button" className="vd-total-eye" aria-label={hidden ? "Mostrar saldo" : "Ocultar saldo"}
@@ -71,34 +71,34 @@ export function SimpleUSDCWallet() {
         <div className="vd-total-body">
           <p className="vd-total-label">MI SALDO DISPONIBLE</p>
           <div className="vd-total-figure" aria-live="polite">
-            <strong>{hidden ? "••••" : ready ? formatUSDC(quantity) : "—"}</strong>
-            <span>USDC</span>
+            <strong>{hidden ? "••••" : ready ? formatUSDT(quantity) : "—"}</strong>
+            <span>USDT</span>
           </div>
           {ready && (
             <div className="vd-total-equivalents">
-              <span>{hidden ? "≈ •••• USD" : `≈ $${formatUSDC(quantity)} USD`}</span>
+              <span>{hidden ? "≈ •••• USD" : `≈ $${formatUSDT(quantity)} USD`}</span>
               <span className="vd-network-chip">Polygon PoS</span>
             </div>
           )}
         </div>
         <div className="vd-total-footer">
           <p role={state === "error" ? "status" : undefined}>{message}</p>
-          <span className="vd-total-stamp">VANDEFI · USDC</span>
+          <span className="vd-total-stamp">VANDEFI · USDT</span>
         </div>
         {state === "guest" && <Link href="/login" className="vd-portfolio-gate">Entrar a mi cuenta <Icon name="chevron" size={15}/></Link>}
         {state === "no-wallet" && <Link href="/profile" className="vd-portfolio-gate">Ver mi wallet <Icon name="chevron" size={15}/></Link>}
       </section>
 
-      <USDCOperationBar />      <div className="vd-simple-information">
+      <USDTOperationBar />      <div className="vd-simple-information">
         <div>
           <p className="vd-overline">UN DÓLAR DIGITAL</p>
           <h2>Compra. Envía. Retira.</h2>
           <p>Sin elegir tokens o cadenas. VanDeFi muestra los costos y la red antes de confirmar.</p>
         </div>
-        <Link href="/receive" className="vd-small-outline">Recibir USDC <Icon name="arrow" size={15}/></Link>
+        <Link href="/receive" className="vd-small-outline">Recibir USDT <Icon name="arrow" size={15}/></Link>
       </div>
       {ready && Number(data!.polygon!.polGasBalance) === 0 && (
-        <p className="vd-gas-disclaimer">Para enviar USDC en Polygon se necesita POL para la comisión. El patrocinio automático de gas todavía no está habilitado.</p>
+        <p className="vd-gas-disclaimer">Para enviar USDT en Polygon se necesita POL para la comisión. El patrocinio automático de gas todavía no está habilitado.</p>
       )}
       <button type="button" className="vd-other-assets-link" onClick={() => setMode("expert")}>
         Tengo otros activos o quiero configurar más tokens <Icon name="chevron" size={16}/>

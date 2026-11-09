@@ -1,9 +1,9 @@
 import "server-only";
 import { formatUnits, getAddress, isAddress } from "viem";
-import { POLYGON_CHAIN_ID, POLYGON_USDC_ADDRESS, POLYGON_USDC_DECIMALS } from "@/lib/polygon/asset";
+import { POLYGON_CHAIN_ID, POLYGON_USDT_ADDRESS, POLYGON_USDT_DECIMALS } from "@/lib/polygon/asset";
 
-/** Circle native USDC, NOT bridged USDC.e (0x2791...). */
-export const POLYGON_USDC = getAddress(POLYGON_USDC_ADDRESS);
+/** Tether USDT en Polygon PoS (contrato USDT0, se muestra USDT). */
+export const POLYGON_USDT = getAddress(POLYGON_USDT_ADDRESS);
 const PUBLIC_RPC = "https://polygon-bor-rpc.publicnode.com";
 
 function endpoint() {
@@ -32,7 +32,15 @@ async function rpc<T>(method: string, params: unknown[]): Promise<T> {
   const chain = raw.find((item) => (item as { id?: number }).id === 1) as RpcResponse<string> | undefined;
   const result = raw.find((item) => (item as { id?: number }).id === 2) as RpcResponse<T> | undefined;
   if (chain?.result !== "0x89") throw new Error("polygon_wrong_chain");
-  if (!result || result.error || result.result === undefined) throw new Error("polygon_rpc_error");
+  if (result?.error) {
+    // Classify only; never return provider text that could contain an RPC key.
+    const message = String(result.error.message || "");
+    if (/insufficient funds/i.test(message)) throw new Error("polygon_insufficient_funds");
+    if (/already known|known transaction/i.test(message)) throw new Error("polygon_already_known");
+    if (/nonce too low/i.test(message)) throw new Error("polygon_nonce_too_low");
+    throw new Error("polygon_rpc_error");
+  }
+  if (!result || result.result === undefined) throw new Error("polygon_rpc_error");
   return result.result;
 }
 
@@ -41,19 +49,19 @@ function hexBigInt(value: string) {
   return BigInt(value);
 }
 
-export async function readPolygonUSDC(address: string) {
+export async function readPolygonUSDT(address: string) {
   if (!isAddress(address)) throw new Error("polygon_invalid_address");
   const owner = getAddress(address);
   const input = "0x70a08231" + owner.slice(2).toLowerCase().padStart(64, "0");
   const [amountHex, polHex] = await Promise.all([
-    rpc<string>("eth_call", [{ to: POLYGON_USDC, data: input }, "latest"]),
+    rpc<string>("eth_call", [{ to: POLYGON_USDT, data: input }, "latest"]),
     rpc<string>("eth_getBalance", [owner, "latest"]),
   ]);
   return {
     network: "Polygon",
-    token: "USDC",
-    contract: POLYGON_USDC,
-    amount: formatUnits(hexBigInt(amountHex), POLYGON_USDC_DECIMALS),
+    token: "USDT",
+    contract: POLYGON_USDT,
+    amount: formatUnits(hexBigInt(amountHex), POLYGON_USDT_DECIMALS),
     polGasBalance: formatUnits(hexBigInt(polHex), 18),
     observedAt: new Date().toISOString(),
   };

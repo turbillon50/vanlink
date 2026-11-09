@@ -3,14 +3,14 @@ import {
   parseTransaction, parseUnits, recoverTransactionAddress, serializeTransaction,
   type Hex,
 } from "viem";
-import { POLYGON_CHAIN_ID, POLYGON_USDC_ADDRESS, POLYGON_USDC_DECIMALS } from "@/lib/polygon/asset";
+import { POLYGON_CHAIN_ID, POLYGON_USDT_ADDRESS, POLYGON_USDT_DECIMALS } from "@/lib/polygon/asset";
 
 export type PolygonTransferQuote = {
   nonce: number;
   gas: string;
   maxFeePerGas: string;
   maxPriorityFeePerGas: string;
-  usdcBalance: string;
+  usdtBalance: string;
   polBalance: string;
   issuedAt: number;
 };
@@ -25,17 +25,17 @@ export function normalizePolygonAddress(input: string): `0x${string}` | null {
   return /^0x0{40}$/i.test(formatted) ? null : formatted;
 }
 
-export function polygonUSDCUnits(value: string): bigint | null {
+export function polygonUSDTUnits(value: string): bigint | null {
   const input = value.replace(",", ".").trim();
   if (!/^\d+(?:\.\d{1,6})?$/.test(input)) return null;
-  const parsed = parseUnits(input, POLYGON_USDC_DECIMALS);
+  const parsed = parseUnits(input, POLYGON_USDT_DECIMALS);
   return parsed > BigInt(0) ? parsed : null;
 }
 
-export const formatPolygonUSDC = (value: bigint) => formatUnits(value, POLYGON_USDC_DECIMALS);
+export const formatPolygonUSDT = (value: bigint) => formatUnits(value, POLYGON_USDT_DECIMALS);
 export const maxPolygonGas = (quote: PolygonTransferQuote) => BigInt(quote.gas) * BigInt(quote.maxFeePerGas);
 
-export function buildPolygonUSDCUnsigned(params: {
+export function buildPolygonUSDTUnsigned(params: {
   to: string; amount: bigint; quote: PolygonTransferQuote;
 }) {
   const to = normalizePolygonAddress(params.to);
@@ -50,7 +50,7 @@ export function buildPolygonUSDCUnsigned(params: {
     type: "eip1559" as const,
     chainId: POLYGON_CHAIN_ID,
     nonce: q.nonce,
-    to: getAddress(POLYGON_USDC_ADDRESS),
+    to: getAddress(POLYGON_USDT_ADDRESS),
     value: BigInt(0),
     gas: BigInt(q.gas),
     maxFeePerGas: BigInt(q.maxFeePerGas),
@@ -61,7 +61,7 @@ export function buildPolygonUSDCUnsigned(params: {
 }
 
 /** The signature must preserve every reviewed field and be from this Turnkey wallet. */
-export async function verifyPolygonUSDCSigned(
+export async function verifyPolygonUSDTSigned(
   signed: string,
   expected: { from: string; unsigned: Hex },
 ): Promise<Hex> {
