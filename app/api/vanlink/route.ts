@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   if (body.amount && !isValidAmount(body.amount)) {
     return NextResponse.json({ error: "monto_invalido" }, { status: 400, headers });
   }
-  if (network === "Polygon" && (!body.amount || !/^(?:0|[1-9][0-9]{0,11})(?:\\.[0-9]{1,6})?$/.test(body.amount) || Number(body.amount) <= 0)) {
+  if (network === "Polygon" && (!body.amount || !/^(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,6})?$/.test(body.amount) || Number(body.amount) <= 0)) {
     return NextResponse.json({ error: "monto_polygon_invalido" }, { status: 400, headers });
   }
 
