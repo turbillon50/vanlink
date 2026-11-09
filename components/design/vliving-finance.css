@@ -529,3 +529,34 @@
 @media(prefers-reduced-motion:reduce){
   .vd-total-eye,.vd-portfolio-gate{transition:none!important}
 }
+
+
+/* Estado excepcional de generación de wallet: no pide vincular wallet externa. */
+.vd-wallet-enrollment-error{
+  position:fixed;z-index:80;
+  left:50%;bottom:calc(98px + env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  display:flex;flex-direction:column;gap:11px;
+  width:min(calc(100vw - 30px),430px);
+  padding:16px 17px;border-radius:17px;
+  background:#131517;color:#eeefed;
+  border:1px solid rgba(255,255,255,.24);
+  border-top-color:rgba(255,255,255,.38);
+  box-shadow:0 15px 38px rgba(0,0,0,.8);
+  font-family:var(--font-geist-sans),system-ui,sans-serif;
+}
+.vd-wallet-enrollment-error>span{font-size:12px;line-height:1.5}
+.vd-wallet-enrollment-error>div{display:flex;align-items:center;gap:15px}
+.vd-wallet-enrollment-error button,.vd-wallet-enrollment-error a{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:40px;font-size:12px;font-weight:600;
+  text-decoration:none;border-radius:11px;
+}
+.vd-wallet-enrollment-error button{
+  color:#101112;background:#eeefec;border:1px solid #fff;
+  padding:9px 15px;
+}
+.vd-wallet-enrollment-error a{color:#d4d5d3}
+@media(prefers-reduced-motion:reduce){
+  .vd-wallet-enrollment-error button{transition:none!important}
+}
