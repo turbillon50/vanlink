@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { wallets } from "@/lib/db/schema";
 import { readPolygonUSDC } from "@/lib/chain/polygon";
+import { polygonUsdcMoneyEnabled } from "@/lib/polygon/capabilities";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,12 +18,14 @@ export async function GET() {
     const wallet = process.env.DATABASE_URL
       ? (await db().select().from(wallets).where(eq(wallets.clerkUserId, userId)))[0]
       : null;
-    if (!wallet) return NextResponse.json({ wallet: null, network: "Polygon" }, { headers });
+    if (!wallet) return NextResponse.json({ wallet: null, network: "Polygon", receiveEnabled: false, sendEnabled: false }, { headers });
 
     const value = await readPolygonUSDC(wallet.evmAddress);
     return NextResponse.json({
       wallet: { evmAddress: wallet.evmAddress },
       polygon: value,
+      receiveEnabled: polygonUsdcMoneyEnabled(),
+      sendEnabled: polygonUsdcMoneyEnabled(),
     }, { headers });
   } catch (error) {
     // Do not turn network / provider errors into false 0 balances.
