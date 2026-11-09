@@ -418,3 +418,16 @@
   .vd-operation-key,.vd-mode-switch button,.vd-feature-action,
   .app-root .dock-selection,.app-root .press-button{transition:none!important}
 }
+
+/* Perfil: el modo acompaña a la cuenta, no es un ajuste escondido. */
+.vd-profile-mode{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:16px 0;border-top:1px solid rgba(255,255,255,.09);
+  border-bottom:1px solid rgba(255,255,255,.09);
+}
+.vd-profile-mode>div{flex:1;min-width:0}
+.vd-profile-mode strong{display:block;font-size:13px;color:#f1f1ef;font-weight:580}
+.vd-profile-mode small{display:block;font-size:11px;margin-top:4px;color:#929597;line-height:1.4}
+@media(max-width:380px){
+  .vd-profile-mode{flex-wrap:wrap}
+}
