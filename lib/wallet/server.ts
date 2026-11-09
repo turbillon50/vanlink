@@ -7,7 +7,7 @@ import { walletConfig } from "./config";
 import { assertServiceIdentity } from "./service-identity";
 import { walletStep } from "./diagnostics";
 
-export async function provisionWallet(userId: string, publicKey: string) {
+export async function provisionWallet(userId: string, publicKey: string, email: string | null = null) {
   const config = walletConfig();
   const client = new Turnkey({ apiBaseUrl: "https://api.turnkey.com", defaultOrganizationId: config.parentId,
     apiPublicKey: process.env.TURNKEY_API_PUBLIC_KEY!, apiPrivateKey: process.env.TURNKEY_API_PRIVATE_KEY! }).apiClient();
@@ -26,7 +26,7 @@ export async function provisionWallet(userId: string, publicKey: string) {
     if (!organizationId) {
       const created = await walletStep("wallet_create", () => client.createSubOrganization({ organizationId: config.parentId,
         subOrganizationName: `VanLink ${userId}`, rootQuorumThreshold: 1,
-        rootUsers: [{ userName: "Wallet owner", apiKeys: [{ apiKeyName: "VanLink device", publicKey,
+        rootUsers: [{ userName: "Wallet owner", ...(email ? { userEmail: email } : {}), apiKeys: [{ apiKeyName: "VanLink device", publicKey,
           curveType: "API_KEY_CURVE_P256" }], authenticators: [], oauthProviders: [] }],
         wallet: { walletName: "VanLink", accounts: [...DEFAULT_ETHEREUM_ACCOUNTS, ...DEFAULT_BITCOIN_MAINNET_P2WPKH_ACCOUNTS] },
       }));

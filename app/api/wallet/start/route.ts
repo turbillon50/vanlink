@@ -4,6 +4,7 @@ import { walletConfig, walletConfigured } from "@/lib/wallet/config";
 import { allowedOrigin, validPublicKey } from "@/lib/wallet/security";
 import { provisionWallet } from "@/lib/wallet/server";
 import { walletDiagnostic } from "@/lib/wallet/diagnostics";
+import { primaryEmail } from "@/lib/wallet/recovery-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     if (raw.length > 512) return NextResponse.json({ error: "Solicitud demasiado grande." }, { status: 400, headers });
     const { publicKey } = JSON.parse(raw);
     if (!validPublicKey(publicKey)) return NextResponse.json({ error: "No pudimos preparar este dispositivo." }, { status: 400, headers });
-    await provisionWallet(userId, publicKey);
+    await provisionWallet(userId, publicKey, await primaryEmail(userId).catch(() => null));
     return NextResponse.json({ connected: true }, { headers });
   } catch (error) {
     console.error("wallet_activation_failed", { stage: "wallet", ...walletDiagnostic(error) });

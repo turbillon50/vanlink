@@ -10,6 +10,7 @@
  * tu wallet y que el contenido no cambió.
  */
 
+import { RecoverDevice } from "@/components/wallet/recover-device";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
@@ -332,7 +333,7 @@ function SendFlowInner() {
         )}
         <p className="rcv-warn">Los envíos en la cadena no se pueden cancelar ni revertir. Verifica la dirección carácter por carácter.</p>
         {error && <p role="alert" className="field-error">{error}</p>}
-        {deviceOk === false && <p role="alert" className="field-error">{ERRORS.dispositivo_no_autorizado}</p>}
+        {deviceOk === false && userId && <RecoverDevice userId={userId} context="firmar envíos" onRecovered={() => setDeviceOk(true)} />}
         <PressButton onClick={confirm} disabled={Boolean(busy) || deviceOk === false}>
           {busy === "firmando" ? "Firmando en tu dispositivo…" : busy === "transmitiendo" ? "Enviando a la red…" : "Confirmar y enviar"}
         </PressButton>
@@ -404,7 +405,7 @@ function SendFlowInner() {
       )}
 
       {error && <p role="alert" className="field-error">{error}</p>}
-      {deviceOk === false && <p className="snd-hint">Este dispositivo no puede firmar envíos. Puedes preparar el envío, pero firmarlo requiere el dispositivo donde activaste tu wallet.</p>}
+      {deviceOk === false && userId && <RecoverDevice userId={userId} context="firmar envíos" onRecovered={() => setDeviceOk(true)} />}
       {guest
         ? <PressButton href="/login?redirect_url=/send">Inicia sesión para enviar</PressButton>
         : <PressButton type="submit" disabled={busy === "cotizando"}>{busy === "cotizando" ? "Cotizando la red…" : "Revisar envío"}</PressButton>}

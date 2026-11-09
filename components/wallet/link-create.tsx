@@ -8,6 +8,7 @@
  * La llave desechable del link se genera aquí y se guarda en ESTE dispositivo
  * para poder recuperar el dinero si nadie lo reclama.
  */
+import { RecoverDevice } from "@/components/wallet/recover-device";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { PressButton } from "@/components/ui/press-button";
@@ -224,7 +225,7 @@ function Inner() {
         </div>
         <p className="rcv-warn">Quien tenga el link, cobra. Si nadie lo reclama, lo recuperas desde "Mis links".</p>
         {error && <p role="alert" className="field-error">{error}</p>}
-        {deviceOk === false && <p role="alert" className="field-error">Este dispositivo no puede firmar. Usa el dispositivo donde activaste tu wallet.</p>}
+        {deviceOk === false && userId && <RecoverDevice userId={userId} context="fondear tu VanLink" onRecovered={() => setDeviceOk(true)} />}
         <PressButton onClick={confirm} disabled={Boolean(busy) || deviceOk === false}>
           {busy === "firmando" ? "Firmando en tu dispositivo…" : busy === "transmitiendo" ? "Fondeando el link…" : "Crear link"}
         </PressButton>
