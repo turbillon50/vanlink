@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Activity, ArrowRight, BookOpen, Link2, Menu, Send, Wallet, X } from "lucide-react";
+import { Activity, ArrowRight, BookOpen, Menu, Wallet, X } from "lucide-react";
 import { Logo, Wordmark } from "@/components/brand/logo";
 import { CreateVanLinkForm } from "@/components/vanlink/create-form";
 import { ActivityList } from "@/components/wallet/activity-list";
@@ -221,11 +221,13 @@ export function ModuleHome() {
       <div className="m-routes">
         <button type="button" className="m-route" onClick={() => open("enviar")}>
           <span className="m-mesh" aria-hidden="true" /><span className="m-luz" aria-hidden="true" /><span className="m-vidrio" aria-hidden="true" />
-          <Send className="m-ico" aria-hidden="true" /><b>Enviar dinero</b>
+          <svg className="m-ico" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="vd-a" x1="12" y1="52" x2="52" y2="10" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#d5dde6"/><stop offset="1" stopColor="#f7f8f6"/></linearGradient></defs><g fill="none" stroke="url(#vd-a)" strokeLinecap="round" strokeLinejoin="round"><circle cx="32" cy="32" r="29" strokeWidth="1.5"/><path d="M20 36 L44 24" strokeWidth="3"/><path d="M30 22 H46 V38" strokeWidth="3"/></g></svg>
+          <b>Enviar dinero</b>
         </button>
         <button type="button" className="m-route" onClick={() => open("crear")}>
           <span className="m-mesh" aria-hidden="true" /><span className="m-luz" aria-hidden="true" /><span className="m-vidrio" aria-hidden="true" />
-          <Link2 className="m-ico" aria-hidden="true" /><b>Cobrar por enlace</b>
+          <svg className="m-ico" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="vd-b" x1="12" y1="52" x2="52" y2="10" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#d5dde6"/><stop offset="1" stopColor="#f7f8f6"/></linearGradient></defs><g fill="none" stroke="url(#vd-b)" strokeLinecap="round" strokeLinejoin="round"><circle cx="32" cy="32" r="29" strokeWidth="1.5"/><path d="M27 25.5h-4a7.5 7.5 0 0 0 0 15h6" strokeWidth="3"/><path d="M37 38.5h4a7.5 7.5 0 0 0 0-15h-6" strokeWidth="3"/></g></svg>
+          <b>Cobrar por enlace</b>
         </button>
       </div>
     </header>
