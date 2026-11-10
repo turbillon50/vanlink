@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PressButton } from "@/components/ui/press-button";
 import { Icon } from "@/components/icons";
 import { Logo } from "@/components/brand/logo";
+import { usePolygonAvailability } from "@/lib/polygon/use-availability";
+import type { PolygonAvailability } from "@/lib/polygon/availability";
+import { PolygonAvailabilityNotice } from "@/components/wallet/polygon-availability";
 import { useWalletMode } from "@/components/mode/wallet-mode";
 import { ExportWallet } from "@/components/wallet/export-wallet";
 import { DeviceCheck } from "@/components/wallet/device-check";
@@ -38,6 +41,7 @@ export function WalletSetup({ userId }: { userId: string }) {
 
 function WalletSetupInner({ userId }: { userId: string }) {
   const { mode } = useWalletMode();
+  const availability = usePolygonAvailability();
   const [status, setStatus] = useState<WalletStatus | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -110,36 +114,38 @@ function WalletSetupInner({ userId }: { userId: string }) {
     };
   }, [userId]);
 
-  return <WalletSetupView status={status} error={error} busy={busy} verified={verified} userId={userId} expert={mode === "expert"}
+  return <WalletSetupView status={status} error={error} busy={busy} verified={verified} userId={userId} expert={mode === "expert"} availability={availability}
     onRecovered={() => { setVerified(true); setError(""); }}
     onConnect={connect}
     onRetry={() => { setError(""); setRetry(n => n + 1); }} />;
 }
 
 /** Presentation only, shared by real account states and isolated visual review. */
-export function WalletSetupView({ status, error, busy, verified, userId, onRecovered, onConnect, onRetry, expert = false }: {
+export function WalletSetupView({ status, error, busy, verified, userId, onRecovered, onConnect, onRetry, expert = false, availability = "unknown" }: {
   status: WalletStatus | null; error: string; busy: boolean; verified: boolean | null;
   userId: string; onRecovered: () => void;
-  onConnect: () => void; onRetry: () => void; expert?: boolean;
+  onConnect: () => void; onRetry: () => void; expert?: boolean; availability?: PolygonAvailability;
 }) {
   return <section className="access-status wallet-setup" aria-busy={busy} aria-labelledby="wallet-title">
-    <div className="wallet-status-line"><span className="eyebrow">MI WALLET</span><span className={"wallet-state" + (verified ? " connected" : "")}><i aria-hidden="true" />{status?.wallet ? verified ? "Acceso reconocido" : verified === null ? "Verificando acceso" : "Acceso por comprobar" : status ? "Creación automática" : error ? "Sin conexión" : "Consultando"}</span></div>
+    <div className="wallet-status-line"><span className="eyebrow">MI WALLET</span><span className={"wallet-state" + (verified ? " connected" : "")}><i aria-hidden="true" />{status?.wallet ? verified ? "Acceso reconocido" : verified === null ? "Verificando acceso" : "Acceso por comprobar" : status ? status.canActivate ? "Creación automática" : "Nuevas wallets en pausa" : error ? "Sin conexión" : "Consultando"}</span></div>
     <div className="wallet-emblem" aria-hidden="true"><Logo size={58} /><span /></div>
-    <div className="wallet-copy"><h2 id="wallet-title">{status?.wallet ? "Tu wallet" : "Tu wallet se crea automáticamente"}</h2>
+    <div className="wallet-copy"><h2 id="wallet-title">{status?.wallet ? "Tu wallet" : status ? status.canActivate ? "Tu wallet se crea automáticamente" : "Nuevas wallets en pausa" : "Estado de tu wallet"}</h2>
     {status ? <p>{status.wallet
       ? verified ? "Tu wallet está vinculada a esta cuenta. Comprueba la firma de este dispositivo sin mover fondos."
         : "Tu wallet ya existe. Comprueba la firma para saber si este navegador puede autorizar movimientos."
       : status.canActivate ? "La generamos al registrar tu cuenta. La clave de firma se guarda en este dispositivo, no en la aplicación."
-        : "Tu cuenta está lista. Estamos preparando la activación de tu wallet."}</p>
+        : "Tu cuenta está disponible. La creación de nuevas wallets está en pausa; no necesitas reintentar."}</p>
       : !error ? <p role="status">Consultando tu wallet…</p> : null}
     </div>
     {status ? <>
       <div className="wallet-network-list"><span>USDT <em>en Polygon PoS</em></span>
         {expert && <><span className="wallet-future">USDC <em>Base · histórico</em></span><span className="wallet-future">BTC <em>Bitcoin · histórico</em></span></>}
       </div>
+      {status?.wallet && <PolygonAvailabilityNotice availability={availability} />}
       {status?.wallet?.evmAddress ? (
         <div className="wallet-address-list">
-          <WalletAddress label="Polygon PoS · EVM" value={status.wallet.evmAddress} />
+          <p className="vd-legal-note">Esta dirección permite identificar tu wallet y consultar su historial.{availability !== "enabled" ? " Copiarla no habilita depósitos: no envíes dinero a Polygon mientras los movimientos estén en pausa o sin comprobar." : " Antes de usarla para recibir, verifica siempre la red."}</p>
+          <WalletAddress label={availability === "enabled" ? "Polygon PoS · EVM" : "Polygon PoS · consulta e historial"} value={status.wallet.evmAddress} />
           {expert && status.wallet.bitcoinAddress ? (
             <WalletAddress label="Bitcoin · histórico" value={status.wallet.bitcoinAddress} />
           ) : null}
@@ -163,7 +169,7 @@ export function WalletSetupView({ status, error, busy, verified, userId, onRecov
         </PressButton> : !status.wallet ? <PressButton href="/vanlink" variant="secondary">Ver mis VanLinks <Icon name="arrow" size={17} /></PressButton> : null}
         <p className="wallet-activation-note"><Icon name="shield" size={13} />{status.wallet
           ? verified ? "Comprueba la firma antes de autorizar movimientos." : "Ver tu saldo no confirma que este navegador pueda firmar. Usa la comprobación de arriba."
-          : "Al entrar generamos tu wallet automáticamente. No necesitas vincular una wallet externa."}</p>
+          : status.canActivate ? "Al entrar generamos tu wallet automáticamente. No necesitas vincular una wallet externa." : "La creación de wallets nuevas está en pausa. Tu cuenta conserva su acceso."}</p>
       </div>
     </> : error ? <div className="wallet-error wallet-load-error"><Icon name="info" size={17} /><div><p role="alert">{error}</p><PressButton variant="secondary" onClick={onRetry}>Reintentar</PressButton></div></div> : <div className="wallet-loading-line" aria-hidden="true" />}
   </section>;

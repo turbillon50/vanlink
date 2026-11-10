@@ -894,3 +894,51 @@
   background:repeating-linear-gradient(45deg,#eee,#eee 8px,#fff 8px,#fff 16px);
   opacity:.7;
 }
+
+
+/* The mobile dock owns a separate row: links never remain visible beneath it.
+   Only the workspace scrolls, below the opaque status-bar safe area. */
+@media (max-width: 767px) {
+  .app-root {
+    height: 100dvh;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    padding-top: env(safe-area-inset-top, 0px);
+    overflow: hidden;
+    background: var(--vd-bg, #000);
+  }
+  .app-root > .workspace {
+    grid-row: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    overscroll-behavior-y: contain;
+    scroll-padding: 16px 0 24px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .app-root > .workspace::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    height: env(safe-area-inset-top, 0px);
+    background: var(--vd-bg, #000);
+    z-index: 40;
+    pointer-events: none;
+  }
+  .app-root .page-content {
+    min-height: 100%;
+    padding-top: 16px;
+    padding-bottom: 24px;
+  }
+  .app-root > .dock-wrap {
+    grid-row: 2;
+    position: relative;
+    inset: auto;
+    width: 100%;
+  }
+}
+
+/* Readable labels on the mobile wallet and account gate. */
+.app-root .dock-item { font-size:12px; }
+.app-root .vd-total-footer p { font-size:12px; line-height:1.5; }

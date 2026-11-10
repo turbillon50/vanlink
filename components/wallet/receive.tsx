@@ -14,6 +14,9 @@ import { useAuth } from "@clerk/nextjs";
 import { authConfigured } from "@/lib/auth-config";
 import Link from "next/link";
 import QRCode from "qrcode";
+import { usePolygonAvailability } from "@/lib/polygon/use-availability";
+import type { PolygonAvailability } from "@/lib/polygon/availability";
+import { PolygonAvailabilityNotice } from "@/components/wallet/polygon-availability";
 import { useWalletMode } from "@/components/mode/wallet-mode";
 
 type Wallet = { evmAddress: string; bitcoinAddress: string };
@@ -28,7 +31,7 @@ function chunk(address: string) {
   return address.replace(/(.{4})/g, "$1 ").trim();
 }
 
-function ReceivePanelInner() {
+function ReceivePanelInner({ availability }: { availability: PolygonAvailability }) {
   const { userId, isLoaded } = useAuth();
   const { mode } = useWalletMode();
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -38,22 +41,13 @@ function ReceivePanelInner() {
   const [copied, setCopied] = useState(false);
   const [clipboardError, setClipboardError] = useState(false);
   const [walletVersion, setWalletVersion] = useState(0);
-  const [polygonReady, setPolygonReady] = useState(false);
+  const polygonReady = availability === "enabled";
 
   useEffect(() => {
     const ready = () => setWalletVersion((n) => n + 1);
     window.addEventListener("vandefi:wallet-ready", ready);
     return () => window.removeEventListener("vandefi:wallet-ready", ready);
   }, []);
-
-  useEffect(() => {
-    let live = true;
-    void fetch("/api/chain/polygon", { cache: "no-store" })
-      .then(async r => r.ok ? r.json() as Promise<{ receiveEnabled?: boolean }> : null)
-      .then(result => { if (live) setPolygonReady(result?.receiveEnabled === true); })
-      .catch(() => { if (live) setPolygonReady(false); });
-    return () => { live = false; };
-  }, [walletVersion]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -64,12 +58,13 @@ function ReceivePanelInner() {
       return;
     }
     let active = true;
+    const controller = new AbortController();
     setWallet(null);
     setState("cargando");
     setQr("");
     void (async () => {
       try {
-        const response = await fetch("/api/chain/balance", { cache: "no-store" });
+        const response = await fetch("/api/chain/balance", { cache: "no-store", signal: controller.signal });
         if (response.status === 401) {
           if (active) setState("sin-sesion");
           return;
@@ -90,7 +85,7 @@ function ReceivePanelInner() {
         if (active) setState("error");
       }
     })();
-    return () => { active = false; };
+    return () => { active = false; controller.abort(); };
   }, [walletVersion, isLoaded, userId]);
 
   useEffect(() => {
@@ -104,7 +99,7 @@ function ReceivePanelInner() {
 
   useEffect(() => {
     setQr("");
-    if (!address) return;
+    if (!address || (network === "polygon" && !polygonReady)) return;
     let active = true;
     void QRCode.toDataURL(address, {
       margin: 4,
@@ -113,12 +108,12 @@ function ReceivePanelInner() {
       color: { dark: "#09090b", light: "#ffffff" },
     }).then((url) => { if (active) setQr(url); }).catch(() => { if (active) setQr(""); });
     return () => { active = false; };
-  }, [address]);
+  }, [address, network, polygonReady]);
 
   if (state === "cargando") return <div className="rcv-skeleton" aria-label="Cargando" />;
-  if (state === "sin-sesion") return <div className="snd-gate"><p>Entra con tu cuenta para ver el QR de tu wallet.</p><Link href="/login" className="vd-small-outline">Iniciar sesión</Link></div>;
+  if (state === "sin-sesion") return <div className="snd-gate"><p>{polygonReady ? "Entra con tu cuenta para consultar las direcciones de tu wallet." : "Entra para consultar tus direcciones históricas de Base y Bitcoin."}</p><Link href="/login?redirect_url=/receive" className="vd-small-outline">Iniciar sesión</Link></div>;
   if (state === "sin-wallet") {
-    return <p className="bal-note">Estamos generando tu wallet. Podrás recibir cuando aparezcan tus direcciones.</p>;
+    return <p className="bal-note">Tu cuenta todavía no tiene direcciones de wallet. Consulta su estado en Cuenta.</p>;
   }
   if (state === "error" || !wallet) {
     return <p className="bal-note">No pudimos cargar tus direcciones. Intenta de nuevo.</p>;
@@ -144,11 +139,7 @@ function ReceivePanelInner() {
       </div>
 
       {network === "polygon" && !polygonReady ? (
-        <div className="snd-gate" role="status">
-          <strong>USDT en Polygon · recepción en preparación</strong>
-          <p>La dirección EVM de tu wallet funciona también en Polygon, pero no habilitaremos depósitos hasta comprobar los envíos y las comisiones. No mandes dinero a Polygon todavía.</p>
-          <p>Las direcciones antiguas de Base y Bitcoin siguen accesibles desde el modo Experto.</p>
-        </div>
+        <p className="vd-legal-note">Las direcciones históricas de Base y Bitcoin siguen disponibles en sus pestañas. Polygon no ofrece dirección de depósito ni QR mientras su disponibilidad no esté confirmada.</p>
       ) : <>
       <div className="rcv-qr-wrap">
         {qr ? (
@@ -196,7 +187,20 @@ function ReceivePanelInner() {
   );
 }
 
+function ReceivePanelSession({ availability }: { availability: PolygonAvailability }) {
+  const { userId, isLoaded } = useAuth();
+  return <ReceivePanelInner key={isLoaded ? userId || "guest" : "loading"} availability={availability} />;
+}
+
 export function ReceivePanel() {
-  if (!authConfigured) return <p className="bal-note">Para recibir debes iniciar sesión en VanDeFi.</p>;
-  return <ReceivePanelInner />;
+  const availability = usePolygonAvailability();
+  const { mode } = useWalletMode();
+  if (mode === "simple" && availability !== "enabled") return <>
+    <PolygonAvailabilityNotice availability={availability} />
+    <p className="vd-legal-note">Puedes consultar tus activos históricos de Base y Bitcoin desde el modo Experto.</p>
+  </>;
+  return <>
+    <PolygonAvailabilityNotice availability={availability} />
+    {authConfigured ? <ReceivePanelSession availability={availability} /> : <p className="bal-note">Inicia sesión para consultar las direcciones de tu wallet.</p>}
+  </>;
 }

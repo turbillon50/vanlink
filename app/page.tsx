@@ -6,11 +6,13 @@ import { TopBar } from "@/components/top-bar";
 import { Icon } from "@/components/icons";
 import { WalletPortfolio } from "@/components/wallet/portfolio";
 import { SimpleUSDTWallet } from "@/components/wallet/simple-usdc";
+import { usePolygonAvailability } from "@/lib/polygon/use-availability";
 import { MarketPulse } from "@/components/market-pulse";
 import { ModeToggle, useWalletMode } from "@/components/mode/wallet-mode";
 
 export default function HomePage() {
   const { mode } = useWalletMode();
+  const availability = usePolygonAvailability();
 
   return (
     <AppShell wide>
@@ -31,7 +33,7 @@ export default function HomePage() {
           )}
         </header>
 
-        {mode === "simple" ? <SimpleUSDTWallet /> : <WalletPortfolio />}
+        {mode === "simple" ? <SimpleUSDTWallet availability={availability} /> : <WalletPortfolio />}
 
         {mode === "expert" && <section className="vd-feature-link" aria-label="VanLink">
           <div className="vd-feature-copy">
@@ -49,7 +51,7 @@ export default function HomePage() {
           <section className="vd-simple-links" aria-label="Accesos rápidos">
             <Link href="/receive" className="vd-flat-link">
               <span className="vd-flat-icon"><Icon name="wallet" size={21}/></span>
-              <span><strong>Recibir USDT</strong><small>Polygon · misma wallet, sin otra cuenta</small></span>
+              <span><strong>{availability === "enabled" ? "Recibir USDT" : "Ver estado de Polygon"}</strong><small>{availability === "enabled" ? "Polygon · misma wallet, sin otra cuenta" : availability === "paused" ? "Envíos y depósitos en pausa" : "Disponibilidad por comprobar"}</small></span>
               <Icon name="chevron" size={16}/>
             </Link>
             <Link href="/v" className="vd-flat-link">

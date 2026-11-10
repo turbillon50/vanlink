@@ -7,6 +7,8 @@ const withClerk = clerkMiddleware(async (auth, request) => {
 }, { signInUrl: "/login" });
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
+  // This exact read-only endpoint exposes only the public Polygon release gate.
+  if (request.nextUrl.pathname === "/api/polygon/availability" && (request.method === "GET" || request.method === "HEAD")) return NextResponse.next();
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
     if (request.nextUrl.pathname.startsWith("/api/")) return NextResponse.json({ error: "Acceso no disponible." }, { status: 503, headers: { "Cache-Control": "no-store" } });
     if (isPrivate(request)) return NextResponse.redirect(new URL("/login", request.url));

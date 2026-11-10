@@ -2,7 +2,9 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { authConfigured } from "@/lib/auth-config";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+
+type OperationMonitorProps = { compact?: boolean; children?: ReactNode };
 import {
   TRACKING_EVENT, decodeOperations, explorerForOperation, isValidTransactionId,
   phaseLabel, readTrackedOperations, reconcileOperation, trackOperation,
@@ -33,7 +35,7 @@ function formatTime(value: string | null): string {
   return parsed.toLocaleString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-function OperationMonitorInner({ compact = false }: { compact?: boolean }) {
+function OperationMonitorInner({ compact = false, children }: OperationMonitorProps) {
   const { userId, isLoaded } = useAuth();
   const [operations, setOperations] = useState<TrackedOperation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -157,7 +159,7 @@ function OperationMonitorInner({ compact = false }: { compact?: boolean }) {
     const networkName = lookupNetwork === "polygon" ? "Polygon" : "Base";
     const token = lookupNetwork === "polygon" ? "USDT" : "USDC";
     if (!isValidTransactionId(lookupNetwork, hash)) {
-      setMessage("Escribe un hash válido de " + networkName + " (0x + 64 caracteres hexadecimales).");
+      setMessage("Escribe un identificador válido de " + networkName + " (0x + 64 caracteres hexadecimales).");
       return;
     }
     setMessage("");
@@ -166,12 +168,12 @@ function OperationMonitorInner({ compact = false }: { compact?: boolean }) {
       const response = await fetchStatus({ network: lookupNetwork, id: hash });
       if (sessionUserId.current !== userId) return;
       if (response.phase === "not_seen") {
-        setMessage("La red " + networkName + " aún no localiza ese hash. Revisa el enlace o vuelve a comprobar.");
+        setMessage("La red " + networkName + " aún no localiza ese identificador. Revisa el enlace o vuelve a comprobar.");
         return;
       }
       const transfer = response.transfers?.find(item => item.direction === "in" && item.token === token);
       if (!transfer) {
-        setMessage("El hash existe, pero todavía no se comprobó un ingreso de " + token + " a tu dirección.");
+        setMessage("La operación existe, pero todavía no se comprobó un ingreso de " + token + " a tu dirección.");
         return;
       }
       if (!trackOperation(userId, {
@@ -187,50 +189,34 @@ function OperationMonitorInner({ compact = false }: { compact?: boolean }) {
         checkedAt: response.checkedAt || new Date().toISOString(),
       });
       setTxHash("");
-      setMessage("Ingreso " + token + " localizado. Puedes ver su estado abajo.");
+      setMessage("Ingreso " + token + " localizado. Puedes ver su estado en el seguimiento.");
     } catch {
       if (sessionUserId.current !== userId) return;
       setMessage("La red no respondió. El ingreso puede existir; no vuelvas a pedir otro envío por este error.");
     } finally { if (sessionUserId.current === userId) setLoading(false); }
   }
 
-  if (!isLoaded || !userId) return null;
+  if (!isLoaded || !userId) return <>{children}</>;
   const active = operations.filter(item => item.phase !== "confirmed" && item.phase !== "failed");
   const completed = operations.filter(item => item.phase === "confirmed" || item.phase === "failed");
-  const visible = [...active, ...completed.slice(0, showOlder ? 30 : compact ? 2 : 5)];
+  const includesHistory = children != null;
+  const visible = includesHistory
+    ? operations.filter(item => item.phase !== "confirmed")
+    : [...active, ...completed.slice(0, showOlder ? 30 : compact ? 2 : 5)];
   return (
-    <section className={compact ? "vd-operations-monitor compact" : "vd-operations-monitor"}
+    <>
+    {(!includesHistory || visible.length > 0 || serverUnavailable) && <section className={compact ? "vd-operations-monitor compact" : "vd-operations-monitor"}
       aria-label="Estado verificable de tus operaciones">
       <div className="vd-operations-heading">
         <div>
-          <p className="vd-overline">BLOCKCHAIN · POLYGON / BASE / BITCOIN</p>
-          <h2>Seguimiento de operaciones</h2>
+          <p className="vd-overline">SEGUIMIENTO</p>
+          <h2>{includesHistory ? "Movimientos por revisar" : "Seguimiento de operaciones"}</h2>
         </div>
         {active.length > 0 && <span className="vd-operations-count">{active.length} por verificar</span>}
       </div>
-      <p className="vd-operations-explainer">
-        Los envíos Polygon se recuperan desde tu cuenta; este dispositivo conserva el seguimiento. La blockchain confirma su estado.
-      </p>
-      {!compact && (
-        <form className="vd-operations-lookup" onSubmit={checkIncoming}>
-          <label htmlFor="vd-operation-network">Red del depósito</label>
-          <select id="vd-operation-network" value={lookupNetwork}
-            onChange={event => { setLookupNetwork(event.target.value as "polygon" | "base"); setMessage(""); }} disabled={loading}>
-            <option value="polygon">USDT · Polygon</option>
-            <option value="base">USDC · Base (histórico)</option>
-          </select>
-          <label htmlFor="vd-operation-txid">Comprueba el hash de tu depósito</label>
-          <div>
-            <input id="vd-operation-txid" value={txHash} onChange={e => setTxHash(e.target.value.trim())}
-              placeholder={lookupNetwork === "polygon" ? "0x… Hash de Polygon" : "0x… Hash de Base"} autoCapitalize="none" autoCorrect="off" spellCheck={false}
-              aria-describedby={message ? "vd-operation-feedback" : undefined}/>
-            <button type="submit" disabled={loading || !txHash.trim()}>
-              {loading ? "Buscando…" : "Comprobar"}
-            </button>
-          </div>
-          {message && <p id="vd-operation-feedback" role="status">{message}</p>}
-        </form>
-      )}
+      {!includesHistory && <p className="vd-operations-explainer">
+        Aquí puedes ver el estado de los movimientos que estás siguiendo.
+      </p>}
       {serverUnavailable && <p role="status" className="vd-operations-disclaimer">No pudimos recuperar tus envíos desde el servidor. Conservamos los hashes de este dispositivo y volveremos a consultar.</p>}
       {visible.length === 0
         ? <p className="vd-no-operations">{serverUnavailable ? "Puedes comprobar un envío con su hash mientras se restablece el historial." : "Todavía no hay operaciones en seguimiento. Los movimientos confirmados aparecen en tu historial."}</p>
@@ -251,23 +237,50 @@ function OperationMonitorInner({ compact = false }: { compact?: boolean }) {
           </a>
         ))}</div>
       }
-      {!compact && completed.length > 5 && (
+      {!compact && !includesHistory && completed.length > 5 && (
         <button type="button" className="vd-operations-older" onClick={() => setShowOlder(s => !s)}>
           {showOlder ? "Mostrar menos" : "Ver más operaciones"}
         </button>
       )}
       <p className="vd-operations-disclaimer">Un fallo al consultar la red no significa que el dinero se perdió. No repitas una transferencia pendiente sin verificar el hash.</p>
-    </section>
+    </section>}
+    {children}
+      {!compact && (
+        <details className="vd-operations-monitor">
+          <summary className="vd-operations-older">Comprobar un movimiento</summary>
+          <p className="vd-operations-explainer">Si te compartieron un comprobante de depósito, puedes revisarlo aquí.</p>
+        <form className="vd-operations-lookup" onSubmit={checkIncoming}>
+          <label htmlFor="vd-operation-network">Red del depósito</label>
+          <select id="vd-operation-network" value={lookupNetwork}
+            onChange={event => { setLookupNetwork(event.target.value as "polygon" | "base"); setMessage(""); }} disabled={loading}>
+            <option value="polygon">USDT · Polygon</option>
+            <option value="base">USDC · Base (histórico)</option>
+          </select>
+          <label htmlFor="vd-operation-txid">Identificador del depósito</label>
+          <div>
+            <input id="vd-operation-txid" value={txHash} onChange={e => setTxHash(e.target.value.trim())}
+              placeholder="Pega el identificador del comprobante" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+              aria-describedby={message ? "vd-operation-feedback" : undefined}/>
+            <button type="submit" disabled={loading || !txHash.trim()}>
+              {loading ? "Buscando…" : "Comprobar"}
+            </button>
+          </div>
+          {message && <p id="vd-operation-feedback" role="status">{message}</p>}
+        </form>
+        </details>
+      )}
+
+    </>
   );
 }
 
-function AuthenticatedOperationMonitor({ compact }: { compact: boolean }) {
+function AuthenticatedOperationMonitor({ compact, children }: OperationMonitorProps) {
   const { userId, isLoaded } = useAuth();
-  if (!isLoaded || !userId) return null;
-  return <OperationMonitorInner key={userId} compact={compact}/>;
+  if (!isLoaded || !userId) return <>{children}</>;
+  return <OperationMonitorInner key={userId} compact={compact}>{children}</OperationMonitorInner>;
 }
 
-export function OperationMonitor({ compact = false }: { compact?: boolean }) {
-  if (!authConfigured) return null;
-  return <AuthenticatedOperationMonitor compact={compact}/>;
+export function OperationMonitor({ compact = false, children }: OperationMonitorProps) {
+  if (!authConfigured) return <>{children}</>;
+  return <AuthenticatedOperationMonitor compact={compact}>{children}</AuthenticatedOperationMonitor>;
 }
