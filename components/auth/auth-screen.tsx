@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ClerkFailed, ClerkLoaded, ClerkLoading, SignIn, SignUp } from "@clerk/nextjs";
-import { Wordmark } from "@/components/brand/logo";
+import { Logo, Wordmark } from "@/components/brand/logo";
 import { Icon } from "@/components/icons";
 import { PressButton } from "@/components/ui/press-button";
 import { authConfigured } from "@/lib/auth-config";
@@ -48,16 +48,11 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
     <main className="va-auth">
       <section className="va-auth-hero" aria-hidden="true">
         <Wordmark size={26} />
+        <div className="va-auth-emblem"><Logo size={140} /></div>
         <div>
-          <h2>Manda dólares<br />digitales en <span>segundos.</span></h2>
-          <p>USDT en Polygon. Sin bancos de por medio, sin esperar días.</p>
-          <div className="va-auth-balance">
-            <small>Saldo disponible</small>
-            <strong>$1,250.00 <em>USDT</em></strong>
-            <span>▲ Enviado a Caracas · hace 2 min</span>
-          </div>
+          <h2>Tu cartera<br /><span>digital.</span></h2>
+          <p>Consulta tus saldos, revisa movimientos y administra el acceso a tu wallet.</p>
         </div>
-        <ul className="va-auth-trust"><li>Autocustodia</li><li>Polygon</li><li>Protegido por Clerk</li></ul>
       </section>
 
       <section className="va-auth-side">
@@ -67,8 +62,8 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
         <div className="va-auth-panel">
           <div className="va-auth-head">
             <Wordmark size={24} />
-            <h1>{signUp ? "Crea tu cuenta" : "Qué bueno verte"}</h1>
-            <p>{signUp ? "Crea tu cuenta para acceder a VanDeFi." : "Entra en segundos. Tu dinero, tu control."}</p>
+            <h1>{signUp ? "Crea tu cuenta" : "Entrar a VanDeFi"}</h1>
+            <p>{signUp ? "Registra tu identidad para acceder a VanDeFi." : "Continúa con tu cuenta para abrir tu cartera."}</p>
           </div>
           {authConfigured ? <div className="va-auth-form">
             <ClerkLoading><AccessLoading /></ClerkLoading>
@@ -78,7 +73,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
               : <SignIn routing="path" path="/login" signUpUrl="/sign-up" appearance={authAppearance} />}</ClerkLoaded>
           </div> : <section className="access-status"><h2>El acceso está en preparación</h2><p>Puedes explorar VanDeFi y preparar borradores. El registro estará disponible al conectar esta instalación.</p></section>}
           <PressButton variant="ghost" href="/">Seguir explorando</PressButton>
-          <p className="va-auth-legal">VanDeFi utiliza <b>USDT en Polygon</b>. La llave de tu dispositivo permanece en tu navegador. Crear una cuenta no mueve dinero.</p>
+          <p className="va-auth-legal">Para autorizar movimientos necesitas un dispositivo autorizado para tu wallet.</p>
         </div>
       </section>
     </main>

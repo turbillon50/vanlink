@@ -6,7 +6,6 @@ import { useUser } from "@clerk/nextjs";
 import { AppShell } from "@/components/app-shell";
 import { TopBar } from "@/components/top-bar";
 import { Icon } from "@/components/icons";
-import { useWalletMode } from "@/components/mode/wallet-mode";
 import { authConfigured } from "@/lib/auth-config";
 
 type TrackedToken = {
@@ -22,7 +21,6 @@ function safeContract(value: string) {
 
 function Playground() {
   const { user, isLoaded } = useUser();
-  const { mode, setMode } = useWalletMode();
   const [input, setInput] = useState("");
   const [tokens, setTokens] = useState<TrackedToken[]>([]);
   const [busy, setBusy] = useState(false);
@@ -64,7 +62,7 @@ function Playground() {
     setError("");
     const contract = input.trim();
     if (!safeContract(contract)) { setError("Escribe la dirección 0x… del contrato ERC-20 en Polygon."); return; }
-    if (tokens.length >= MAX_TOKENS) { setError("El playground admite hasta 20 tokens por dispositivo."); return; }
+    if (tokens.length >= MAX_TOKENS) { setError("Puedes guardar hasta 20 tokens por dispositivo."); return; }
     if (tokens.some(t => t.contract.toLowerCase() === contract.toLowerCase())) { setError("Ya agregaste ese contrato."); return; }
     setBusy(true);
     try {
@@ -77,69 +75,59 @@ function Playground() {
 
   return (
     <AppShell wide>
-      <TopBar title="Playground" backHref="/operate"/>
+      <TopBar title="Mis tokens" backHref="/operate"/>
       <div className="vd-playground">
         <header className="vd-playground-header">
-          <p className="vd-overline">TU ESPACIO CONFIGURABLE</p>
-          <h1>Tu wallet. Tus herramientas.</h1>
+          <p className="vd-overline">POLYGON</p>
+          <h1>Tokens en seguimiento</h1>
           <p>Agrega los tokens ERC-20 que quieras observar en Polygon, sin mezclar sus saldos con tu cuenta USDT principal.</p>
         </header>
-        {mode === "simple" ? (
-          <section className="vd-expert-gate">
-            <strong>Activa Experto para personalizar.</strong>
-            <p>Tu saldo USDC seguirá exactamente igual; solamente aparecen herramientas adicionales.</p>
-            <button type="button" onClick={() => setMode("expert")}>Activar modo Experto</button>
-          </section>
-        ) : (
-          <>
-            <section className="vd-playground-widget">
-              <div className="vd-playground-widget-head">
-                <div><p className="vd-overline">MÓDULO 01</p><h2>Mis tokens en Polygon</h2></div>
-                <span>{tokens.length}/{MAX_TOKENS}</span>
-              </div>
-              <form onSubmit={addToken} className="vd-playground-form">
-                <label htmlFor="vd-token-contract">Contrato del token ERC-20</label>
-                <div>
-                  <input id="vd-token-contract" value={input} onChange={e => setInput(e.target.value)}
-                    placeholder="0x…" spellCheck={false} autoCorrect="off" autoCapitalize="none"/>
-                  <button type="submit" disabled={busy || !userId}><Icon name="plus" size={18}/> Añadir</button>
+        <section className="vd-playground-widget">
+          <div className="vd-playground-widget-head">
+            <div><h2>Mis tokens en Polygon</h2></div>
+            <span>{tokens.length}/{MAX_TOKENS}</span>
+          </div>
+          <form onSubmit={addToken} className="vd-playground-form">
+            <label htmlFor="vd-token-contract">Contrato del token ERC-20</label>
+            <div>
+              <input id="vd-token-contract" value={input} onChange={e => setInput(e.target.value)}
+                placeholder="0x…" spellCheck={false} autoCorrect="off" autoCapitalize="none"/>
+              <button type="submit" disabled={busy || !userId}><Icon name="plus" size={18}/> Añadir</button>
+            </div>
+            {error && <p role="alert" className="field-error">{error}</p>}
+          </form>
+          {!isLoaded || !userId
+            ? <p className="vd-legal-note">Inicia sesión para consultar tus activos.</p>
+            : tokens.length === 0
+              ? <p className="vd-playground-empty">Tu lista está vacía. Agrega un contrato para consultar el saldo real de tu dirección Turnkey.</p>
+              : <div className="vd-playground-tokens">{tokens.map(token => (
+                <div className="vd-playground-token" key={token.contract}>
+                  <span><strong>{token.symbol}</strong><small>{token.contract.slice(0, 8)}…{token.contract.slice(-6)} · No verificado</small></span>
+                  <span><strong>{token.balance}</strong><small>Polygon</small></span>
+                  <button type="button" aria-label={"Quitar " + token.symbol} onClick={() => save(tokens.filter(x => x.contract !== token.contract))}>
+                    <Icon name="close" size={16}/>
+                  </button>
                 </div>
-                {error && <p role="alert" className="field-error">{error}</p>}
-              </form>
-              {!isLoaded || !userId
-                ? <p className="vd-legal-note">Inicia sesión para consultar tus activos.</p>
-                : tokens.length === 0
-                  ? <p className="vd-playground-empty">Tu lista está vacía. Agrega un contrato para consultar el saldo real de tu dirección Turnkey.</p>
-                  : <div className="vd-playground-tokens">{tokens.map(token => (
-                    <div className="vd-playground-token" key={token.contract}>
-                      <span><strong>{token.symbol}</strong><small>{token.contract.slice(0, 8)}…{token.contract.slice(-6)} · No verificado</small></span>
-                      <span><strong>{token.balance}</strong><small>Polygon</small></span>
-                      <button type="button" aria-label={"Quitar " + token.symbol} onClick={() => save(tokens.filter(x => x.contract !== token.contract))}>
-                        <Icon name="close" size={16}/>
-                      </button>
-                    </div>
-                  ))}</div>
-              }
-              <p className="vd-legal-note">Lectura de balances únicamente. Los símbolos pueden ser falsificados por cualquier contrato. Nunca pegues frases semilla, claves ni credenciales.</p>
-            </section>
-            <section className="vd-playground-widget">
-              <div className="vd-playground-widget-head"><div><p className="vd-overline">MÓDULO 02</p><h2>Herramientas adicionales</h2></div></div>
-              <div className="vd-utility-list">
-                <Link className="vd-utility-row" href="/market"><span className="vd-utility-icon"><Icon name="chart" size={20}/></span>
-                  <span><strong>Mercado</strong><small>Cotizaciones y evolución de activos</small></span><Icon name="chevron" size={16}/></Link>
-                <Link className="vd-utility-row" href="/receive"><span className="vd-utility-icon"><Icon name="wallet" size={20}/></span>
-                  <span><strong>Mis redes y direcciones</strong><small>Polygon + acceso a Base y BTC históricos</small></span><Icon name="chevron" size={16}/></Link>
-              </div>
-            </section>
-            <p className="vd-legal-note">Alchemy proporciona APIs para datos enriquecidos de tokens; si todavía no hay una clave de Alchemy conectada, VanDeFi usa un RPC público de sólo lectura. Agregar un token aquí no habilita transferencias de ese token.</p>
-          </>
-        )}
+              ))}</div>
+          }
+          <p className="vd-legal-note">Lectura de balances únicamente. Los símbolos pueden ser falsificados por cualquier contrato. Nunca pegues frases semilla, claves ni credenciales.</p>
+        </section>
+        <section className="vd-playground-widget">
+          <div className="vd-playground-widget-head"><div><h2>Herramientas adicionales</h2></div></div>
+          <div className="vd-utility-list">
+            <Link className="vd-utility-row" href="/market"><span className="vd-utility-icon"><Icon name="chart" size={20}/></span>
+              <span><strong>Mercado</strong><small>Cotizaciones y evolución de activos</small></span><Icon name="chevron" size={16}/></Link>
+            <Link className="vd-utility-row" href="/cartera"><span className="vd-utility-icon"><Icon name="wallet" size={20}/></span>
+              <span><strong>Otros activos</strong><small>Saldos y direcciones de Base y Bitcoin</small></span><Icon name="chevron" size={16}/></Link>
+          </div>
+        </section>
+        <p className="vd-legal-note">Los tokens que agregues aquí se muestran únicamente para consulta.</p>
       </div>
     </AppShell>
   );
 }
 
 export default function ExpertPage() {
-  if (!authConfigured) return <AppShell><TopBar title="Playground"/><p>Conecta el acceso de VanDeFi para usar el playground.</p></AppShell>;
+  if (!authConfigured) return <AppShell><TopBar title="Mis tokens"/><p>Conecta el acceso de VanDeFi para consultar tus tokens.</p></AppShell>;
   return <Playground/>;
 }

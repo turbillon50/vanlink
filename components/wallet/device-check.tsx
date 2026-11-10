@@ -2,15 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { PressButton } from "@/components/ui/press-button";
+import { RecoveryContactSetup } from "./recovery-contact";
 import { RecoverDevice } from "@/components/wallet/recover-device";
 
 type DeviceWallet = { organizationId: string; turnkeyUserId: string; evmAddress: string };
-type CheckStatus = "not_checked" | "checking" | "verified" | "key_missing" | "key_mismatch" | "access_unverified" | "signature_rejected" | "signature_invalid" | "approval_required" | "check_unavailable";
+type CheckStatus = "not_checked" | "key_match" | "checking" | "verified" | "key_missing" | "key_mismatch" | "access_unverified" | "signature_rejected" | "signature_invalid" | "approval_required" | "check_unavailable";
 type DeviceMetadata = { registeredDeviceFingerprints: string[]; recoveryEmailPresent: boolean };
 
 const messages: Record<CheckStatus, string> = {
   not_checked: "Comprueba que este navegador puede firmar con tu wallet. Sólo firma un mensaje de prueba: no envía fondos ni consume saldo o gas.",
-  checking: "Comprobando el dispositivo y su firma…",
+  key_match: "Turnkey reconoció la llave de este navegador para tu wallet. Puedes comprobar la firma por separado.",
+  checking: "Comprobando el dispositivo…",
   verified: "Firma comprobada para esta wallet. Esta prueba no envió fondos ni consumió saldo o gas.",
   key_missing: "No encontramos la llave de tu wallet en este navegador. Abre el navegador donde creaste la wallet para conservar el acceso.",
   key_mismatch: "La llave de este navegador no coincide con la registrada en tu wallet. Usa el navegador original; no borres sus datos.",
@@ -38,7 +40,7 @@ export function DeviceCheck({ userId, wallet, onRecovered }: {
     return () => { alive.current = false; requestController.current?.abort(); };
   }, []);
 
-  async function check() {
+  async function check(includeSignature: boolean) {
     if (busy.current) return;
     busy.current = true;
     setStatus("checking"); setCopyState("idle"); setCheckedAt(null);
@@ -62,6 +64,7 @@ export function DeviceCheck({ userId, wallet, onRecovered }: {
       const accessVerified = await verifyWalletDevice(userId, wallet.organizationId, wallet.turnkeyUserId);
       if (!alive.current) return;
       if (!accessVerified) { setStatus("access_unverified"); return; }
+      if (!includeSignature) { setStatus("key_match"); return; }
       const { checkWalletSignature } = await import("@/lib/wallet/device-signature");
       const result = await checkWalletSignature(wallet);
       if (!alive.current) return;
@@ -95,13 +98,17 @@ export function DeviceCheck({ userId, wallet, onRecovered }: {
     <p className="recover-title">Firma de este dispositivo</p>
     <p className="recover-text" role="status" aria-live="polite">{messages[status]}</p>
     {checkedAt && <p className="wallet-activation-note">Comprobada: {new Date(checkedAt).toLocaleString("es-MX")}</p>}
-    <PressButton onClick={() => { void check(); }} disabled={status === "checking"}>
+    <PressButton variant="secondary" onClick={() => { void check(false); }} disabled={status === "checking"}>Buscar mi llave en este navegador</PressButton>
+    <PressButton onClick={() => { void check(true); }} disabled={status === "checking"}>
       {status === "checking" ? "Comprobando…" : "Comprobar firma"}
     </PressButton>
     {status !== "not_checked" && status !== "checking" && <PressButton variant="secondary" onClick={() => { void copyDiagnostic(); }}>
       {copyState === "copied" ? "Diagnóstico copiado" : "Copiar diagnóstico"}
     </PressButton>}
     {copyState === "failed" && <p className="field-error" role="status">No pudimos copiar el diagnóstico. Inténtalo de nuevo.</p>}
+    {(status === "key_match" || status === "verified") && recoveryEmailPresent === false &&
+      <RecoveryContactSetup key={userId + wallet.organizationId} userId={userId} organizationId={wallet.organizationId}
+        turnkeyUserId={wallet.turnkeyUserId} onSaved={() => setRecoveryEmailPresent(true)}/>}
     {needsAccess && recoveryEmailPresent === false &&
       <p className="recover-text">Esta wallet no tiene correo de recuperación registrado. Usa el navegador original; desde aquí no podemos recuperar la llave por correo.</p>}
     {needsAccess && recoveryEmailPresent === true && <RecoverDevice userId={userId} context="autorizar movimientos"

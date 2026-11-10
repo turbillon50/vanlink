@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     if (!wallet) return NextResponse.json({ error: "Aún no tienes wallet activada." }, { status: 404, headers });
     const registered = await ownerEmail(wallet.organizationId, wallet.turnkeyUserId);
     if (!registered) return NextResponse.json({ code: "sin_correo",
-      error: "Esta wallet se creó antes de la recuperación por correo y solo se puede mover desde el dispositivo original." }, { status: 409, headers });
+      error: "Esta wallet no tiene correo de recuperación registrado. Busca su llave en un navegador o perfil que ya hayas autorizado." }, { status: 409, headers });
     const email = await primaryEmail(userId);
     if (!email || email !== registered) return NextResponse.json({ code: "correo_distinto",
       error: "El correo de tu cuenta no coincide con el de tu wallet." }, { status: 409, headers });

@@ -4,30 +4,27 @@ import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { TopBar } from "@/components/top-bar";
 import { Icon } from "@/components/icons";
-import { OperationBar } from "@/components/design/operation-bar";
+import { usePolygonAvailability } from "@/lib/polygon/use-availability";
+import { PolygonAvailabilityNotice } from "@/components/wallet/polygon-availability";
 import { USDTOperationBar } from "@/components/design/usdc-operations";
-import { ModeToggle, useWalletMode } from "@/components/mode/wallet-mode";
 
 export default function OperatePage() {
-  const { mode } = useWalletMode();
+  const availability = usePolygonAvailability();
 
   return (
     <AppShell wide>
       <TopBar title="Operar" />
       <div className="vd-operate-screen">
         <header className="vd-operate-head">
-          <p className="vd-overline">TUS OPERACIONES</p>
-          <h1>{mode === "simple" ? "¿Qué quieres hacer?" : "Centro de operaciones."}</h1>
-          <p>{mode === "simple" ? "Comprar, enviar, retirar o cobrar USDT. Una sola red, Polygon." : "Tus herramientas avanzadas, siempre con revisión de red y comisiones."}</p>
-          <ModeToggle />
+          <h1>Operaciones</h1>
         </header>
-
-        {mode === "simple" ? <USDTOperationBar /> : <OperationBar />}
+        <PolygonAvailabilityNotice availability={availability} />
+        {availability === "enabled" && <USDTOperationBar />}
 
         <section className="vd-utility-list" aria-label="Más formas de mover dinero">
           <Link href="/receive" className="vd-utility-row">
             <span className="vd-utility-icon"><Icon name="wallet" size={23}/></span>
-            <span><strong>Recibir con QR</strong><small>Tu dirección y tu código por red</small></span>
+            <span><strong>{availability === "enabled" ? "Recibir USDT" : "Estado de Polygon"}</strong><small>{availability === "enabled" ? "Dirección y código QR" : "Disponibilidad de envíos y depósitos"}</small></span>
             <Icon name="chevron" size={18}/>
           </Link>
           <Link href="/vanlink" className="vd-utility-row">
@@ -42,32 +39,21 @@ export default function OperatePage() {
           </Link>
         </section>
 
-        {mode === "expert" && (
-          <section className="vd-expert-section" aria-label="Herramientas de análisis">
-            <div className="vd-expert-head">
-              <p className="vd-overline">HERRAMIENTAS</p>
-              <h2>Datos para decidir.</h2>
-            </div>
-            <Link href="/expert" className="vd-utility-row">
-              <span className="vd-utility-icon"><Icon name="wallet" size={23}/></span>
-              <span><strong>Playground de tokens</strong><small>Configura tu tablero ERC-20 en Polygon</small></span>
-              <Icon name="chevron" size={18}/>
-            </Link>
-            <Link href="/market" className="vd-utility-row">
-              <span className="vd-utility-icon"><Icon name="chart" size={23}/></span>
-              <span><strong>Mercado y precios</strong><small>Gráficas y cotizaciones disponibles</small></span>
-              <Icon name="chevron" size={18}/>
-            </Link>
-            <p className="vd-legal-note">
-              El modo Experto cambia la información visible, no tus permisos.
-              Las redes, comisiones y firmas siempre se confirman en la operación.
-            </p>
-          </section>
-        )}
-        <p className="vd-legal-note">
-          Algunas compras, retiros y conversiones dependen de proveedores externos.
-          Si una cotización no está habilitada, VanDeFi lo indicará antes de mover fondos.
-        </p>
+        <section className="vd-expert-section" aria-label="Herramientas de análisis">
+          <div className="vd-expert-head">
+            <h2>Herramientas</h2>
+          </div>
+          <Link href="/expert" className="vd-utility-row">
+            <span className="vd-utility-icon"><Icon name="wallet" size={23}/></span>
+            <span><strong>Mis tokens</strong><small>Configura tu tablero ERC-20 en Polygon</small></span>
+            <Icon name="chevron" size={18}/>
+          </Link>
+          <Link href="/market" className="vd-utility-row">
+            <span className="vd-utility-icon"><Icon name="chart" size={23}/></span>
+            <span><strong>Mercado y precios</strong><small>Gráficas y cotizaciones disponibles</small></span>
+            <Icon name="chevron" size={18}/>
+          </Link>
+        </section>
       </div>
     </AppShell>
   );

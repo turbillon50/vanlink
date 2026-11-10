@@ -18,12 +18,16 @@ export async function POST(request: NextRequest) {
   try {
     const raw = await request.text();
     if (raw.length > 512) return NextResponse.json({ error: "Solicitud demasiado grande." }, { status: 400, headers });
-    const { publicKey } = JSON.parse(raw);
+    const { publicKey, intent, requestedFor } = JSON.parse(raw);
     if (!validPublicKey(publicKey)) return NextResponse.json({ error: "No pudimos preparar este dispositivo." }, { status: 400, headers });
     // Existing mappings survive the creation pause and need no Clerk/provider
     // email lookup. This response is not proof of device signing authorization.
     if (await lookupExistingWallet(userId)) return NextResponse.json({ connected: true }, { headers });
     if (!walletProvisioningEnabled()) return provisioningPaused();
+    if (intent !== "create_wallet" || requestedFor !== userId) {
+      return NextResponse.json({ code: "wallet_request_required",
+        error: "Abre tu perfil para solicitar una wallet con tu cuenta actual." }, { status: 409, headers });
+    }
     // Recuperación no custodiada: toda wallet nueva debe asociarse al correo
     // de Clerk para permitir agregar un dispositivo si el original se pierde.
     let email: string | null;

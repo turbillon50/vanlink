@@ -3,7 +3,8 @@ import { TopBar } from "@/components/top-bar";
 import { PageIntro } from "@/components/craft";
 import { ReceivePanel } from "@/components/wallet/receive";
 
-export default function ReceivePage() {
+export default async function ReceivePage({ searchParams }: { searchParams: Promise<{ red?: string }> }) {
+  const historical = (await searchParams).red === "historica";
   return (
     <AppShell>
       <TopBar title="Recibir" backHref="/operate" returnToOrigin />
@@ -12,7 +13,7 @@ export default function ReceivePage() {
         title="Recibir en tu wallet"
         description="Consulta la disponibilidad y verifica la red antes de compartir una dirección."
       />
-      <ReceivePanel />
+      <ReceivePanel historical={historical} />
     </AppShell>
   );
 }

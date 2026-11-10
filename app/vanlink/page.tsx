@@ -72,7 +72,7 @@ export default function VanLinkPage() {
       </div>
       {!ready ? <div className="skeleton-row" aria-label="Cargando VanLinks"/> : guest ? (
         <EmptyState icon="link" title="Inicia sesión para ver tus cobros"
-          description="Tu wallet se genera automáticamente al registrar tu cuenta."
+          description="Consulta el estado de tu wallet en tu perfil."
           action={<Link href="/login" className="text-link">Entrar a mi cuenta</Link>} />
       ) : filter === "drafts" ? (
         drafts.length ? <div>{drafts.map(d => (

@@ -99,7 +99,7 @@ function recovery(options = {}) {
       if (duringVerify) duringVerify(state, storage);
       return { ok: !verifyFailure, json: async () => verifyFailure
         ? { error: "Código incorrecto o vencido." }
-        : { credentialBundle: "test-encrypted-bundle", ...identity, turnkeyUserId: TURNKEY_USER } };
+        : { clerkUserId: options.responseClerkUser ?? USER, credentialBundle: "test-encrypted-bundle", ...identity, turnkeyUserId: TURNKEY_USER } };
     },
   });
   function load(name) {
@@ -239,6 +239,19 @@ test("key replacement during successful identity lookup cannot be reported as re
     duringDeviceCheck(state) { state.key = "changed-device-key"; } });
   await assert.rejects(recover(d), /wallet_device_changed/);
   assert.equal(d.state.key, "changed-device-key");
+  assert.equal(d.state.resets, 0);
+  assert.equal(d.state.registrations, 0);
+});
+
+test("completed key registration cannot authorize a different Turnkey user", async () => {
+  const d = recovery({ deviceIdentity: { organizationId: ORG, userId: "another-user" } });
+  await assert.rejects(recover(d), /wallet_device_identity_mismatch/);
+  assert.equal(d.state.registrations, 1);
+});
+
+test("switching Clerk accounts while a recovery is open cannot bind a credential", async () => {
+  const d = recovery({ responseClerkUser: "other-login" });
+  await assert.rejects(recover(d), /wallet_recovery_account_changed/);
   assert.equal(d.state.resets, 0);
   assert.equal(d.state.registrations, 0);
 });

@@ -7,7 +7,6 @@ import { Icon } from "@/components/icons";
 import { PressButton } from "@/components/ui/press-button";
 import { authConfigured } from "@/lib/auth-config";
 import { WalletSetup } from "@/components/wallet/setup";
-import { ModeToggle } from "@/components/mode/wallet-mode";
 
 function ProfileContent() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -17,11 +16,10 @@ function ProfileContent() {
   const name = user.fullName || user.firstName || "Tu cuenta";
   return <div className="account-layout">
     <header className="account-heading">
-      <p className="eyebrow">TU ESPACIO PERSONAL</p>
-      <h2>Tu cuenta, a la mano.</h2>
+      <p className="eyebrow">VANDEFI</p>
+      <h2>Mi cuenta</h2>
       <p>Administra tu wallet y tu acceso.</p>
     </header>
-    <section className="vd-profile-mode" aria-label="Experiencia de la aplicación"><div><strong>Tu experiencia</strong><small>Elige qué tanta información quieres ver</small></div><ModeToggle /></section>
     <WalletSetup key={user.id} userId={user.id} />
     <div className="account-identity-panel">
       <div className="profile-card">

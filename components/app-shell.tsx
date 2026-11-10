@@ -13,7 +13,6 @@ import {
 import { Wordmark } from "@/components/brand/logo";
 import { Icon, type IconName } from "@/components/icons";
 import { AccountLink } from "@/components/auth/account-link";
-import { ModeToggle, useWalletMode } from "@/components/mode/wallet-mode";
 
 const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "Inicio", icon: "home" },
@@ -24,13 +23,16 @@ const navigation: { href: string; label: string; icon: IconName }[] = [
 ];
 
 const extraNavigation: { href: string; label: string; icon: IconName }[] = [
+  { href: "/cartera", label: "Otros activos", icon: "wallet" },
+  { href: "/expert", label: "Mis tokens", icon: "wallet" },
+  { href: "/vanx", label: "VANX", icon: "wallet" },
   { href: "/vanlink", label: "Mis VanLinks", icon: "link" },
   { href: "/v", label: "Asistente", icon: "chat" },
   { href: "/welcome", label: "Conoce VanDeFi", icon: "globe" },
 ];
 
 function currentNav(pathname: string): number {
-  if (pathname === "/") return 0;
+  if (pathname === "/" || pathname === "/cartera") return 0;
   if (pathname.startsWith("/market")) return 1;
   if (
     ["/operate", "/expert", "/up", "/down", "/send", "/receive", "/swap", "/buy", "/vanlink", "/vanx"]
@@ -56,16 +58,8 @@ export function AppShell({
   const pathname = usePathname() || "/";
   const dialog = useRef<HTMLDialogElement>(null);
   const [keyboard, setKeyboard] = useState(false);
-  const { mode } = useWalletMode();
   const active = currentNav(pathname);
-  const items = [
-    ...navigation,
-    ...(mode === "expert" ? [
-      { href: "/expert", label: "Playground", icon: "wallet" as IconName },
-      { href: "/vanx", label: "VANX · token", icon: "wallet" as IconName },
-    ] : []),
-    ...extraNavigation,
-  ];
+  const items = [...navigation, ...extraNavigation];
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -81,7 +75,7 @@ export function AppShell({
 
   return (
     <MenuContext.Provider value={() => dialog.current?.showModal()}>
-      <div className="app-root" data-keyboard={keyboard} data-experience={mode}>
+      <div className="app-root" data-keyboard={keyboard}>
         <a className="skip-link" href="#main">Ir al contenido</a>
         <aside className="desktop-rail" aria-label="Menú de escritorio">
           <Link href="/" aria-label="VanDeFi, inicio">
@@ -104,8 +98,7 @@ export function AppShell({
             ))}
           </nav>
           <div className="rail-bottom">
-            <span className="network-label"><i /> {mode === "simple" ? "USDT · Polygon" : "Experto · multiactivo"}</span>
-            <ModeToggle compact />
+            <span className="network-label"><i /> USDT · Polygon</span>
             <AccountLink rail />
           </div>
         </aside>
@@ -160,11 +153,7 @@ export function AppShell({
                 </Link>
               ))}
             </nav>
-            <div className="vd-menu-mode">
-              <span>Tu experiencia</span>
-              <ModeToggle />
-            </div>
-            <span className="network-label"><i /> {mode === "simple" ? "USDT · Polygon" : "Tokens y redes de tu cartera"}</span>
+            <span className="network-label"><i /> USDT · Polygon</span>
           </div>
         </dialog>
       </div>

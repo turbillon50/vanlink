@@ -132,13 +132,12 @@ function publicUi(path, state, name, props = {}) {
       if (path === "components/wallet/simple-usdc.tsx") return { userId: null, isLoaded: true };
       throw new Error("Paused Send/Receive must not mount authenticated wallet components");
     } },
-    "@/components/mode/wallet-mode": { useWalletMode: () => ({ mode: "simple", setMode: empty }) },
     "@/lib/auth-config": { authConfigured: true },
     "@/components/ui/press-button": { PressButton: Button },
     "@/components/wallet/recover-device": { RecoverDevice: empty },
     "@/components/wallet/export-wallet": { ExportWallet: empty },
     "@/components/wallet/device-check": { DeviceCheck: empty },
-    "@/components/wallet/auto-enrollment": {},
+    "@/lib/wallet/request-wallet": {},
     "@/components/wallet/operation-monitor": { OperationMonitor: empty },
     "@/lib/operations/tracker": {},
     "@/lib/send/polygon-tx": {},
@@ -182,7 +181,7 @@ test("Cuenta explica copiar para consulta y conserva Bitcoin histórico sin ofre
       organizationId: "test_org", turnkeyUserId: "test_user", networks: ["Polygon", "Bitcoin"],
       evmAddress: "0x1111111111111111111111111111111111111111", bitcoinAddress: "bc1testonly",
     } },
-    error: "", busy: false, verified: true, userId: "user_test123", expert: true,
+    error: "", busy: false, verified: true, userId: "user_test123",
     onRecovered() {}, onConnect() {}, onRetry() {},
   });
   assert.match(html, /Polygon PoS · consulta e historial/);
@@ -199,4 +198,13 @@ test("Cuenta sin wallet con altas detenidas no promete creación ni ofrece reint
   });
   assert.match(html, /Nuevas wallets en pausa/);
   assert.doesNotMatch(html, /se crea automáticamente|generamos tu wallet|Reintentar activación/);
+});
+
+test("a signed-in user can request enrollment explicitly when openings are enabled", () => {
+  const html = publicUi("components/wallet/setup.tsx", "enabled", "WalletSetupView", {
+    status: { canActivate: true, transfersEnabled: true, wallet: null }, error: "", busy: false,
+    verified: null, userId: "test-owner", onRecovered() {}, onConnect() {}, onRetry() {},
+  });
+  assert.match(html, /Solicitar mi wallet/);
+  assert.doesNotMatch(html, /automáticamente/);
 });

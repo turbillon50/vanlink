@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/icons";
 import { Wordmark } from "@/components/brand/logo";
-import { OperationBar } from "@/components/design/operation-bar";
+import { useAuth } from "@clerk/nextjs";
+import { authConfigured } from "@/lib/auth-config";
 import {
   valueWallet,
   type BalanceItem,
@@ -34,8 +35,19 @@ function formatAssetAmount(token: string, amount?: string) {
   return new Intl.NumberFormat("es-MX", { maximumFractionDigits: decimals }).format(value);
 }
 
-/** Resumen y detalle comparten UNA lectura on-chain para evitar saldos contradictorios. */
 export function WalletPortfolio() {
+  return authConfigured ? <AccountPortfolio /> : <p className="bal-note">Inicia sesión para consultar tus activos.</p>;
+}
+
+function AccountPortfolio() {
+  const { userId, isLoaded } = useAuth();
+  if (!isLoaded) return <p role="status" className="bal-note">Consultando tu cuenta…</p>;
+  if (!userId) return <Link href="/login?redirect_url=/cartera" className="vd-flat-link">Inicia sesión para ver tus activos</Link>;
+  return <PortfolioBalance key={userId} />;
+}
+
+/** Resumen y detalle comparten UNA lectura on-chain para evitar saldos contradictorios. */
+function PortfolioBalance() {
   const [hidden, setHidden] = useState(false);
   const [state, setState] = useState<LoadState>("loading");
   const [wallet, setWallet] = useState<WalletSnapshot | null>(null);
@@ -179,8 +191,6 @@ export function WalletPortfolio() {
           <p className="vd-cbbtc-note">cbBTC valorado aproximadamente con el precio de BTC.</p>
         )}
       </section>
-
-      <OperationBar />
 
       <section className="vd-assets vd-breakdown" aria-label="Desglose de activos">
         <div className="vd-breakdown-top">
