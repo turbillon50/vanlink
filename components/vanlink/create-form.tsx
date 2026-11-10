@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const CHOICES = [
@@ -10,7 +10,7 @@ const CHOICES = [
   { id: "bitcoin-btc", asset: "BTC", network: "Bitcoin", label: "BTC", note: "Bitcoin · legado" },
 ] as const;
 
-export function CreateVanLinkForm() {
+export function CreateVanLinkForm({ owner }: { owner?: string } = {}) {
   const router = useRouter();
   const [choiceId, setChoiceId] = useState<(typeof CHOICES)[number]["id"]>("polygon-usdt");
   const [amount, setAmount] = useState("");
@@ -19,6 +19,29 @@ export function CreateVanLinkForm() {
   const [state, setState] = useState<"idle" | "creating" | "error">("idle");
   const [message, setMessage] = useState("");
   const [link, setLink] = useState("");
+
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    if (!owner) return;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem("vd-link-draft:" + owner) || "null");
+      if (saved && typeof saved === "object") {
+        const network = CHOICES.find(item => item.id === saved.choiceId);
+        if (network) setChoiceId(network.id);
+        if (typeof saved.amount === "string") setAmount(saved.amount);
+        if (typeof saved.concept === "string") setConcept(saved.concept.slice(0, 80));
+        if (["1", "7", "30", "90"].includes(saved.days)) setDays(saved.days);
+      }
+    } catch {}
+    setRestored(true);
+  }, [owner]);
+  useEffect(() => {
+    if (!owner || !restored) return;
+    try {
+      if (link) sessionStorage.removeItem("vd-link-draft:" + owner);
+      else sessionStorage.setItem("vd-link-draft:" + owner, JSON.stringify({ choiceId, amount, concept, days }));
+    } catch {}
+  }, [owner, restored, link, choiceId, amount, concept, days]);
 
   const choice = CHOICES.find(item => item.id === choiceId) || CHOICES[0];
 
@@ -44,7 +67,7 @@ export function CreateVanLinkForm() {
         throw new Error(result.error === "polygon_no_habilitado"
           ? "VanLink USDT Polygon se está validando. Aún no podemos publicar cobros en esa red."
           : result.error === "sin_wallet"
-          ? "Tu wallet todavía se está generando. Revisa tu cuenta."
+          ? "Necesitas una cartera vinculada para publicar un cobro."
           : result.error === "monto_polygon_invalido"
           ? "Escribe un monto de USDT con máximo seis decimales."
           : result.error || "No pudimos crear el cobro.");

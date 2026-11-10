@@ -45,6 +45,7 @@ function AuthenticatedActivityList({ filter }: { filter: ActivityFilter }) {
 }
 
 function UserActivityList({ filter, userId }: { filter: ActivityFilter; userId: string }) {
+  const [attempt, setAttempt] = useState(0);
   const [data, setData] = useState<Response | null>(null);
   const [state, setState] = useState<"cargando" | "listo" | "sin-wallet" | "error">("cargando");
 
@@ -84,14 +85,14 @@ function UserActivityList({ filter, userId }: { filter: ActivityFilter; userId: 
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onFocus);
     };
-  }, [userId]);
+  }, [userId, attempt]);
 
-  if (state === "cargando") return <div className="act-skeleton" aria-label="Cargando movimientos" />;
+  if (state === "cargando") return <p role="status">Consultando</p>;
   if (state === "sin-wallet") {
     return <p className="bal-note">Inicia sesión o entra a tu wallet para consultar los movimientos.</p>;
   }
   if (state === "error" || !data) {
-    return <p className="bal-note">No pudimos leer tu actividad ahora. Intenta de nuevo.</p>;
+    return <><p className="bal-note">No pudimos leer tu actividad ahora.</p><button type="button" onClick={() => setAttempt((n) => n + 1)}>Reintentar</button></>;
   }
 
   const list = data.movements.filter((m) => filter === "all" || m.direction === filter);
@@ -106,8 +107,8 @@ function UserActivityList({ filter, userId }: { filter: ActivityFilter; userId: 
       )}
       {list.length === 0 ? (
         <p className="bal-note">
-          {filter === "all" ? (data.baseRecentOnly ? "No encontramos movimientos en la ventana reciente consultada." : "Todavía no hay movimientos.")
-            : filter === "in" ? "Aún no hay entradas." : "Aún no hay salidas."}
+          {filter === "all" ? (data.baseRecentOnly ? "No encontramos movimientos en la ventana reciente consultada." : "Cero confirmado. Todavía no hay movimientos.")
+            : filter === "in" ? "Cero confirmado. Aún no hay entradas." : "Cero confirmado. Aún no hay salidas."}
         </p>
       ) : (
         <ul className="act-list">

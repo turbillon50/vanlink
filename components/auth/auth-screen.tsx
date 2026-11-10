@@ -7,6 +7,7 @@ import { Logo, Wordmark } from "@/components/brand/logo";
 import { Icon } from "@/components/icons";
 import { PressButton } from "@/components/ui/press-button";
 import { authConfigured } from "@/lib/auth-config";
+import { resumePath, originFrom } from "@/lib/navigation/module-one";
 import "./auth.css";
 
 function AccessRetry() {
@@ -44,6 +45,21 @@ const authAppearance = {
 };
 
 export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
+  const [destination, setDestination] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const direct = resumePath(url.searchParams.get("volver"));
+    let path = direct;
+    try {
+      const atStart = /^\/(login|sign-up)\/?$/.test(url.pathname);
+      if (direct) sessionStorage.setItem("vd-access-return", direct);
+      else if (atStart) sessionStorage.removeItem("vd-access-return");
+      else path = resumePath(sessionStorage.getItem("vd-access-return"));
+    } catch {}
+    setDestination(path);
+  }, []);
+  const query = destination ? "?volver=" + encodeURIComponent(destination) : "";
+  const back = destination ? originFrom(new URL(destination, "https://navigation.invalid")) : "/";
   return (
     <main className="va-auth">
       <section className="va-auth-hero" aria-hidden="true">
@@ -57,7 +73,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
 
       <section className="va-auth-side">
         <div className="va-auth-top">
-          <Link href="/" aria-label="Volver" className="icon-button"><Icon name="back" /></Link>
+          <Link href={back} aria-label="Volver" className="icon-button"><Icon name="back" /></Link>
         </div>
         <div className="va-auth-panel">
           <div className="va-auth-head">
@@ -68,11 +84,11 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
           {authConfigured ? <div className="va-auth-form">
             <ClerkLoading><AccessLoading /></ClerkLoading>
             <ClerkFailed><AccessRetry /></ClerkFailed>
-            <ClerkLoaded>{signUp
-              ? <SignUp routing="path" path="/sign-up" signInUrl="/login" appearance={authAppearance} />
-              : <SignIn routing="path" path="/login" signUpUrl="/sign-up" appearance={authAppearance} />}</ClerkLoaded>
+            <ClerkLoaded>{destination === undefined ? <AccessLoading /> : signUp
+              ? <SignUp routing="path" path="/sign-up" signInUrl={"/login" + query} forceRedirectUrl={destination ?? undefined} signInForceRedirectUrl={destination ?? undefined} appearance={authAppearance} />
+              : <SignIn routing="path" path="/login" signUpUrl={"/sign-up" + query} forceRedirectUrl={destination ?? undefined} signUpForceRedirectUrl={destination ?? undefined} appearance={authAppearance} />}</ClerkLoaded>
           </div> : <section className="access-status"><h2>El acceso está en preparación</h2><p>Puedes explorar VanDeFi y preparar borradores. El registro estará disponible al conectar esta instalación.</p></section>}
-          <PressButton variant="ghost" href="/">Seguir explorando</PressButton>
+          <PressButton variant="ghost" href={back}>Seguir explorando</PressButton>
           <p className="va-auth-legal">Para autorizar movimientos necesitas un dispositivo autorizado para tu wallet.</p>
         </div>
       </section>

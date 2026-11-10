@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
 
   try {
     if (process.env.DATABASE_URL) {
+      await db().execute(sql`DELETE FROM vandefi_accounts WHERE clerk_user_id = ${userId}`);
       await db().delete(walletFlows).where(eq(walletFlows.clerkUserId, userId));
       await db().delete(wallets).where(eq(wallets.clerkUserId, userId));
       // La actividad fiat se anonimiza en vez de borrarse: puede ser necesaria

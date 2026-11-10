@@ -27,10 +27,10 @@ export async function provisionWallet(userId: string, publicKey: string, email: 
   if (!walletProvisioningEnabled()) throw new WalletProvisioningPausedError();
   if (!email) throw new Error("Verified recovery email required");
   const config = walletConfig();
+  const { intent, dispatch } = await reserveIntent(userId, config.parentId, publicKey);
   const client = new Turnkey({ apiBaseUrl: "https://api.turnkey.com", defaultOrganizationId: config.parentId,
     apiPublicKey: process.env.TURNKEY_API_PUBLIC_KEY!, apiPrivateKey: process.env.TURNKEY_API_PRIVATE_KEY! }).apiClient();
   await walletStep("service_identity", () => assertServiceIdentity(client, config.parentId, config.serviceUserId));
-  const { intent, dispatch } = await reserveIntent(userId, config.parentId, publicKey);
   const requestName = `VanDeFi/${intent.attempt_id}`;
   const find = async (filterType: string, filterValue: string) =>
     (await client.getSubOrgIds({ organizationId: config.parentId, filterType, filterValue })).organizationIds;

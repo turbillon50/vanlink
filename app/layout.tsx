@@ -4,7 +4,7 @@ import "./globals.css";
 import "@/components/brand/crystal.css";
 import "@/components/design/vliving-finance.css";
 import { Atmosphere } from "@/components/brand/atmosphere";
-import { BrandEntrance } from "@/components/brand/entrance";
+import "@/components/module-one/home.css";
 import { AuthProvider } from "@/components/auth/provider";
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const geistMono = Geist_Mono({
@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 });
 export const metadata: Metadata = {
-  title: "VanDeFi · Tu dinero. Tu control.",
-  description: "Consulta tu wallet de USDT en Polygon y el estado de tus movimientos.",
+  title: "VanDeFi",
+  description: "Envía dinero o cobra con un enlace.",
   applicationName: "VanDeFi",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -41,7 +41,6 @@ export default function RootLayout({
       >
         <AuthProvider>{children}</AuthProvider>
         <Atmosphere />
-        <BrandEntrance />
       </body>
     </html>
   );
