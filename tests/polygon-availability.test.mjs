@@ -127,7 +127,11 @@ function publicUi(path, state, name, props = {}) {
     "next/link": Button,
     "@/lib/polygon/use-availability": { usePolygonAvailability: () => state },
     "@/components/wallet/polygon-availability": { PolygonAvailabilityNotice: notice },
-    "@clerk/nextjs": { useAuth: () => { throw new Error("Paused public UI must not request an authenticated wallet"); } },
+    "@clerk/nextjs": { useAuth: () => {
+      // Reading anonymous Clerk state isolates the balance; it is not a wallet request.
+      if (path === "components/wallet/simple-usdc.tsx") return { userId: null, isLoaded: true };
+      throw new Error("Paused Send/Receive must not mount authenticated wallet components");
+    } },
     "@/components/mode/wallet-mode": { useWalletMode: () => ({ mode: "simple", setMode: empty }) },
     "@/lib/auth-config": { authConfigured: true },
     "@/components/ui/press-button": { PressButton: Button },
@@ -143,7 +147,9 @@ function publicUi(path, state, name, props = {}) {
     "@/components/design/usdc-operations": { USDTOperationBar: () => { throw new Error("Financial actions must stay hidden"); } },
     viem: {}, qrcode: {},
   };
-  const Component = isolated(path, imports)[name];
+  const Component = isolated(path, imports, {
+    fetch: () => { throw new Error("Public UI tests must not make a real or private request"); },
+  })[name];
   return renderToStaticMarkup(React.createElement(Component, { availability: state, ...props }));
 }
 
@@ -164,6 +170,9 @@ test("Inicio conserva consulta y oculta operaciones, promesas y gas mientras Pol
     assert.match(html, /href="\/activity"/);
     assert.doesNotMatch(html, /Compra\. Envía\. Retira\.|Para enviar USDT|href="\/receive"/);
     assert.ok(html.indexOf('role="status"') < html.indexOf('aria-label="USDT real en Polygon"'));
+    const login = html.indexOf('href="/login"');
+    assert.ok(login >= 0, "anonymous balance offers access only for consultation");
+    assert.ok(html.indexOf('role="status"') < login, "availability notice precedes login");
   }
 });
 

@@ -12,7 +12,8 @@ export function usePolygonAvailability(): PolygonAvailability {
       current?.abort();
       const controller = new AbortController();
       current = controller;
-      setAvailability("loading");
+      // Keep the last confirmed state while refreshing; do not erase a draft on focus.
+      // Timeout/errors still resolve to unknown, and the server validates every money action.
       const timeout = window.setTimeout(() => controller.abort(), 8_000);
       try {
         const next = await readPolygonAvailability(controller.signal);
