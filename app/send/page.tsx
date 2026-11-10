@@ -5,5 +5,5 @@ import { SendExperience } from "@/components/wallet/send-experience";
 export const metadata = { title: "Enviar · VanDeFi" };
 
 export default function SendPage() {
-  return <AppShell><TopBar title="Enviar" backHref="/operate"/><SendExperience/></AppShell>;
+  return <AppShell><TopBar title="Enviar" backHref="/operate" returnToOrigin /><SendExperience/></AppShell>;
 }

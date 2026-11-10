@@ -6,7 +6,7 @@ import { ReceivePanel } from "@/components/wallet/receive";
 export default function ReceivePage() {
   return (
     <AppShell>
-      <TopBar title="Recibir" backHref="/" />
+      <TopBar title="Recibir" backHref="/operate" returnToOrigin />
       <PageIntro
         eyebrow="DIRECTO A TU WALLET"
         title="Recibe sin vueltas"
