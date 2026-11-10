@@ -10,7 +10,7 @@ export function SendExperience() {
   if (mode === "simple") return (
     <>
       <PageIntro eyebrow="USDT · POLYGON" title="Enviar dinero"
-        description="Escribe cuánto y a quién. Revisa la comisión y confirma desde tu dispositivo." />
+        description="Consulta la disponibilidad de USDT en Polygon antes de preparar un envío." />
       <SendPolygonUSDT/>
     </>
   );

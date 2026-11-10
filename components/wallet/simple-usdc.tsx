@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { PolygonAvailability } from "@/lib/polygon/availability";
+import { PolygonAvailabilityNotice } from "@/components/wallet/polygon-availability";
 import { Wordmark } from "@/components/brand/logo";
 import { Icon } from "@/components/icons";
 import { useWalletMode } from "@/components/mode/wallet-mode";
@@ -19,7 +21,7 @@ function formatUSDT(amount: string) {
   return new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: value > 0 && value < 0.01 ? 6 : 2 }).format(value);
 }
 
-export function SimpleUSDTWallet() {
+export function SimpleUSDTWallet({ availability }: { availability: PolygonAvailability }) {
   const { setMode } = useWalletMode();
   const [state, setState] = useState<ViewState>("loading");
   const [data, setData] = useState<PolygonBalance | null>(null);
@@ -53,13 +55,14 @@ export function SimpleUSDTWallet() {
   const message =
     state === "loading" ? "Leyendo saldo en Polygon…"
       : state === "guest" ? "Inicia sesión para consultar tu USDT."
-      : state === "no-wallet" ? "Estamos generando tu wallet automáticamente."
+      : state === "no-wallet" ? "Tu cuenta todavía no tiene una wallet. Consulta su estado en Cuenta."
       : state === "error" ? "No pudimos comprobar tu saldo. No mostraremos un cero falso."
       : "USDT de Tether · Polygon PoS. Valor en USD aproximado.";
 
 
   return (
     <>
+      <PolygonAvailabilityNotice availability={availability} />
       <section className="vd-total-card vd-simple-usdc-card" aria-label="USDT real en Polygon">
         <div className="vd-total-top">
           <Wordmark size={19}/>
@@ -86,18 +89,19 @@ export function SimpleUSDTWallet() {
           <span className="vd-total-stamp">VANDEFI · USDT</span>
         </div>
         {state === "guest" && <Link href="/login" className="vd-portfolio-gate">Entrar a mi cuenta <Icon name="chevron" size={15}/></Link>}
-        {state === "no-wallet" && <Link href="/profile" className="vd-portfolio-gate">Ver mi wallet <Icon name="chevron" size={15}/></Link>}
+        {state === "no-wallet" && <Link href="/profile" className="vd-portfolio-gate">Ver mi cuenta <Icon name="chevron" size={15}/></Link>}
       </section>
 
-      <USDTOperationBar />      <div className="vd-simple-information">
+      {availability === "enabled" && <USDTOperationBar />}
+      <div className="vd-simple-information">
         <div>
           <p className="vd-overline">UN DÓLAR DIGITAL</p>
-          <h2>Compra. Envía. Retira.</h2>
-          <p>Sin elegir tokens o cadenas. VanDeFi muestra los costos y la red antes de confirmar.</p>
+          <h2>{availability === "enabled" ? "Compra. Envía. Retira." : "Consulta tu wallet"}</h2>
+          <p>{availability === "enabled" ? "Sin elegir tokens o cadenas. VanDeFi muestra los costos y la red antes de confirmar." : "Tu saldo y tus movimientos siguen disponibles para consulta."}</p>
         </div>
-        <Link href="/receive" className="vd-small-outline">Recibir USDT <Icon name="arrow" size={15}/></Link>
+        <Link href={availability === "enabled" ? "/receive" : "/activity"} className="vd-small-outline">{availability === "enabled" ? "Recibir USDT" : "Ver actividad"} <Icon name="arrow" size={15}/></Link>
       </div>
-      {ready && Number(data!.polygon!.polGasBalance) === 0 && (
+      {availability === "enabled" && ready && Number(data!.polygon!.polGasBalance) === 0 && (
         <p className="vd-gas-disclaimer">Para enviar USDT en Polygon se necesita POL para la comisión. El patrocinio automático de gas todavía no está habilitado.</p>
       )}
       <button type="button" className="vd-other-assets-link" onClick={() => setMode("expert")}>

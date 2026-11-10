@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { usePolygonAvailability } from "@/lib/polygon/use-availability";
+import type { PolygonAvailability } from "@/lib/polygon/availability";
+import { PolygonAvailabilityNotice } from "@/components/wallet/polygon-availability";
 import { useEffect, useRef, useState } from "react";
 import { keccak256 } from "viem";
 import { OperationMonitor } from "@/components/wallet/operation-monitor";
@@ -34,6 +37,16 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export function SendPolygonUSDT() {
+  const availability = usePolygonAvailability();
+  if (availability !== "enabled") return <div className="form-stack">
+    <PolygonAvailabilityNotice availability={availability} />
+    <p className="vd-legal-note">Tus activos históricos de Base y Bitcoin siguen disponibles en Experto.</p>
+    <PressButton href="/expert" variant="secondary">Abrir herramientas expertas</PressButton>
+  </div>;
+  return <SendPolygonUSDTSession />;
+}
+
+function SendPolygonUSDTSession() {
   const { userId, isLoaded } = useAuth();
   return <SendPolygonUSDTForUser key={isLoaded ? userId || "guest" : "loading"}/>;
 }
@@ -44,7 +57,7 @@ function SendPolygonUSDTForUser() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [deviceOk, setDeviceOk] = useState<boolean | null>(null);
   const [balance, setBalance] = useState<string | null>(null);
-  const [sendEnabled, setSendEnabled] = useState(false);
+  const [moneyAvailability, setMoneyAvailability] = useState<PolygonAvailability>("loading");
   const [destination, setDestination] = useState("");
   const [amount, setAmount] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -83,7 +96,7 @@ function SendPolygonUSDTForUser() {
           request<{ polygon: { amount: string }; sendEnabled: boolean }>("/api/chain/polygon").catch(() => null),
         ]);
         const verified = await verifyWalletDevice(userId, found.organizationId, found.turnkeyUserId).catch(() => false);
-        if (live) { setDeviceOk(verified); setBalance(polygon?.polygon.amount ?? null); setSendEnabled(polygon?.sendEnabled === true); }
+        if (live) { setDeviceOk(verified); setBalance(polygon?.polygon.amount ?? null); setMoneyAvailability(polygon ? polygon.sendEnabled === true ? "enabled" : "paused" : "unknown"); }
       } catch {
         if (live) setPhase("error");
       }
@@ -190,17 +203,11 @@ function SendPolygonUSDTForUser() {
     <PressButton href="/login?redirect_url=/send">Entrar a mi cuenta</PressButton>
   </div>;
   if (phase === "no-wallet") return <div className="snd-gate">
-    <p>Estamos generando tu wallet automáticamente.</p>
+    <p>Tu cuenta todavía no tiene una wallet. Consulta su estado en Cuenta.</p>
     <PressButton href="/profile">Ver mi cuenta</PressButton>
   </div>;
   if (phase === "error" || !wallet) return <p className="field-error">No pudimos consultar tu wallet.</p>;
-  if (!sendEnabled) return (
-    <div className="snd-gate">
-      <p><strong>USDT Polygon · en habilitación.</strong> La nueva red está siendo probada. Todavía no están activados los envíos ni los depósitos.</p>
-      <p>La opción Experto mantiene el acceso a tus activos históricos de Base y Bitcoin.</p>
-      <PressButton href="/expert" variant="secondary">Abrir herramientas expertas</PressButton>
-    </div>
-  );
+  if (moneyAvailability !== "enabled") return <PolygonAvailabilityNotice availability={moneyAvailability} />;
 
   if (sent) return (
     <div className="form-stack">
