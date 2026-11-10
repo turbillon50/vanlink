@@ -19,10 +19,16 @@ export function safeInternalPath(value: string | null | undefined): string | nul
 
 export type InternalNavigation = { current: string | null; previous: string | null };
 
+function isAuthPath(value: string): boolean {
+  const pathname = new URL(value, APP_ORIGIN).pathname;
+  return /^\/(?:login|sign-in|sign-up)(?:\/|$)/.test(pathname);
+}
+
 function internalReferrer(referrer: string, origin: string): string | null {
   try {
     const url = new URL(referrer);
-    return url.origin === origin ? safeInternalPath(url.pathname + url.search + url.hash) : null;
+    const path = safeInternalPath(url.pathname + url.search + url.hash);
+    return url.origin === origin && path && !isAuthPath(path) ? path : null;
   } catch { return null; }
 }
 
@@ -31,7 +37,7 @@ export function rememberInternalRoute(
   navigation: InternalNavigation, pathname: string | null, referrer: string, origin: string,
 ): InternalNavigation {
   const current = safeInternalPath(pathname);
-  if (!current || /^\/(?:login|sign-in|sign-up)(?:\/|$)/.test(current) || current === navigation.current)
+  if (!current || isAuthPath(current) || current === navigation.current)
     return navigation;
   const previous = safeInternalPath(navigation.current) ?? internalReferrer(referrer, origin);
   return { current, previous: previous === current ? null : previous };

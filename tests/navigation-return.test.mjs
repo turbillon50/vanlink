@@ -70,3 +70,13 @@ test("datos inválidos o destino de reserva externo terminan en una ruta interna
   assert.equal(safeInternalPath(null), null);
   assert.equal(safeInternalPath(undefined), null);
 });
+
+test("carga fresca tras acceso ignora el referente de login y usa la reserva interna", () => {
+  for (const destination of ["/send", "/receive"]) {
+    for (const authPath of ["/login", "/login/continue", "/sign-in", "/sign-up"]) {
+      const state = visit(empty(), destination, origin + authPath + "?redirect_url=" + encodeURIComponent(destination));
+      assert.equal(state.previous, null);
+      assert.equal(internalBackDestination(state, destination, "/operate"), "/operate");
+    }
+  }
+});
