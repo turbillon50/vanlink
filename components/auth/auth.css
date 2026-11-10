@@ -79,7 +79,18 @@
 }
 
 .va-auth-side, .va-auth-form, .va-clerk-cardbox, .va-clerk-card { min-width: 0; }
-.va-auth .va-label { display: block; height: auto !important; min-height: 1.5em; line-height: 1.5 !important; white-space: normal; overflow: visible; }
+.va-auth .va-label,
+.va-auth .cl-formFieldLabel,
+.va-auth .cl-formFieldLabelRow {
+  display: block;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 1.5em;
+  line-height: 1.5 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+}
 .va-auth .va-input { min-width: 0; width: 100%; }
 .va-auth .va-auth-panel { overflow: visible; }
 .va-auth .va-primary { position: relative; pointer-events: auto; }

@@ -11,10 +11,23 @@ import { panelPath, resumePath } from "../lib/navigation/module-one.ts";
 test("resume preserves a local link origin through Clerk and rejects foreign destinations", () => {
   const expected = panelPath("crear", "/l/recibo?via=mensaje");
   assert.equal(resumePath(expected), expected);
+  assert.equal(resumePath(panelPath("enviar", "/")), panelPath("enviar", "/"));
   assert.equal(resumePath("https://outside.example"), null);
   assert.equal(resumePath("/login"), null);
   assert.equal(resumePath("/?panel=desconocido"), null);
   assert.equal(resumePath("/?panel=crear&origen=%2F%2Foutside.example"), panelPath("crear", "/"));
+});
+
+test("the cover offers two actions and keeps wallet, activity and guide in the menu", () => {
+  const home = readFileSync(new URL("../components/module-one/home.tsx", import.meta.url), "utf8");
+  assert.match(home, /Envía dinero o cobra con un enlace/);
+  assert.match(home, /Enviar dinero/);
+  assert.match(home, /Cobrar por enlace/);
+  assert.match(home, /Mi cartera/);
+  assert.match(home, /Actividad/);
+  assert.match(home, /Cómo funciona/);
+  assert.match(home, /No hay ruta disponible/);
+  assert.doesNotMatch(home, /Tu dinero\. Tu control|selector de rol|Modo simple|moneda dorada|Explorar/);
 });
 
 test("session, webhook and redelivery produce a single account without creating a wallet", async t => {

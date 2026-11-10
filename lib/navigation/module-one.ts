@@ -1,6 +1,6 @@
 import { safeInternalPath } from "./return-path";
 
-export const panelNames = ["menu", "guia", "crear", "cartera", "actividad"] as const;
+export const panelNames = ["menu", "guia", "enviar", "crear", "cartera", "actividad"] as const;
 export type Panel = typeof panelNames[number];
 export function panelFrom(url: URL): Panel | null {
   const value = url.searchParams.get("panel");
