@@ -16,8 +16,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }}
       signInUrl="/login"
       signUpUrl="/sign-up"
-      signInFallbackRedirectUrl="/profile"
-      signUpFallbackRedirectUrl="/profile"
+      signInFallbackRedirectUrl="/?panel=cartera"
+      signUpFallbackRedirectUrl="/?panel=cartera"
       afterSignOutUrl="/"
       appearance={{
         variables: {

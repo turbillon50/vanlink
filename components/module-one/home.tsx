@@ -73,8 +73,7 @@ function AccountPanel({ panel, path }: { panel: Panel; path: string }) {
 }
 
 function AccountBoundary(props: { panel: Panel; path: string }) {
-  const { userId, isLoaded } = useAuth();
-  if (!isLoaded) return <p role="status">Preparando el acceso…</p>;
+  const { userId } = useAuth();
   return <AccountPanel key={userId || "guest"} {...props} />;
 }
 
