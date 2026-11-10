@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 export const metadata: Metadata = {
   title: "VanDeFi · Tu dinero. Tu control.",
-  description: "Tu wallet con Bitcoin, USDC y links de pago en un mismo lugar.",
+  description: "Consulta tu wallet de USDT en Polygon y el estado de tus movimientos.",
   applicationName: "VanDeFi",
   manifest: "/manifest.webmanifest",
   appleWebApp: {

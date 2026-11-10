@@ -938,3 +938,7 @@
     width: 100%;
   }
 }
+
+/* Readable labels on the mobile wallet and account gate. */
+.app-root .dock-item { font-size:12px; }
+.app-root .vd-total-footer p { font-size:12px; line-height:1.5; }

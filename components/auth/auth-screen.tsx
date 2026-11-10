@@ -68,7 +68,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
           <div className="va-auth-head">
             <Wordmark size={24} />
             <h1>{signUp ? "Crea tu cuenta" : "Qué bueno verte"}</h1>
-            <p>{signUp ? "Crea tu cuenta y generamos tu wallet automáticamente." : "Entra en segundos. Tu dinero, tu control."}</p>
+            <p>{signUp ? "Crea tu cuenta para acceder a VanDeFi." : "Entra en segundos. Tu dinero, tu control."}</p>
           </div>
           {authConfigured ? <div className="va-auth-form">
             <ClerkLoading><AccessLoading /></ClerkLoading>
@@ -78,7 +78,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
               : <SignIn routing="path" path="/login" signUpUrl="/sign-up" appearance={authAppearance} />}</ClerkLoaded>
           </div> : <section className="access-status"><h2>El acceso está en preparación</h2><p>Puedes explorar VanDeFi y preparar borradores. El registro estará disponible al conectar esta instalación.</p></section>}
           <PressButton variant="ghost" href="/">Seguir explorando</PressButton>
-          <p className="va-auth-legal">Al crear tu cuenta generamos tu wallet de <b>USDT en Polygon</b>. Tu llave queda protegida en tu dispositivo; nosotros nunca la tenemos.</p>
+          <p className="va-auth-legal">VanDeFi utiliza <b>USDT en Polygon</b>. La llave de tu dispositivo permanece en tu navegador. Crear una cuenta no mueve dinero.</p>
         </div>
       </section>
     </main>
