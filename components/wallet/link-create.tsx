@@ -174,7 +174,7 @@ function Inner() {
       <PressButton href="/login?redirect_url=/send/link">Inicia sesión para crear un link</PressButton>
     </div>
   );
-  if (boot === "sin-wallet") return <div className="snd-gate"><p>Estamos generando tu wallet automáticamente.</p><PressButton href="/profile">Ver estado de mi wallet</PressButton></div>;
+  if (boot === "sin-wallet") return <div className="snd-gate"><p>Tu cuenta aún no tiene una wallet vinculada.</p><PressButton href="/profile">Ver estado de mi wallet</PressButton></div>;
   if (boot === "error" || !wallet) return <p className="field-error" role="alert">No pudimos cargar tu wallet. Recarga la página.</p>;
 
   const list = (

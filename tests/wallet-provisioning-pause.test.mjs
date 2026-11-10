@@ -117,7 +117,7 @@ function start(options = {}) {
     "@/lib/wallet/diagnostics": { walletDiagnostic: () => ({ reason: "test" }) },
     "@/lib/wallet/recovery-server": { primaryEmail: async id => { calls.push(["email", id]); if (options.emailError) throw new Error("test email unavailable"); return options.noEmail ? null : "owner@example.test"; } },
   }, env);
-  const request = (body = { publicKey: key }, origin = "https://example.test") => new Request("https://example.test/api/wallet/start", {
+  const request = (body = { publicKey: key, intent: "create_wallet", requestedFor: userId }, origin = "https://example.test") => new Request("https://example.test/api/wallet/start", {
     method: "POST", headers: { "Content-Type": "application/json", Origin: origin }, body: JSON.stringify(body),
   });
   return { ...exports, calls, request };
@@ -259,3 +259,13 @@ test("wallet GET disables only new activation and preserves existing mapping and
   assert.equal(payload.wallet.evmAddress, existing.evmAddress);
   assert.deepEqual(calls, ["lookup"]);
 });
+
+for (const [label, extra] of [["old PWA", {}], ["changed session", { intent: "create_wallet", requestedFor: "another-account" }]]) {
+  test(label + " cannot create a wallet even when provisioning is enabled", async () => {
+    const r = start({ env: { WALLET_PROVISIONING_ENABLED: "true" } });
+    const response = await r.POST(r.request({ publicKey: key, ...extra }));
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).code, "wallet_request_required");
+    assert.deepEqual(r.calls, [["lookup", userId]]);
+  });
+}

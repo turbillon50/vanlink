@@ -138,7 +138,7 @@ function publicUi(path, state, name, props = {}) {
     "@/components/wallet/recover-device": { RecoverDevice: empty },
     "@/components/wallet/export-wallet": { ExportWallet: empty },
     "@/components/wallet/device-check": { DeviceCheck: empty },
-    "@/components/wallet/auto-enrollment": {},
+    "@/lib/wallet/request-wallet": {},
     "@/components/wallet/operation-monitor": { OperationMonitor: empty },
     "@/lib/operations/tracker": {},
     "@/lib/send/polygon-tx": {},
@@ -199,4 +199,13 @@ test("Cuenta sin wallet con altas detenidas no promete creación ni ofrece reint
   });
   assert.match(html, /Nuevas wallets en pausa/);
   assert.doesNotMatch(html, /se crea automáticamente|generamos tu wallet|Reintentar activación/);
+});
+
+test("a signed-in user can request enrollment explicitly when openings are enabled", () => {
+  const html = publicUi("components/wallet/setup.tsx", "enabled", "WalletSetupView", {
+    status: { canActivate: true, transfersEnabled: true, wallet: null }, error: "", busy: false,
+    verified: null, userId: "test-owner", onRecovered() {}, onConnect() {}, onRetry() {},
+  });
+  assert.match(html, /Solicitar mi wallet/);
+  assert.doesNotMatch(html, /automáticamente/);
 });

@@ -199,7 +199,7 @@ function SendPolygonUSDTForUser() {
 
   if (phase === "loading") return <div className="snd-skeleton" aria-label="Cargando wallet"/>;
   if (phase === "guest") return <div className="snd-gate">
-    <p>Tu wallet se crea al registrarte. Entra para enviar USDT.</p>
+    <p>Inicia sesión para consultar tu wallet y la disponibilidad de USDT.</p>
     <PressButton href="/login?redirect_url=/send">Entrar a mi cuenta</PressButton>
   </div>;
   if (phase === "no-wallet") return <div className="snd-gate">
