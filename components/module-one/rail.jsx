@@ -36,12 +36,13 @@ export default function Deslizable({ className = "", children, paso = 0.85 }) {
     if (e.pointerType !== "mouse" || e.button !== 0) return;
     const n = el.current; if (!n || n.scrollWidth <= n.clientWidth) return;
     drag.current = { on: true, x: e.clientX, sl: n.scrollLeft, movido: false };
-    n.classList.add(d.arrastrando);
   };
   const onMove = (e) => {
     const g = drag.current, n = el.current; if (!g.on || !n) return;
     const dx = e.clientX - g.x;
-    if (Math.abs(dx) > 4) g.movido = true;
+    if (!g.movido && Math.abs(dx) <= 4) return;
+    g.movido = true;
+    n.classList.add(d.arrastrando);
     n.scrollLeft = g.sl - dx;
   };
   const onUp = () => {
