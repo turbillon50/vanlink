@@ -28,6 +28,33 @@ Una wallet admite varias cuentas y una suborganización admite varias wallets. D
 
 Un comercio es titular de su tesorería. Designa operadores con las autorizaciones que correspondan. Una marca o un asociado pueden vender el servicio sin figurar entre esos operadores. Soporte puede orientar al titular y consultar el diagnóstico autorizado. El acceso de soporte al expediente deberá quedar registrado. Una aprobación comercial de gastos o comisiones y una aprobación de firma son acciones distintas.
 
+## Preparación de marcas blancas por país
+
+La unidad de preparación comercial es una empresa con una marca y un país de operación. Si la misma marca abre en otro país, se abre una ficha de país bajo esa marca. Si un despacho representa a varias empresas, cada mandato tiene su propio alcance. Estas fichas se pueden preparar antes de seleccionar infraestructura o dar de alta titulares en Turnkey.
+
+| Perfil comercial solicitado | Qué registrar en la ficha | Qué comprobar en el piloto |
+| --- | --- | --- |
+| Pagadora | Empresa contratante, responsable de tesorería y responsables de preparar y aprobar pagos | Separación de funciones y conciliación de un lote de ejemplo. |
+| SOFOM | País, denominación de la entidad, operación contratada y responsables | Correspondencia entre cliente, contrato y movimiento de prueba. |
+| SOFOL | País y denominación que figure en los documentos de la entidad, con su revisión pendiente o completada | Verificación de la figura aplicable antes de habilitar la marca. |
+| Despacho | Empresa representada, personal autorizado y alcance del mandato | Un operador solo puede consultar los expedientes que le corresponden. |
+
+Los perfiles son categorías comerciales. Para cada país y entidad queda por documentar qué funciones pueden ofrecerse y quién las aprueba. La denominación que figure en una ficha no acredita facultades para operar.
+
+### Ficha reutilizable
+
+| Campo | Qué debe quedar registrado |
+| --- | --- |
+| Empresa, marca y país | Razón social, marca visible, código de país, perfil, dominio y responsable de la ficha. |
+| Alcance | Producto contratado, moneda y red, acciones permitidas y restricciones por país. |
+| Modalidad | Gestionada o independiente. Documentar qué organización atendería a los futuros titulares y quién operaría la infraestructura. |
+| Titulares y tesorería | Distinguir wallets de clientes y tesorería de la empresa. Registrar la prueba de titularidad de cada relación en el expediente privado. |
+| Acceso y operación | Administradores comerciales, operadores, aprobadores, soporte y procedimiento de recuperación con factores válidos. |
+| Costos y conciliación | Cupos por marca y globales, responsable del consumo, fuente de movimientos y tratamiento de diferencias y comisiones. |
+| Estado y evidencia | Borrador, piloto autorizado u operación habilitada. Anotar responsable, fecha y referencia privada de cada verificación. |
+
+Una ficha queda preparada para piloto cuando tiene empresa y país definidos, alcance y responsables revisados y criterios de prueba acordados. Para habilitar operación se requiere evidencia de aislamiento entre marcas, acceso a la misma wallet desde dos dispositivos autorizados, recuperación, límites de consumo y conciliación de la operación ofertada. La preparación de fichas conserva las asignaciones existentes. Un caso sin titular conciliado sigue en investigación.
+
 ## Un titular desde varios dispositivos
 
 1. El backend valida el token de identidad y resuelve emisor y sujeto contra el vínculo persistido. El correo, el nombre, la IP, el navegador y el dominio comercial son insuficientes para adjudicar una wallet.
