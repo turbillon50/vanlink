@@ -125,12 +125,10 @@ export function ModuleHome() {
   return <main className="m-home">
     <nav className="m-nav" aria-label="Principal"><a href="/" className="m-word"><Logo size={30} /><Wordmark /></a>
       <button className="m-round" ref={fallback} aria-label="Abrir menú" onClick={() => open("menu")}><Menu size={22} /></button></nav>
-    <header className="m-hero"><div className="m-copy"><span className="m-kicker">CARTERA DIGITAL</span>
-      <h1>Tu dinero,<br /><em>en un enlace.</em></h1>
-      <p>Con VanDeFi puedes preparar un enlace de cobro y consultar tu cartera digital.</p>
+    <header className="m-hero"><div className="m-copy"><h1>Cobrar por enlace</h1>
+      <p>Prepara un VanLink y compártelo por mensaje.</p>
       <div className="m-actions"><button className="m-primary" onClick={() => open("crear")}>Crear VanLink <ArrowRight size={17} /></button>
-      <button className="m-secondary" onClick={() => open("guia")}>Cómo funciona</button></div></div>
-      <div className="m-art" aria-hidden="true"><div className="m-halo" /><div className="m-medal"><Logo size={114}/></div></div></header>
+      <button className="m-secondary" onClick={() => open("guia")}>Cómo funciona</button></div></div></header>
     <section className="m-discover" aria-labelledby="explorar"><h2 id="explorar">Explorar</h2>
       <Rail className="m-rail">{choices.map(({panel: id,title,summary,icon: Icon})=><button key={id} className="m-tile" onClick={()=>open(id)}><Icon size={23}/><span><strong>{title}</strong><small>{summary}</small></span><ArrowDownLeft size={17}/></button>)}</Rail>
     </section>
