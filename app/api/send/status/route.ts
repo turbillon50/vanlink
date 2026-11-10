@@ -1,6 +1,7 @@
 import { btcStatus, currentWallet, errorResponse, noStore, SendError } from "@/lib/send/server";
 import { inspectBaseHash } from "@/lib/chain/base-audit-rpc";
 import { inspectPolygonHash } from "@/lib/chain/polygon-operations";
+import { expectedPolygonOperation } from "@/lib/operations/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,22 +47,25 @@ export async function GET(req: Request) {
     }
 
     if (network === "polygon" && /^0x[0-9a-f]{64}$/i.test(id)) {
-      const result = await inspectPolygonHash(id, wallet.evmAddress);
+      const expected=await expectedPolygonOperation(wallet.clerkUserId,id);
+      const result = await inspectPolygonHash(id, wallet.evmAddress,expected);
       if (!result.related && result.transactionSeen)
         throw new SendError("transaccion_ajena", 404, "Esta operación no pertenece a tu wallet.");
 
       const failed = result.status === "0x0";
       // A successful EVM receipt alone does not prove that USDT moved.
       const transferVerified = result.transfers.length > 0;
-      const confirmed = result.status === "0x1" && transferVerified && (result.confirmations ?? 0) >= 1;
+      const confirmed = result.state === "confirmed";
       const phase = failed ? "failed" : confirmed ? "confirmed"
-        : result.status === "0x1" && !transferVerified ? "unavailable"
+        : result.state === "investigate" ? "unavailable"
         : result.status ? "confirming" : result.transactionSeen ? "pending" : "not_seen";
 
       return Response.json({
         network, id: id.toLowerCase(), phase, confirmed, failed,
         confirmations: result.confirmations, block: result.block,
         transfers: result.transfers, transferVerified, checkedAt,
+        finalized:result.finalized,canonical:result.canonical,blockHash:result.blockHash,
+        reorg:result.canonical === false,reason:result.reason,
         explorer: "https://polygonscan.com/tx/" + id.toLowerCase(),
       }, { headers: noStore });
     }

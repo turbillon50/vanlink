@@ -1,12 +1,15 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest, type NextFetchEvent } from "next/server";
+import { externalMutationGuard } from "@/lib/admin/isolation";
 
-const isPrivate = createRouteMatcher(["/profile(.*)"]);
+const isPrivate = createRouteMatcher(["/profile(.*)", "/admin(.*)"]);
 const withClerk = clerkMiddleware(async (auth, request) => {
   if (isPrivate(request)) await auth.protect();
 }, { signInUrl: "/login" });
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
+  const isolated = externalMutationGuard(request);
+  if (isolated) return isolated;
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
     if (request.nextUrl.pathname.startsWith("/api/")) return NextResponse.json({ error: "Acceso no disponible." }, { status: 503, headers: { "Cache-Control": "no-store" } });
     if (isPrivate(request)) return NextResponse.redirect(new URL("/login", request.url));

@@ -16,6 +16,7 @@ export type Movement = {
   counterparty: string | null;
   at: string | null;
   confirmed: boolean;
+  verification?: "indexer_only";
   explorer: string;
 };
 

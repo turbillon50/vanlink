@@ -104,7 +104,7 @@ export function AppShell({
             ))}
           </nav>
           <div className="rail-bottom">
-            <span className="network-label"><i /> {mode === "simple" ? "USDC · Polygon" : "Experto · multiactivo"}</span>
+            <span className="network-label"><i /> {mode === "simple" ? "USDT · Polygon" : "Experto · multiactivo"}</span>
             <ModeToggle compact />
             <AccountLink rail />
           </div>
@@ -164,7 +164,7 @@ export function AppShell({
               <span>Tu experiencia</span>
               <ModeToggle />
             </div>
-            <span className="network-label"><i /> {mode === "simple" ? "USDC · Polygon" : "Tokens y redes de tu cartera"}</span>
+            <span className="network-label"><i /> {mode === "simple" ? "USDT · Polygon" : "Tokens y redes de tu cartera"}</span>
           </div>
         </dialog>
       </div>

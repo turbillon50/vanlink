@@ -11,6 +11,7 @@
 import { RecoverDevice } from "@/components/wallet/recover-device";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { walletSession } from "@/lib/wallet/session";
 import { PressButton } from "@/components/ui/press-button";
 import { SummaryRow } from "@/components/craft";
 import { authConfigured } from "@/lib/auth-config";
@@ -113,43 +114,55 @@ function Inner() {
   async function confirm() {
     if (!wallet || !review || !userId || busy) return;
     setError("");
+    const sessionToken = walletSession.capture();
     const saved: Saved = { token: review.key.token, address: review.key.address, sats: review.sats, note: note.trim(), createdAt: new Date().toISOString() };
     // La llave se guarda ANTES de mover dinero: si se cierra la página, no se pierde.
     const list = [saved, ...readLinks(userId)];
     writeLinks(userId, list);
     if (!readLinks(userId).some(l => l.token === saved.token)) { setError("Este navegador no deja guardar datos (modo privado). Sin eso no podrías recuperar el link. Usa una ventana normal."); return; }
+    let broadcastAttempted = false;
     try {
       const signer = await import("@/lib/send/signer");
+      walletSession.assert(sessionToken, userId);
       const unsigned = buildBtcUnsigned(review.plan, wallet.bitcoinAddress);
       setBusy("firmando");
       const sigs = await signer.signBitcoinHashes(wallet.organizationId, wallet.bitcoinAddress, unsigned.sighashes);
+      walletSession.assert(sessionToken, userId);
       const done = finalizeBtc(unsigned, sigs);
+      saved.fundTxid = done.txid;
+      writeLinks(userId, [saved, ...readLinks(userId).filter(l => l.token !== saved.token)]);
       setBusy("transmitiendo");
+      broadcastAttempted = true;
       const r = await fetch("/api/send/btc/broadcast", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hex: done.hex }) });
       const d = await r.json();
+      walletSession.assert(sessionToken, userId);
       if (!r.ok) throw new Error(d.message || "La red no aceptó el envío.");
       saved.fundTxid = d.txid;
       const next = [saved, ...readLinks(userId).filter(l => l.token !== saved.token)];
       writeLinks(userId, next); setLinks(next); setCreated(saved); setReview(null); setAmount(""); setNote("");
     } catch (err) {
-      // El fondeo falló: el link no tiene dinero, se quita de la lista.
-      const next = readLinks(userId).filter(l => l.token !== saved.token);
+      // A timeout or session switch after broadcast cannot prove lack of funds.
+      // Keep the existing link key and exact hash; never automatically fund it again.
+      const next = broadcastAttempted ? readLinks(userId) : readLinks(userId).filter(l => l.token !== saved.token);
       writeLinks(userId, next); setLinks(next);
       const m = (err as Error).message || "";
-      setError(m === "dispositivo_no_autorizado" ? "Este dispositivo no puede firmar. Usa el dispositivo donde activaste tu wallet." : m && !/_/.test(m) ? m : "No se pudo enviar. No se movió dinero.");
+      setError(broadcastAttempted ? "La respuesta del envío es incierta. Conservamos el link y su hash; comprueba la operación antes de intentar otra." : m === "dispositivo_no_autorizado" ? "Este dispositivo no puede firmar. Usa el dispositivo donde activaste tu wallet." : m && !/_/.test(m) ? m : "No se pudo enviar. No se movió dinero.");
     } finally { setBusy(""); }
   }
 
   async function recover(l: Saved) {
     if (!wallet || !userId || recovering) return;
     setRecovering(l.address); setError("");
+    const sessionToken = walletSession.capture();
     try {
       const key = parseLinkToken(l.token)!;
       const s = await fetch(`/api/claim/${l.address}`, { cache: "no-store" }).then(r => r.json()) as LinkStatus;
+      walletSession.assert(sessionToken, userId);
       if (s.status !== "disponible") throw new Error(s.status === "reclamado" ? "Ya lo reclamaron." : "El link todavía no tiene saldo confirmado en la red.");
       const signed = sweepLink(key, s.utxos, wallet.bitcoinAddress, s.unconfirmed ? s.fees.fastest : s.fees.economy);
       const r = await fetch("/api/claim/broadcast", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hex: signed.hex }) });
       const d = await r.json();
+      walletSession.assert(sessionToken, userId);
       if (!r.ok) throw new Error(d.message || "La red no aceptó la recuperación.");
       const next = readLinks(userId).map(x => x.token === l.token ? { ...x, recoveredTxid: d.txid } : x);
       writeLinks(userId, next); setLinks(next);

@@ -104,16 +104,15 @@ export function trackOperation(
 }
 
 export function reconcileOperation(userId: string, id: string, network: TrackedNetwork,
-  next: { phase: TrackedPhase; confirmations: number | null; checkedAt: string },
+  next: { phase: TrackedPhase; confirmations: number | null; checkedAt: string; reorg?:boolean; canonical?:boolean|null },
 ): boolean {
   const records = readTrackedOperations(userId);
   const index = records.findIndex(x => x.id === id.toLowerCase() && x.network === network);
   if (index < 0) return false;
   const current = records[index];
   // A later flaky RPC must never downgrade a definitively confirmed receipt.
-  if (current.phase === "confirmed" && next.phase !== "confirmed") return true;
-  if (current.phase === "failed" && next.phase !== "failed") return true;
-  if (current.phase === next.phase && current.confirmations === next.confirmations) return true;
+  if (current.phase === "confirmed" && next.phase !== "confirmed" && next.reorg !== true && next.canonical !== false) return true;
+  if (current.phase === "failed" && next.phase !== "failed" && next.reorg !== true && next.canonical !== false) return true;
   records[index] = {
     ...current, phase: next.phase, confirmations: next.confirmations,
     checkedAt: next.checkedAt,

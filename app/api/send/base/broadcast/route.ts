@@ -1,3 +1,4 @@
+import { externalMutationGuard } from "@/lib/admin/isolation";
 import { baseBroadcast, currentWallet, errorResponse, noStore, SendError } from "@/lib/send/server";
 import { validateBaseBroadcast } from "@/lib/send/base-broadcast-policy";
 
@@ -5,6 +6,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const isolated = externalMutationGuard(req);
+  if (isolated) return isolated;
   try {
     const wallet = await currentWallet();
     const body = (await req.json().catch(() => ({}))) as { signed?: unknown };

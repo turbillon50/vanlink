@@ -1,3 +1,4 @@
+import { isAdminPreviewIsolated } from "@/lib/admin/isolation";
 /**
  * Consulta PÚBLICA de un VanLink + detección del pago en cadena.
  *
@@ -47,7 +48,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
       });
       if (match) {
         pago = { tx: match.explorer, amount: match.amount, confirmed: match.confirmed };
-        if (match.confirmed) {
+        if (match.confirmed && !isAdminPreviewIsolated()) {
           await db().update(vanlinks)
             .set({ status: "pagado", paidTx: match.explorer, paidAt: new Date() })
             .where(eq(vanlinks.slug, slug));

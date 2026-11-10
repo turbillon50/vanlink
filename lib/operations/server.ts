@@ -58,3 +58,9 @@ export async function serverTrackedOperations(clerkUserId: string, walletAddress
     checkedAt: null,
   }));
 }
+
+export async function expectedPolygonOperation(clerkUserId:string,hash:string) {
+  const [row]=await db().select({recipient:walletOperations.recipient,amountRaw:walletOperations.amountRaw}).from(walletOperations)
+    .where(and(eq(walletOperations.clerkUserId,clerkUserId),eq(walletOperations.txHash,hash.toLowerCase()),eq(walletOperations.network,"polygon"))).limit(1);
+  return row;
+}

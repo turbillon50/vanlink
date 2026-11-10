@@ -14,6 +14,7 @@ import { RecoverDevice } from "@/components/wallet/recover-device";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { walletSession } from "@/lib/wallet/session";
 import { keccak256 } from "viem";
 import { trackOperation, reconcileOperation, type TrackedPhase } from "@/lib/operations/tracker";
 import { PressButton } from "@/components/ui/press-button";
@@ -277,15 +278,19 @@ function SendFlowInner() {
       return;
     }
     inFlight.current = true;
+    const sessionToken = walletSession.capture();
+    const assertSession = () => walletSession.assert(sessionToken, userId || undefined);
     setError("");
     let candidate: Sent | null = null;
     let networkAttempted = false;
     try {
       const signer = await import("@/lib/send/signer");
+      assertSession();
       if (review.network === "bitcoin") {
         const unsigned = buildBtcUnsigned(review.plan, wallet.bitcoinAddress);
         setBusy("firmando");
         const signatures = await signer.signBitcoinHashes(wallet.organizationId, wallet.bitcoinAddress, unsigned.sighashes);
+        assertSession();
         const done = finalizeBtc(unsigned, signatures);
         candidate = {
           network: "bitcoin",
@@ -308,6 +313,7 @@ function SendFlowInner() {
         setBusy("firmando");
         const raw = await signer.signBaseTransaction(wallet.organizationId, wallet.evmAddress, review.unsigned);
         const signed = await verifyBaseSigned(raw, { from: wallet.evmAddress, unsigned: review.unsigned });
+        assertSession();
         const hash = keccak256(signed);
         candidate = {
           network: "base", id: hash,

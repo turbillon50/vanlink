@@ -3,27 +3,22 @@
  * Endpoint que la pantalla de Actividad consulta para pintar estado real
  * (pendiente/completado/fallido) de las transacciones fiat del usuario.
  *
- * INTEGRACIÓN PENDIENTE: obtener la wallet del usuario autenticado. Aquí
- * lo dejo vía query param `?wallet=0x...` como placeholder explícito —
- * en el repo real esto debe salir de la sesión (igual que el resto de
- * VanDeFi resuelve al usuario logueado), no de un query param público.
+ * La wallet se obtiene de Clerk y de la relación persistida; nunca de un
+ * parámetro de búsqueda proporcionado por quien hace la petición.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { currentWallet, errorResponse, noStore } from "@/lib/send/server";
 import { listFiatActivityForUser } from "@/lib/fiat/activity-store";
 
 export const runtime = "nodejs";
 
-export async function GET(req: NextRequest) {
-  const wallet = req.nextUrl.searchParams.get("wallet");
-  if (!wallet) {
-    return NextResponse.json({ error: "missing_wallet" }, { status: 400 });
-  }
-
+export async function GET(_req: NextRequest) {
   try {
-    const rows = await listFiatActivityForUser(wallet);
-    return NextResponse.json({ activity: rows });
-  } catch (err) {
-    console.error("[onramp/activity] error:", err);
-    return NextResponse.json({ error: "query_failed" }, { status: 500 });
+    const wallet = await currentWallet();
+    // Ignore public query parameters: only the authenticated account's wallet is accessible.
+    const rows = await listFiatActivityForUser(wallet.evmAddress);
+    return NextResponse.json({ activity: rows }, { headers: noStore });
+  } catch (error) {
+    return errorResponse(error);
   }
 }

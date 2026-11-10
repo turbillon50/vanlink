@@ -1,3 +1,4 @@
+import { externalMutationGuard } from "@/lib/admin/isolation";
 import { getAddress, parseUnits } from "viem";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -18,6 +19,8 @@ function creditedTo(log: PolygonLog, recipient: string): bigint | null {
 }
 
 export async function POST(request: Request, ctx: { params: Promise<{ slug: string }> }) {
+  const isolated = externalMutationGuard(request);
+  if (isolated) return isolated;
   const { slug } = await ctx.params;
   if (!/^[a-z2-9]{6,16}$/.test(slug)) return Response.json({ error: "no_encontrado" }, { status: 404, headers: noStore });
   try {

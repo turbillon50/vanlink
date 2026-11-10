@@ -1,12 +1,13 @@
 "use client";
 /** Registers this browser using the OTP credential encrypted to this tab. */
 import { existingWalletDeviceStamper, prepareWalletDevice } from "@/lib/wallet/browser";
+import { walletSession } from "@/lib/wallet/session";
 
 const OWNER = "vanlink.wallet-device-owner.v1";
 export type RecoveryStart = { otpId: string; email: string };
 
-async function post<T>(url: string, body: unknown): Promise<T> {
-  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+async function post<T>(url: string, body: unknown, expectedUserId?: string): Promise<T> {
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", ...(expectedUserId ? { "X-VanDeFi-User": expectedUserId } : {}) }, body: JSON.stringify(body) });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw Object.assign(new Error(d.error || "No se pudo completar."), { code: d.code });
   return d as T;
@@ -34,22 +35,29 @@ async function withDeviceLock<T>(operation: () => Promise<T>): Promise<T> {
   return operation();
 }
 
-export function sendCode() {
-  return post<RecoveryStart>("/api/wallet/recover/start", {});
+export function sendCode(userId?: string) {
+  walletSession.assert(walletSession.capture(), userId);
+  return post<RecoveryStart>("/api/wallet/recover/start", {}, userId);
 }
 
 export async function recoverWithCode(userId: string, otpId: string, code: string) {
+  const sessionToken = walletSession.capture();
+  const assertSession = () => walletSession.assert(sessionToken, userId);
+  assertSession();
   await assertRecoveryDeviceAvailable(userId);
   const [{ generateP256KeyPair, decryptCredentialBundle, getPublicKey }, { uint8ArrayFromHexString, uint8ArrayToHexString }, { ApiKeyStamper }, { TurnkeyClient }] = await Promise.all([
     import("@turnkey/crypto"), import("@turnkey/encoding"), import("@turnkey/api-key-stamper"), import("@turnkey/http"),
   ]);
   const ephemeral = generateP256KeyPair();
+  assertSession();
   const res = await post<{ credentialBundle: string; organizationId: string; turnkeyUserId: string }>(
-    "/api/wallet/recover/verify", { otpId, code, targetPublicKey: ephemeral.publicKeyUncompressed });
+    "/api/wallet/recover/verify", { otpId, code, targetPublicKey: ephemeral.publicKeyUncompressed }, userId);
+  assertSession();
 
   // Do not hold a browser lock while the user is entering the code. Recheck
   // both marker and key under the same global lock used by auto-enrollment.
   return withDeviceLock(async () => {
+    assertSession();
     let device = await recoveryDevice(userId);
     if (device) {
       const current = new TurnkeyClient({ baseUrl: "https://api.turnkey.com" }, device);
@@ -68,12 +76,14 @@ export async function recoverWithCode(userId: string, otpId: string, code: strin
     const session = new TurnkeyClient({ baseUrl: "https://api.turnkey.com" },
       new ApiKeyStamper({ apiPublicKey: sessionPublic, apiPrivateKey: sessionPrivate }));
     const sessionIdentity = await session.getWhoami({ organizationId: res.organizationId });
+    assertSession();
     if (sessionIdentity.organizationId !== res.organizationId || sessionIdentity.userId !== res.turnkeyUserId)
       throw new Error("wallet_recovery_identity_mismatch");
 
     if (!device) {
       // init creates a genuinely missing key once. Claim its local marker
       // before registration so a failed API call can retry this same key.
+      assertSession();
       await prepareWalletDevice(userId);
       device = await recoveryDevice(userId);
     }
@@ -85,6 +95,7 @@ export async function recoverWithCode(userId: string, otpId: string, code: strin
     if (unchanged?.getPublicKey() !== devicePublic) throw new Error("wallet_device_changed");
 
     const stamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+    assertSession();
     const act = await session.createApiKeys({ type: "ACTIVITY_TYPE_CREATE_API_KEYS_V2", organizationId: res.organizationId,
       timestampMs: String(Date.now()), parameters: { userId: res.turnkeyUserId,
         apiKeys: [{ apiKeyName: `VanLink device ${stamp}`, publicKey: devicePublic, curveType: "API_KEY_CURVE_P256" }] } });

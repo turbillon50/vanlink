@@ -1,3 +1,4 @@
+import { externalMutationGuard } from "@/lib/admin/isolation";
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { walletConfig, walletConfigured } from "@/lib/wallet/config";
@@ -14,8 +15,12 @@ function oculto(email: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const isolated = externalMutationGuard(request);
+  if (isolated) return isolated;
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Inicia sesión para continuar." }, { status: 401, headers });
+  const expectedUser = request.headers.get("X-VanDeFi-User");
+  if (expectedUser && expectedUser !== userId) return NextResponse.json({ error: "La sesión cambió. Revisa tu cuenta." }, { status: 409, headers });
   if (!walletConfigured()) return NextResponse.json({ error: "La recuperación no está disponible ahora." }, { status: 503, headers });
   if (!allowedOrigin(request.headers.get("origin"), walletConfig().origin)) return NextResponse.json({ error: "Solicitud no válida." }, { status: 403, headers });
   try {
