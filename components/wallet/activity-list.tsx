@@ -98,7 +98,7 @@ function UserActivityList({ filter, userId }: { filter: ActivityFilter; userId: 
 
   return (
     <>
-      {data.baseRecentOnly && <p className="act-partial">Base: se verificaron sólo las operaciones recientes que permite consultar el nodo público. No es un historial completo; el hash de cualquier transferencia se puede comprobar arriba.</p>}
+      {data.baseRecentOnly && <p className="act-partial">Base: se verificaron sólo las operaciones recientes que permite consultar el nodo público. No es un historial completo; puedes usar «Comprobar un movimiento» para revisar un depósito.</p>}
       {(data.unavailable?.length ?? 0) > 0 && (
         <p className="act-partial">
           No pudimos consultar {data.unavailable!.join(" ni ")}. Lo que ves puede estar incompleto.
