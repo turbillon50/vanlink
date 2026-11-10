@@ -1,11 +1,9 @@
-import { Icon } from "@/components/icons";
-
-export function Logo({ size = 28, className }: {
-  size?: number; glow?: boolean; className?: string;
-}) {
-  return <Icon name="wallet" size={size} className={className} />;
+export function Logo({ size = 28, className }: { size?: number; glow?: boolean; className?: string }) {
+  return <svg aria-hidden="true" className={className} width={size} height={size} viewBox="0 0 64 64" fill="currentColor">
+    <path d="M3 10h13l16 30 8-15h13L32 61zM43 6h16l-7 13H36z" />
+  </svg>;
 }
 
 export function Wordmark({ size = 24 }: { size?: number }) {
-  return <span className="wordmark" aria-label="VanDeFi" style={{ gap: 0, fontSize: size, fontWeight: 650, letterSpacing: "-.045em", lineHeight: 1.15 }}><span style={{ fontSize: "inherit", fontWeight: "inherit", letterSpacing: "inherit", color: "#d6d6dc" }}>Van</span><span style={{ fontSize: "inherit", fontWeight: "inherit", letterSpacing: "inherit", color: "#25D366" }}>DeFi</span></span>;
+  return <span aria-label="VanDeFi" style={{fontSize:size, fontWeight:650, letterSpacing:"-.055em", lineHeight:1.15}}>VanDeFi</span>;
 }
