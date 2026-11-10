@@ -58,12 +58,13 @@ function ReceivePanelInner({ availability }: { availability: PolygonAvailability
       return;
     }
     let active = true;
+    const controller = new AbortController();
     setWallet(null);
     setState("cargando");
     setQr("");
     void (async () => {
       try {
-        const response = await fetch("/api/chain/balance", { cache: "no-store" });
+        const response = await fetch("/api/chain/balance", { cache: "no-store", signal: controller.signal });
         if (response.status === 401) {
           if (active) setState("sin-sesion");
           return;
@@ -84,7 +85,7 @@ function ReceivePanelInner({ availability }: { availability: PolygonAvailability
         if (active) setState("error");
       }
     })();
-    return () => { active = false; };
+    return () => { active = false; controller.abort(); };
   }, [walletVersion, isLoaded, userId]);
 
   useEffect(() => {
@@ -186,6 +187,11 @@ function ReceivePanelInner({ availability }: { availability: PolygonAvailability
   );
 }
 
+function ReceivePanelSession({ availability }: { availability: PolygonAvailability }) {
+  const { userId, isLoaded } = useAuth();
+  return <ReceivePanelInner key={isLoaded ? userId || "guest" : "loading"} availability={availability} />;
+}
+
 export function ReceivePanel() {
   const availability = usePolygonAvailability();
   const { mode } = useWalletMode();
@@ -195,6 +201,6 @@ export function ReceivePanel() {
   </>;
   return <>
     <PolygonAvailabilityNotice availability={availability} />
-    {authConfigured ? <ReceivePanelInner availability={availability} /> : <p className="bal-note">Inicia sesión para consultar las direcciones de tu wallet.</p>}
+    {authConfigured ? <ReceivePanelSession availability={availability} /> : <p className="bal-note">Inicia sesión para consultar las direcciones de tu wallet.</p>}
   </>;
 }

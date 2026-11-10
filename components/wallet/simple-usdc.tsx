@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { authConfigured } from "@/lib/auth-config";
 import type { PolygonAvailability } from "@/lib/polygon/availability";
 import { PolygonAvailabilityNotice } from "@/components/wallet/polygon-availability";
 import { Wordmark } from "@/components/brand/logo";
@@ -22,16 +24,35 @@ function formatUSDT(amount: string) {
 }
 
 export function SimpleUSDTWallet({ availability }: { availability: PolygonAvailability }) {
+  if (!authConfigured) return <SimpleUSDTWalletForUser key="guest" userId={null} isLoaded availability={availability} />;
+  return <AuthenticatedSimpleUSDTWallet availability={availability} />;
+}
+
+function AuthenticatedSimpleUSDTWallet({ availability }: { availability: PolygonAvailability }) {
+  const { userId, isLoaded } = useAuth();
+  // Remount synchronously on an identity change; no previous balance can flash.
+  return <SimpleUSDTWalletForUser key={isLoaded ? userId || "guest" : "loading"}
+    userId={userId || null} isLoaded={isLoaded} availability={availability} />;
+}
+
+function SimpleUSDTWalletForUser({ availability, userId, isLoaded }: {
+  availability: PolygonAvailability; userId: string | null; isLoaded: boolean;
+}) {
   const { setMode } = useWalletMode();
-  const [state, setState] = useState<ViewState>("loading");
+  const [state, setState] = useState<ViewState>(isLoaded && !userId ? "guest" : "loading");
   const [data, setData] = useState<PolygonBalance | null>(null);
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
+    setData(null);
+    if (!isLoaded) { setState("loading"); return; }
+    if (!userId) { setState("guest"); return; }
+    setState("loading");
     let live = true;
+    const controller = new AbortController();
     const refresh = async () => {
       try {
-        const response = await fetch("/api/chain/polygon", { cache: "no-store" });
+        const response = await fetch("/api/chain/polygon", { cache: "no-store", signal: controller.signal });
         if (!live) return;
         if (response.status === 401) { setData(null); setState("guest"); return; }
         if (!response.ok) throw new Error("unavailable");
@@ -47,8 +68,8 @@ export function SimpleUSDTWallet({ availability }: { availability: PolygonAvaila
     const onReady = () => { void refresh(); };
     window.addEventListener("vandefi:wallet-ready", onReady);
     const interval = window.setInterval(() => { void refresh(); }, 60_000);
-    return () => { live = false; clearInterval(interval); window.removeEventListener("vandefi:wallet-ready", onReady); };
-  }, []);
+    return () => { live = false; controller.abort(); clearInterval(interval); window.removeEventListener("vandefi:wallet-ready", onReady); };
+  }, [userId, isLoaded]);
 
   const ready = state === "ready" && data?.polygon?.token === "USDT";
   const quantity = data?.polygon?.amount ?? "";
