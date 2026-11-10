@@ -1,5 +1,7 @@
 # VanDeFi / VanLink — Craft
 
+El [modelo operativo de VanDeFi](docs/modelo-operativo-vandefi.md) reúne la estructura de titulares y marcas, las decisiones de producto y la evidencia de pruebas. La reconstrucción descrita a continuación corresponde al proyecto histórico.
+
 Revisión del proyecto existente `septvandefi`, recuperado del deployment Vercel
 `dpl_9PzaxmNQ7qzmBwkpS7jfWw7uUtjH` el 16 de septiembre de 2026.
 
