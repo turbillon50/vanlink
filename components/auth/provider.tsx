@@ -8,7 +8,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   if (!authConfigured) return children;
   return (
     <ClerkProvider
-      localization={esMX}
+      localization={{
+        ...esMX,
+        dividerText: "o con tu correo",
+        socialButtonsBlockButton: "Continuar con {{provider|titleize}}",
+        signIn: { ...esMX.signIn, start: { ...esMX.signIn?.start, title: "Qué bueno verte", subtitle: "Entra a tu cuenta", actionText: "¿Primera vez?", actionLink: "Crea tu cuenta" } },
+        signUp: { ...esMX.signUp, start: { ...esMX.signUp?.start, title: "Crea tu cuenta", subtitle: "Así de simple", actionText: "¿Ya tienes cuenta?", actionLink: "Entra" } },
+      }}
       signInUrl="/login"
       signUpUrl="/sign-up"
       signInFallbackRedirectUrl="/profile"
