@@ -22,7 +22,8 @@ function client() {
 
 export async function primaryEmail(userId: string) {
   const user = await (await clerkClient()).users.getUser(userId);
-  return user.primaryEmailAddress?.emailAddress?.toLowerCase() ?? null;
+  const email = user.primaryEmailAddress;
+  return email?.verification?.status === "verified" ? email.emailAddress.toLowerCase() : null;
 }
 
 export async function walletFor(userId: string) {

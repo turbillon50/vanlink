@@ -5,6 +5,7 @@ import { POLYGON_USDT_DECIMALS, POLYGON_USDT_SYMBOL } from "@/lib/polygon/asset"
 import {
   decodePolygonUsdtTransfer, type PolygonLog, type PolygonUsdtTransfer,
 } from "@/lib/polygon/transfer-log";
+import { inspectPolygonEvidence } from "./polygon-evidence";
 
 /**
  * Estado REAL de una operación USDT en Polygon (ADR-009) leído de la cadena.
@@ -16,43 +17,16 @@ type Tx = { from?: string; to?: string; blockNumber?: string | null };
 const HEX = /^0x[0-9a-fA-F]+$/;
 const sameAddress = (a: string | undefined, b: string) => Boolean(a) && a!.toLowerCase() === b.toLowerCase();
 
-export async function inspectPolygonHash(hash: string, walletAddress: string) {
-  if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) throw new Error("hash_invalido");
-  if (!isAddress(walletAddress)) throw new Error("polygon_invalid_address");
-  const owner = getAddress(walletAddress);
-
-  const [receipt, tx, tipHex] = await Promise.all([
-    polygonRpc<Receipt | null>("eth_getTransactionReceipt", [hash]),
-    polygonRpc<Tx | null>("eth_getTransactionByHash", [hash]),
-    polygonRpc<string>("eth_blockNumber", []),
-  ]);
-
-  const transfers = (receipt?.status === "0x1" ? receipt.logs ?? [] : [])
-    .map((log) => decodePolygonUsdtTransfer(log, POLYGON_USDT))
-    .filter((t): t is PolygonUsdtTransfer => Boolean(t))
-    .filter((t) => t.value > BigInt(0) && (sameAddress(t.from, owner) || sameAddress(t.to, owner)))
-    .map((t) => ({
-      token: POLYGON_USDT_SYMBOL,
-      contract: POLYGON_USDT,
-      hash: hash.toLowerCase(),
-      from: t.from,
-      to: t.to,
-      raw: t.value.toString(),
-      direction: sameAddress(t.to, owner) ? "in" as const : "out" as const,
-      amount: formatUnits(t.value, POLYGON_USDT_DECIMALS),
-      counterparty: sameAddress(t.to, owner) ? t.from : t.to,
-    }));
-
-  const transactionSeen = Boolean(tx || receipt);
-  const related = sameAddress(tx?.from, owner) || transfers.length > 0;
-  if (transactionSeen && !related) {
-    return { related: false, transactionSeen: true, status: null, block: null, confirmations: null, transfers: [] };
-  }
-  const tip = HEX.test(tipHex) ? Number(BigInt(tipHex)) : null;
-  const block = receipt?.blockNumber && HEX.test(receipt.blockNumber) ? Number(BigInt(receipt.blockNumber)) : null;
-  const confirmations = block !== null && tip !== null && tip >= block ? tip - block + 1 : null;
-  const status = receipt?.status === "0x1" || receipt?.status === "0x0" ? receipt.status : null;
-  return { related, transactionSeen, status, block, confirmations, transfers };
+export async function inspectPolygonHash(hash: string, walletAddress: string, expected?: {recipient:string;amountRaw:string}) {
+  const evidence=await inspectPolygonEvidence({hash,walletAddress,expected,rpc:polygonRpc});
+  const transfers=evidence.transfers.map(event=>({token:POLYGON_USDT_SYMBOL,contract:event.contract,hash:evidence.hash,
+    from:event.sender,to:event.recipient,raw:event.amountRaw,
+    direction:sameAddress(event.recipient,walletAddress) ? "in" as const : "out" as const,
+    amount:formatUnits(BigInt(event.amountRaw),POLYGON_USDT_DECIMALS),
+    counterparty:sameAddress(event.recipient,walletAddress) ? event.sender : event.recipient}));
+  return {...evidence,transfers,block:evidence.blockNumber === null ? null : Number(evidence.blockNumber),
+    confirmations:evidence.confirmations === null ? null : Number(evidence.confirmations),
+    status:evidence.state === "failed" ? "0x0" : evidence.transferVerified ? "0x1" : null};
 }
 
 export type PolygonMovement = {
@@ -64,6 +38,7 @@ export type PolygonMovement = {
   counterparty: string | null;
   at: string | null;
   confirmed: boolean;
+  verification?: "indexer_only";
   explorer: string;
 };
 
@@ -72,6 +47,60 @@ type AssetTransfer = {
   rawContract?: { value?: string; address?: string };
   metadata?: { blockTimestamp?: string };
 };
+
+export type PolygonIndexedTransfer = { hash:string; from:string; to:string; amountRaw:string; uniqueId:string|null; at:string|null };
+/** A fixed block range and explicit continuation make partial coverage reviewable. */
+export async function polygonTransfersPage(input: {
+  address:string;direction:"in"|"out";fromBlock:string;toBlock:string;pageKey?:string;maxCount?:number;signal?:AbortSignal;
+}):Promise<{transfers:PolygonIndexedTransfer[];pageKey?:string}> {
+  if (!isAddress(input.address,{strict:false}) || !/^[0-9]+$/.test(input.fromBlock) || !/^[0-9]+$/.test(input.toBlock) ||
+    BigInt(input.fromBlock)>BigInt(input.toBlock) || (input.pageKey && input.pageKey.length>2048)) throw new Error("polygon_indexer_invalid_input");
+  const key=process.env.ALCHEMY_API_KEY;
+  const url=key ? "https://polygon-mainnet.g.alchemy.com/v2/"+encodeURIComponent(key) : process.env.POLYGON_RPC_URL;
+  if (!url?.startsWith("https://")) throw new Error("polygon_indexer_unconfigured");
+  const response=await fetch(url,{method:"POST",cache:"no-store",signal:input.signal || AbortSignal.timeout(9000),
+    headers:{"Content-Type":"application/json"},body:JSON.stringify([
+      {jsonrpc:"2.0",id:1,method:"eth_chainId",params:[]},
+      {jsonrpc:"2.0",id:2,method:"alchemy_getAssetTransfers",params:[{
+        fromBlock:"0x"+BigInt(input.fromBlock).toString(16),toBlock:"0x"+BigInt(input.toBlock).toString(16),
+        category:["erc20"],contractAddresses:[POLYGON_USDT],withMetadata:true,excludeZeroValue:true,
+        maxCount:"0x"+Math.max(1,Math.min(50,input.maxCount || 25)).toString(16),order:"asc",
+        [input.direction === "in" ? "toAddress" : "fromAddress"]:input.address,
+        ...(input.pageKey ? {pageKey:input.pageKey} : {}),
+      }]},
+    ])});
+  if (!response.ok) {
+    const error=new Error("polygon_indexer_"+response.status) as Error & {retryAfterMs?:number};
+    const retry=response.headers.get("retry-after");
+    if (retry) {
+      const seconds=Number(retry),ms=Number.isFinite(seconds) ? seconds*1000 : Date.parse(retry)-Date.now();
+      if (Number.isFinite(ms)) error.retryAfterMs=Math.min(3_600_000,Math.max(1000,ms));
+    }
+    throw error;
+  }
+  const batch=await response.json() as Array<{id?:number;result?:unknown;error?:unknown}>;
+  if (!Array.isArray(batch) || batch.find(item=>item.id===1)?.result!=="0x89") throw new Error("polygon_wrong_chain");
+  const result=batch.find(item=>item.id===2);
+  if (result?.error) {
+    const message=typeof result.error === "object" && "message" in result.error ? String(result.error.message) : "";
+    if (/page.?key|cursor/i.test(message) && /invalid|expired|not found/i.test(message)) throw new Error("polygon_indexer_cursor_expired");
+    throw new Error("polygon_indexer_error");
+  }
+  if (!result?.result || typeof result.result!=="object") throw new Error("polygon_indexer_error");
+  const page=result.result as {transfers?:unknown;pageKey?:unknown};
+  if (!Array.isArray(page.transfers) || (page.pageKey!==undefined && (typeof page.pageKey!=="string" || page.pageKey.length>2048))) throw new Error("polygon_indexer_invalid_page");
+  const transfers:PolygonIndexedTransfer[]=[];
+  for (const value of page.transfers as AssetTransfer[]) {
+    if (!value.hash || !/^0x[0-9a-f]{64}$/i.test(value.hash) ||
+      value.rawContract?.address?.toLowerCase()!==POLYGON_USDT.toLowerCase() ||
+      !value.rawContract.value || !HEX.test(value.rawContract.value) || BigInt(value.rawContract.value)<=BigInt(0) ||
+      !value.from || !value.to || !isAddress(value.from,{strict:false}) || !isAddress(value.to,{strict:false}) ||
+      !sameAddress(input.direction === "in" ? value.to : value.from,input.address)) continue;
+    transfers.push({hash:value.hash.toLowerCase(),from:value.from.toLowerCase(),to:value.to.toLowerCase(),
+      amountRaw:BigInt(value.rawContract.value).toString(),uniqueId:typeof value.uniqueId === "string" ? value.uniqueId : null,at:value.metadata?.blockTimestamp || null});
+  }
+  return {transfers,...(page.pageKey ? {pageKey:page.pageKey as string} : {})};
+}
 
 async function alchemyTransfers(filter: Record<string, unknown>): Promise<AssetTransfer[]> {
   const key = process.env.ALCHEMY_API_KEY;
@@ -131,9 +160,16 @@ export async function polygonUsdtMovements(address: string): Promise<PolygonMove
       amount: formatUnits(BigInt(t.rawContract.value), POLYGON_USDT_DECIMALS),
       counterparty: (direction === "in" ? t.from : t.to) ?? null,
       at: t.metadata?.blockTimestamp ?? null,
-      confirmed: true,
+      // The indexer discovers candidates. Finality and exact events are established by the reconciler.
+      confirmed: false,
+      verification: "indexer_only" as const,
       explorer: "https://polygonscan.com/tx/" + t.hash.toLowerCase(),
     }];
   });
-  return [...map(received, "in"), ...map(sent, "out")];
+  const result=new Map<string,PolygonMovement>();
+  for (const movement of [...map(received,"in"),...map(sent,"out")]) {
+    const key=movement.id.replace(/-(?:in|out)$/,"");
+    if (!result.has(key)) result.set(key,movement);
+  }
+  return [...result.values()];
 }

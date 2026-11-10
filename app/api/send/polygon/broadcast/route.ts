@@ -1,3 +1,4 @@
+import { externalMutationGuard } from "@/lib/admin/isolation";
 import { getAddress, keccak256, parseTransaction, recoverTransactionAddress, type Hex } from "viem";
 import { polygonRpc } from "@/lib/chain/polygon";
 import { POLYGON_CHAIN_ID, POLYGON_EXPLORER, POLYGON_USDT_ADDRESS } from "@/lib/polygon/asset";
@@ -21,6 +22,8 @@ function assertUSDTTransfer(data: string | undefined): { recipient: string; amou
 }
 
 export async function POST(request: Request) {
+  const isolated = externalMutationGuard(request);
+  if (isolated) return isolated;
   try {
     if (!polygonUsdtMoneyEnabled()) throw new SendError("polygon_no_habilitado", 503,
       "Estamos validando los envíos USDT Polygon. Todavía no muevas fondos a esta red.");

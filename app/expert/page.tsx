@@ -87,7 +87,7 @@ function Playground() {
         {mode === "simple" ? (
           <section className="vd-expert-gate">
             <strong>Activa Experto para personalizar.</strong>
-            <p>Tu saldo USDC seguirá exactamente igual; solamente aparecen herramientas adicionales.</p>
+            <p>Tu saldo USDT seguirá exactamente igual; solamente aparecen herramientas adicionales.</p>
             <button type="button" onClick={() => setMode("expert")}>Activar modo Experto</button>
           </section>
         ) : (

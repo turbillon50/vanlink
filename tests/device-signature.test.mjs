@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
+import { createWalletSessionGuard } from "../lib/wallet/session.ts";
 import * as viem from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -70,6 +71,7 @@ function device(options = {}) {
     setTimeout(callback) { callback(); },
     require(name) {
       if (name === "viem") return viem;
+      if (name === "@/lib/wallet/session") return { walletSession: sessionGuard };
       if (name === "@turnkey/http") return { TurnkeyClient };
       if (name === "@/lib/wallet/browser") return {
         existingWalletDeviceStamper: async () => {
@@ -191,7 +193,9 @@ const signerCompiled = ts.transpileModule(
   } },
 ).outputText;
 
-function legacySigner(missingKey = false) {
+function legacySigner(missingKey = false, switchDuringRead = false) {
+  const sessionGuard = createWalletSessionGuard();
+  sessionGuard.synchronize("user-a", "session-a");
   const state = { readonlyReads: 0, clients: 0, signCalls: 0 };
   class TurnkeyClient {
     constructor(_config, stamper) { state.clients++; assert.equal(stamper.getPublicKey(), "existing-device-key"); }
@@ -213,10 +217,12 @@ function legacySigner(missingKey = false) {
   vm.runInNewContext(signerCompiled, {
     exports,
     require(name) {
+      if (name === "@/lib/wallet/session") return { walletSession: sessionGuard };
       if (name === "@turnkey/http") return { TurnkeyClient };
       if (name === "@/lib/wallet/browser") return {
         existingWalletDeviceStamper: async () => {
           state.readonlyReads++;
+          if (switchDuringRead) sessionGuard.synchronize("user-b", "session-b");
           return missingKey ? null : { getPublicKey: () => "existing-device-key" };
         },
       };
@@ -245,4 +251,11 @@ test("firmantes existentes conservan flujo BTC y EVM usando únicamente clave ex
   assert.equal(d.state.readonlyReads, 3);
   assert.equal(d.state.clients, 3);
   assert.equal(d.state.signCalls, 3);
+});
+
+
+test("account change while loading the device cancels before requesting a transaction signature", async () => {
+  const d = legacySigner(false, true);
+  await assert.rejects(d.api.signBaseTransaction(identity.organizationId, owner.address, "fixture"), /wallet_session_changed/);
+  assert.equal(d.state.signCalls, 0);
 });

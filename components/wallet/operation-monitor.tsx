@@ -16,6 +16,8 @@ type StatusPayload = {
   confirmed?: boolean;
   confirmations?: number | null;
   checkedAt?: string;
+  canonical?:boolean|null;
+  reorg?:boolean;
   transfers?: Array<{ token: string; amount: string; direction: "in" | "out" }>;
 };
 
@@ -115,7 +117,8 @@ function OperationMonitorInner({ compact = false }: { compact?: boolean }) {
       if (!active || running.current || document.visibilityState === "hidden") return;
       running.current = true;
       const pending = readTrackedOperations(userId)
-        .filter(item => item.phase !== "confirmed" && item.phase !== "failed");
+        .filter(item => (item.phase !== "confirmed" && item.phase !== "failed") ||
+          !item.checkedAt || Date.now()-Date.parse(item.checkedAt)>300_000);
       // Rotate bounded batches so older pending hashes also get checked.
       const offset = pollingCursor.current % Math.max(pending.length, 1);
       const batch = Array.from({ length: Math.min(10, pending.length) },
@@ -130,6 +133,7 @@ function OperationMonitorInner({ compact = false }: { compact?: boolean }) {
             reconcileOperation(userId, item.id, item.network, {
               phase, confirmations: response.confirmations ?? null,
               checkedAt: response.checkedAt || new Date().toISOString(),
+              canonical:response.canonical,reorg:response.reorg,
             });
           } catch {
             // Keep pending record; a failed RPC is never evidence of a failed tx.

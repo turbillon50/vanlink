@@ -22,7 +22,9 @@ export async function provisionWallet(userId: string, publicKey: string, email: 
     const matches = await walletStep("device_lookup", () => client.getSubOrgIds({ organizationId: config.parentId, filterType: "PUBLIC_KEY", filterValue: publicKey }));
     if (matches.organizationIds.length > 1) throw new Error("Ambiguous wallet ownership");
     if (existing && matches.organizationIds[0] !== existing.organizationId) throw new Error("Wallet ownership mismatch");
-    let organizationId = existing?.organizationId ?? matches.organizationIds[0];
+    // A public key is not proof of possession. Never adopt an orphaned organization.
+    if (!existing && matches.organizationIds.length) throw new Error("wallet_orphan_requires_owner_verification");
+    let organizationId = existing?.organizationId;
     if (!organizationId) {
       const created = await walletStep("wallet_create", () => client.createSubOrganization({ organizationId: config.parentId,
         subOrganizationName: `VanLink ${userId}`, rootQuorumThreshold: 1,

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
+import { createWalletSessionGuard } from "../lib/wallet/session.ts";
 
 const OWNER = "vanlink.wallet-device-owner.v1";
 const USER = "user_recovery";
@@ -21,8 +22,10 @@ function recovery(options = {}) {
   const { owner = null, key = null, registered = false, deviceIdentity = identity,
     sessionIdentity = identity, registrationFailures = 0, registrationStatus = "ACTIVITY_STATUS_COMPLETED",
     verifyFailure = false, duringVerify = null, duringDeviceCheck = null } = options;
+  const sessionGuard = createWalletSessionGuard();
+  sessionGuard.synchronize(USER, "test-session");
   const values = new Map(owner === null ? [] : [[OWNER, owner]]);
-  const state = { key, registered, resets: 0, registrations: 0, verifyCalls: 0, startCalls: 0,
+  const state = { sessionGuard, key, registered, resets: 0, registrations: 0, verifyCalls: 0, startCalls: 0,
     deviceChecks: 0, sessionChecks: 0, locks: 0, locked: false, registrationKeys: [],
     remainingFailures: registrationFailures, readsInsideLock: 0 };
   const storage = { getItem: name => values.get(name) ?? null,
@@ -69,6 +72,7 @@ function recovery(options = {}) {
   const cache = {};
   let context;
   const req = name => {
+    if (name === "@/lib/wallet/session") return { walletSession: sessionGuard };
     if (name === "@/lib/wallet/browser") return load("browser");
     if (name === "@turnkey/indexed-db-stamper") return { IndexedDbStamper };
     if (name === "@turnkey/http") return { TurnkeyClient };
@@ -241,4 +245,12 @@ test("key replacement during successful identity lookup cannot be reported as re
   assert.equal(d.state.key, "changed-device-key");
   assert.equal(d.state.resets, 0);
   assert.equal(d.state.registrations, 0);
+});
+
+
+test("switching Clerk account during OTP verification cancels registration without changing the device key", async () => {
+  const d = recovery({ duringVerify(state) { state.sessionGuard.synchronize("other-user", "other-session"); } });
+  await assert.rejects(recover(d), /wallet_session_changed/);
+  assert.equal(d.state.registrations, 0);
+  assert.equal(d.state.resets, 0);
 });

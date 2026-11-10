@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { enrollWalletIfMissing, type WalletLookup } from "@/lib/wallet/onboarding";
+import { walletSession } from "@/lib/wallet/session";
 
 export const WALLET_READY_EVENT = "vandefi:wallet-ready";
 export const WALLET_RETRY_EVENT = "vandefi:wallet-retry";
@@ -30,21 +31,25 @@ async function withDeviceLock<T>(operation: () => Promise<T>): Promise<T> {
 }
 
 async function enroll(userId: string): Promise<void> {
+  const session = walletSession.capture();
+  walletSession.assert(session, userId);
   const job = inFlight.get(userId);
   if (job) return job;
 
   const pending = withDeviceLock(() => enrollWalletIfMissing({
-    lookup,
+    lookup: async () => { walletSession.assert(session, userId); const result = await lookup(); walletSession.assert(session, userId); return result; },
     prepareDevice: async () => {
       const { prepareWalletDevice } = await import("@/lib/wallet/browser");
+      walletSession.assert(session, userId);
       return prepareWalletDevice(userId);
     },
     provision: async (publicKey) => {
+      walletSession.assert(session, userId);
       const response = await fetch("/api/wallet/start", {
         method: "POST",
         credentials: "same-origin",
         cache: "no-store",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-VanDeFi-User": userId },
         body: JSON.stringify({ publicKey }),
       });
       const data = await response.json().catch(() => ({}));

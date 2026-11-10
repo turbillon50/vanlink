@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { PressButton } from "@/components/ui/press-button";
+import { walletSession } from "@/lib/wallet/session";
 
 type Props = { userId: string; onRecovered: () => void; context?: string };
 
@@ -15,11 +16,14 @@ export function RecoverDevice({ userId, onRecovered, context = "firmar" }: Props
   const [blocked, setBlocked] = useState(false);
 
   async function send() {
+    const sessionToken = walletSession.capture();
     setBusy(true); setError("");
     try {
       const { assertRecoveryDeviceAvailable, sendCode } = await import("@/lib/wallet/recovery");
       await assertRecoveryDeviceAvailable(userId);
-      const r = await sendCode();
+      walletSession.assert(sessionToken, userId);
+      const r = await sendCode(userId);
+      walletSession.assert(sessionToken, userId);
       setOtpId(r.otpId); setEmail(r.email); setStep("sent");
     } catch (e) {
       const err = e as Error & { code?: string };
@@ -36,10 +40,13 @@ export function RecoverDevice({ userId, onRecovered, context = "firmar" }: Props
   }
 
   async function verify() {
+    const sessionToken = walletSession.capture();
     setBusy(true); setError("");
     try {
       const { recoverWithCode } = await import("@/lib/wallet/recovery");
+      walletSession.assert(sessionToken, userId);
       await recoverWithCode(userId, otpId, code.trim());
+      walletSession.assert(sessionToken, userId);
       setStep("done"); onRecovered();
     } catch (e) {
       const message = (e as Error).message;

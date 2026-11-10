@@ -6,6 +6,7 @@ import { keccak256 } from "viem";
 import { OperationMonitor } from "@/components/wallet/operation-monitor";
 import { trackOperation, reconcileOperation, phaseLabel, type TrackedPhase } from "@/lib/operations/tracker";
 import { useAuth } from "@clerk/nextjs";
+import { walletSession } from "@/lib/wallet/session";
 import { PressButton } from "@/components/ui/press-button";
 import { RecoverDevice } from "@/components/wallet/recover-device";
 import {
@@ -143,6 +144,7 @@ function SendPolygonUSDTForUser() {
     if (!wallet || !quote || !userId || inFlight.current || deviceOk !== true) return;
     if (Date.now() >= quote.expiryMs) { setQuote(null); setError("La cotización venció. Revisa el importe nuevamente."); return; }
     inFlight.current = true;
+    const sessionToken = walletSession.capture();
     setError(""); setBusy(true);
     let candidate: Sent | null = null;
     let networkAttempted = false;
@@ -151,8 +153,10 @@ function SendPolygonUSDTForUser() {
         to: quote.to, amount: BigInt(quote.value), quote: quote.quote,
       });
       const { signEvmTransaction } = await import("@/lib/send/signer");
+      walletSession.assert(sessionToken, userId);
       const signature = await signEvmTransaction(wallet.organizationId, wallet.evmAddress, unsigned);
       const verified = await verifyPolygonUSDTSigned(signature, { from: wallet.evmAddress, unsigned });
+      walletSession.assert(sessionToken, userId);
       if (sessionUserId.current !== userId) throw new Error("La sesión cambió. Revisa tu cuenta antes de enviar.");
       const hash = keccak256(verified);
       candidate = { hash, explorer: "https://polygonscan.com/tx/" + hash, state: "pending", phase: "submitted" };

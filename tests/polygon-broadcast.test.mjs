@@ -12,6 +12,7 @@ const routeSource = readFileSync(new URL("../app/api/send/polygon/broadcast/rout
 const compiledRoute = ts.transpileModule(routeSource, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
 }).outputText;
+const isolationCode = ts.transpileModule(readFileSync(new URL("../lib/admin/isolation.ts", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
 const owner = privateKeyToAccount("0x" + "11".repeat(32));
 const stranger = privateKeyToAccount("0x" + "22".repeat(32));
 const recipient = "0x1111111111111111111111111111111111111111";
@@ -30,7 +31,10 @@ function isolatedRoute(options = {}) {
   class SendError extends Error {
     constructor(code, status = 400, message = code) { super(message); this.code = code; this.status = status; }
   }
+  const isolation = {};
+  vm.runInNewContext(isolationCode, { exports: isolation, Response, URL, process: { env: { VERCEL_ENV: options.preview ? "preview" : "production" } } });
   const imports = {
+    "@/lib/admin/isolation": isolation,
     viem,
     "@/lib/polygon/asset": { POLYGON_CHAIN_ID, POLYGON_EXPLORER, POLYGON_USDT_ADDRESS },
     "@/lib/polygon/capabilities": { polygonUsdtMoneyEnabled: () => options.enabled !== false },
@@ -162,4 +166,13 @@ test("falta de POL no se reporta como transmisión exitosa", async () => {
   assert.equal(response.status, 400);
   assert.equal((await response.json()).code, "sin_pol");
   assert.equal(route.journal.length, 1);
+});
+
+
+test("isolated preview blocks broadcast before wallet lookup, persistence or RPC", async () => {
+  const route = isolatedRoute({ preview: true });
+  const response = await route.post();
+  assert.equal(response.status, 403);
+  assert.equal((await response.json()).error, "preview_mutation_blocked");
+  assert.equal(route.order.length, 0);
 });

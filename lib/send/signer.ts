@@ -1,4 +1,5 @@
 "use client";
+import { walletSession } from "@/lib/wallet/session";
 /**
  * lib/send/signer.ts — firma en el NAVEGADOR con la llave del dispositivo.
  *
@@ -32,13 +33,16 @@ async function settle(c: Awaited<ReturnType<typeof client>>, organizationId: str
 }
 
 export async function signBitcoinHashes(organizationId: string, bitcoinAddress: string, sighashes: string[]) {
+  const token = walletSession.capture();
   const c = await client();
+  walletSession.assert(token);
   const res = await c.signRawPayloads({
     type: "ACTIVITY_TYPE_SIGN_RAW_PAYLOADS", organizationId, timestampMs: String(Date.now()),
     parameters: { signWith: bitcoinAddress, payloads: sighashes,
       encoding: "PAYLOAD_ENCODING_HEXADECIMAL", hashFunction: "HASH_FUNCTION_NO_OP" },
   });
   const a = await settle(c, organizationId, res.activity as unknown as Activity);
+  walletSession.assert(token);
   const sigs = (a.result as { signRawPayloadsResult?: { signatures?: { r: string; s: string; v: string }[] } })
     ?.signRawPayloadsResult?.signatures;
   if (!sigs || sigs.length !== sighashes.length) throw new Error("firmas_incompletas");
@@ -46,12 +50,15 @@ export async function signBitcoinHashes(organizationId: string, bitcoinAddress: 
 }
 
 export async function signBaseTransaction(organizationId: string, evmAddress: string, unsigned: string) {
+  const token = walletSession.capture();
   const c = await client();
+  walletSession.assert(token);
   const res = await c.signTransaction({
     type: "ACTIVITY_TYPE_SIGN_TRANSACTION_V2", organizationId, timestampMs: String(Date.now()),
     parameters: { signWith: evmAddress, unsignedTransaction: unsigned.replace(/^0x/, ""), type: "TRANSACTION_TYPE_ETHEREUM" },
   });
   const a = await settle(c, organizationId, res.activity as unknown as Activity);
+  walletSession.assert(token);
   const signed = (a.result as { signTransactionResult?: { signedTransaction?: string } })?.signTransactionResult?.signedTransaction;
   if (!signed) throw new Error("firma_vacia");
   return signed;

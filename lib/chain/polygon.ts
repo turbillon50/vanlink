@@ -17,16 +17,26 @@ function endpoint() {
 
 type RpcResponse<T> = { result?: T; error?: { code?: number; message?: string } };
 
-async function rpc<T>(method: string, params: unknown[]): Promise<T> {
+async function rpc<T>(method: string, params: unknown[], signal?: AbortSignal): Promise<T> {
   const body = JSON.stringify([
     { jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] },
     { jsonrpc: "2.0", id: 2, method, params },
   ]);
   const response = await fetch(endpoint(), {
-    method: "POST", cache: "no-store", signal: AbortSignal.timeout(10_000),
+    method: "POST", cache: "no-store", signal: signal
+      ? AbortSignal.any([AbortSignal.timeout(10_000), signal]) : AbortSignal.timeout(10_000),
     headers: { "Content-Type": "application/json" }, body,
   });
-  if (!response.ok) throw new Error("polygon_rpc_" + response.status);
+  if (!response.ok) {
+    const error = new Error("polygon_rpc_" + response.status) as Error & { retryAfterMs?: number };
+    const retry = response.headers.get("retry-after");
+    if (retry) {
+      const seconds = Number(retry);
+      const milliseconds = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(retry) - Date.now();
+      if (Number.isFinite(milliseconds)) error.retryAfterMs = Math.min(3_600_000, Math.max(1000, milliseconds));
+    }
+    throw error;
+  }
   const raw = await response.json() as RpcResponse<T>[] | RpcResponse<T>;
   if (!Array.isArray(raw)) throw new Error("polygon_rpc_unverified_batch");
   const chain = raw.find((item) => (item as { id?: number }).id === 1) as RpcResponse<string> | undefined;
@@ -67,6 +77,6 @@ export async function readPolygonUSDT(address: string) {
   };
 }
 
-export async function polygonRpc<T>(method: string, params: unknown[]): Promise<T> {
-  return rpc<T>(method, params);
+export async function polygonRpc<T>(method: string, params: unknown[], options?: { signal?: AbortSignal }): Promise<T> {
+  return rpc<T>(method, params, options?.signal);
 }

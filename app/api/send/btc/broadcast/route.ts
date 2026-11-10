@@ -1,8 +1,11 @@
+import { externalMutationGuard } from "@/lib/admin/isolation";
 import { btcBroadcast, currentWallet, errorResponse, noStore, SendError } from "@/lib/send/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const isolated = externalMutationGuard(req);
+  if (isolated) return isolated;
   try {
     const w = await currentWallet();
     const body = (await req.json().catch(() => ({}))) as { hex?: string };

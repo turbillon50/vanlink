@@ -1,6 +1,6 @@
 # Seguimiento Polygon en otro dispositivo
 
-La migración aditiva `db/migrations/20261109_wallet_operations.sql` crea el registro de intentos de envío. Debe aplicarse antes de habilitar los envíos Polygon. No se ha aplicado a producción como parte de este cambio.
+La migración aditiva `db/migrations/20261109_wallet_operations.sql` crea el registro de intentos de envío. Se aplicó a producción el 9 de noviembre de 2026, según `QA-USDT-POLYGON-20261109.md`; el inventario del centro de mando volvió a comprobar tabla e índices en el corte del 9–10 de noviembre. Su presencia no habilita envíos ni acredita canario o recuperación. Las migraciones nuevas del centro son independientes y se prueban en una rama aislada.
 
 1. Respaldar la base de producción con `pg_dump` siguiendo la operación existente, sin copiar credenciales a consola o commits.
 2. Revisar y aplicar el SQL de la migración con la conexión administrativa de la misma base que usa VanDeFi.

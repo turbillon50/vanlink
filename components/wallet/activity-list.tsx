@@ -14,6 +14,7 @@ type Movement = {
   id: string; network: "Polygon" | "Base" | "Bitcoin"; direction: "in" | "out";
   token: string; amount: string; counterparty: string | null;
   at: string | null; confirmed: boolean; explorer: string;
+  verification?:"indexer_only";
 };
 type Response = { wallet: unknown; movements: Movement[]; unavailable?: string[]; baseRecentOnly?: boolean; baseScannedBlocks?: number | null };
 
@@ -98,6 +99,7 @@ function UserActivityList({ filter, userId }: { filter: ActivityFilter; userId: 
 
   return (
     <>
+      <p className="act-partial">Polygon: el indexador devuelve hasta 50 entradas y 50 salidas recientes. Es una cobertura parcial; comprueba un hash arriba para contrastar sus eventos y finalidad.</p>
       {data.baseRecentOnly && <p className="act-partial">Base: se verificaron sólo las operaciones recientes que permite consultar el nodo público. No es un historial completo; el hash de cualquier transferencia se puede comprobar arriba.</p>}
       {(data.unavailable?.length ?? 0) > 0 && (
         <p className="act-partial">
@@ -118,11 +120,11 @@ function UserActivityList({ filter, userId }: { filter: ActivityFilter; userId: 
                   {m.direction === "in" ? "↓" : "↑"}
                 </span>
                 <span className="act-main">
-                  <strong>{m.direction === "in" ? "Recibiste" : "Enviaste"} {m.token}</strong>
+                  <strong>{m.verification === "indexer_only" ? (m.direction === "in" ? "Entrada de" : "Salida de") : m.direction === "in" ? "Recibiste" : "Enviaste"} {m.token}</strong>
                   <small>
                     {m.network}
                     {m.counterparty ? ` · ${short(m.counterparty)}` : ""}
-                    {!m.confirmed ? " · sin confirmar" : ""}
+                    {m.verification === "indexer_only" ? " · finalidad sin comprobar" : !m.confirmed ? " · sin confirmar" : ""}
                   </small>
                 </span>
                 <span className="act-amount">

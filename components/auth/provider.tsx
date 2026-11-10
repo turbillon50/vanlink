@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { esMX } from "@clerk/localizations";
 import { authConfigured } from "@/lib/auth-config";
-import { AutoWalletEnrollment } from "@/components/wallet/auto-enrollment";
+import { SessionBoundary } from "@/components/auth/session-boundary";
+import { isAdminPreviewIsolated } from "@/lib/admin/isolation";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   if (!authConfigured) return children;
@@ -36,8 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       }}
     >
-      <AutoWalletEnrollment />
-      {children}
+      <SessionBoundary previewIsolated={isAdminPreviewIsolated()}>{children}</SessionBoundary>
     </ClerkProvider>
   );
 }

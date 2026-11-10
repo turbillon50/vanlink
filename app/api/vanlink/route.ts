@@ -1,3 +1,4 @@
+import { externalMutationGuard } from "@/lib/admin/isolation";
 /**
  * app/api/vanlink/route.ts
  * Crear y listar VanLinks de cobro.
@@ -17,6 +18,8 @@ export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store" };
 
 export async function POST(req: NextRequest) {
+  const isolated = externalMutationGuard(req);
+  if (isolated) return isolated;
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "no_autenticado" }, { status: 401, headers });
 
@@ -79,6 +82,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
+  const isolated = externalMutationGuard(req);
+  if (isolated) return isolated;
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "no_autenticado" }, { status: 401, headers });
   let body: { slug?: string; status?: "cancelado" };

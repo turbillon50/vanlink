@@ -1,3 +1,4 @@
+import { externalMutationGuard } from "@/lib/admin/isolation";
 /**
  * app/api/onramp/webhook/route.ts
  * Recibe los webhooks de Onramper. Configurar esta URL en el dashboard de
@@ -16,6 +17,8 @@ import type { OnramperWebhookPayload } from "@/lib/fiat/types";
 export const runtime = "nodejs"; // necesita node:crypto para HMAC
 
 export async function POST(req: NextRequest) {
+  const isolated = externalMutationGuard(req);
+  if (isolated) return isolated;
   const env = readOnramperEnv();
 
   // Degradación elegante: si falta el secret, ni intentamos "confiar a
