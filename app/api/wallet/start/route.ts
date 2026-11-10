@@ -1,8 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import { walletConfig, walletConfigured } from "@/lib/wallet/config";
+import { walletConfig, walletConfigured, walletProvisioningEnabled } from "@/lib/wallet/config";
 import { allowedOrigin, validPublicKey } from "@/lib/wallet/security";
-import { provisionWallet } from "@/lib/wallet/server";
+import { lookupExistingWallet, provisionWallet, WalletProvisioningPausedError } from "@/lib/wallet/server";
 import { walletDiagnostic } from "@/lib/wallet/diagnostics";
 import { primaryEmail } from "@/lib/wallet/recovery-server";
 
@@ -20,6 +20,10 @@ export async function POST(request: NextRequest) {
     if (raw.length > 512) return NextResponse.json({ error: "Solicitud demasiado grande." }, { status: 400, headers });
     const { publicKey } = JSON.parse(raw);
     if (!validPublicKey(publicKey)) return NextResponse.json({ error: "No pudimos preparar este dispositivo." }, { status: 400, headers });
+    // Existing mappings survive the creation pause and need no Clerk/provider
+    // email lookup. This response is not proof of device signing authorization.
+    if (await lookupExistingWallet(userId)) return NextResponse.json({ connected: true }, { headers });
+    if (!walletProvisioningEnabled()) return provisioningPaused();
     // Recuperación no custodiada: toda wallet nueva debe asociarse al correo
     // de Clerk para permitir agregar un dispositivo si el original se pierde.
     let email: string | null;
@@ -36,7 +40,15 @@ export async function POST(request: NextRequest) {
     await provisionWallet(userId, publicKey, email);
     return NextResponse.json({ connected: true }, { headers });
   } catch (error) {
+    if (error instanceof WalletProvisioningPausedError) return provisioningPaused();
     console.error("wallet_activation_failed", { stage: "wallet", ...walletDiagnostic(error) });
     return NextResponse.json({ error: "No pudimos activar tu wallet. Intenta de nuevo." }, { status: 503, headers });
   }
+}
+
+function provisioningPaused() {
+  return NextResponse.json({
+    error: "La creación de nuevas wallets está en pausa. Las wallets existentes conservan su acceso.",
+    code: "wallet_provisioning_paused",
+  }, { status: 503, headers });
 }

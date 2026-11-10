@@ -8,6 +8,11 @@ export function walletConfigured() {
   );
 }
 
+/** New provider resources require a separate, explicit opt-in. Existing wallets do not. */
+export function walletProvisioningEnabled() {
+  return walletConfigured() && process.env.WALLET_PROVISIONING_ENABLED === "true";
+}
+
 export function walletConfig() {
   if (!walletConfigured()) throw new Error("Wallet activation unavailable");
   const origin = new URL(process.env.APP_ORIGIN!).origin;

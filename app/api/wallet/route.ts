@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { wallets } from "@/lib/db/schema";
-import { walletConfigured } from "@/lib/wallet/config";
+import { walletConfigured, walletProvisioningEnabled } from "@/lib/wallet/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export async function GET() {
   try {
     const wallet = process.env.DATABASE_URL
       ? (await db().select().from(wallets).where(eq(wallets.clerkUserId, userId)))[0] : undefined;
-    return NextResponse.json({ canActivate: walletConfigured(), transfersEnabled: walletConfigured(),
+    return NextResponse.json({ canActivate: walletProvisioningEnabled(), transfersEnabled: walletConfigured(),
       wallet: wallet ? { organizationId: wallet.organizationId, turnkeyUserId: wallet.turnkeyUserId,
         walletId: wallet.walletId, evmAddress: wallet.evmAddress, bitcoinAddress: wallet.bitcoinAddress,
         networks: ["Polygon", "Base", "Bitcoin"] } : null }, { headers });
