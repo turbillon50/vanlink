@@ -68,7 +68,7 @@ export async function runJobs(actorId: string) {
   await Promise.all(Array.from({length:2},async()=>{
     const job=await claim();
     if (!job) return;
-    const context={actorId:job.actor_id || actorId,job:{id:job.id,token:job.lease_token},deadline,pageBudget};
+    const context={actorId,job:{id:job.id,token:job.lease_token},deadline,pageBudget};
     const saveCheckpoint=async(checkpoint:RefreshCheckpoint)=>{
       const updated=await adminQuery(`UPDATE command_jobs SET checkpoint=$4::jsonb,updated_at=now()
         WHERE id=$1 AND environment=$2 AND lease_token=$3 AND status='running' AND lease_until>now()`,[job.id,commandEnvironment(),job.lease_token,JSON.stringify(checkpoint)]);

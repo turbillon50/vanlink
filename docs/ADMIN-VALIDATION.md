@@ -17,6 +17,18 @@ Documento de evidencia. Los criterios pendientes no son resultados aprobados. No
 
 ## Registro de esta implementación
 
+### Resultados ejecutados el 10 de noviembre
+
+- Preview institucional publicado en Vercel desde la rama `feat/vandefi-command-center-20261110`; PR #14 en draft. No merge ni promoción de aplicación a producción.
+- Suite completa: **182 pruebas aprobadas**, incluida la regresión de parámetros SQL y MFA sin segundo factor. Typecheck y build Next.js aprobados. El build local usó la clave pública de Clerk visible en el HTML, sin credenciales de servidor.
+- Migración `20261110_command_center.sql` aplicada dos veces en `br-crimson-wave-bcwz552e`. Conserva cinco vínculos originales; sin casos, trabajos, auditoría ni concesiones sintéticas persistidas. Se creó una credencial exclusiva con lectura de tablas heredadas, sin UPDATE/DELETE de auditoría ni escritura del marcador.
+- **Siete comprobaciones reales en Neon**, dentro de subtransacción revertida: control de versión, auditoría inmutable, idempotencia, deduplicación de trabajo activo, precisión numérica, rol activo único y rollback completo. Script reproducible: `scripts/admin/isolated-integration.sql`.
+- **Once módulos y 56 combinaciones de consultas** ejecutadas contra Neon real mediante transporte HTTP de validación, con la credencial limitada. Detectaron y corrigieron parámetros SQL sin tipo en auditoría/roles. El harness ejercitó las consultas; no sustituyó Clerk ni concedió acceso por HTTP al producto.
+- **29 escenarios visuales** con el componente real y fuentes sintéticas locales: módulos, móvil/escritorio, teclado, formularios, filtros, decimales y cuentas sin wallet. Capturas marcadas como simulación, sin datos de clientes. No prueban autorización ni mutaciones reales.
+- **Seis recorridos reales sin sesión** en el preview a 390/1440 px: redirecciones a Clerk conservan destino; sin errores JS ni desbordamiento. APIs administrativas rechazaron con 401; cinco rutas sensibles heredadas rechazaron POST con 403 `preview_mutation_blocked`.
+- Sesión administrativa, MFA y consecuencias UI→API→Neon con el dueño: **pendientes** del ID exacto y bootstrap. Proveedores autenticados, firma y recuperación reales: **sin comprobar**.
+
+
 La rama Neon `preview-command-center-20261110` (`br-crimson-wave-bcwz552e`) fue creada desde producción para el preview. La creación de rama no prueba por sí sola que el despliegue la utilice ni que una migración/restauración haya pasado.
 
 Los resultados de código, migración, despliegue y navegador se añaden sólo tras ejecutar y contrastar las pruebas. No declarar aprobado un flujo por inspección visual o HTTP 200.

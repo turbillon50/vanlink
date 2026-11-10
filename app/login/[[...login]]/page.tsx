@@ -1,2 +1,6 @@
 import { AuthScreen } from "@/components/auth/auth-screen";
-export default function LoginPage() { return <AuthScreen />; }
+import { isAdminPreviewIsolated } from "@/lib/admin/isolation";
+
+export const dynamic = "force-dynamic";
+
+export default function LoginPage() { return <AuthScreen previewIsolated={isAdminPreviewIsolated()}/>; }

@@ -137,3 +137,7 @@ El verificador rechaza tablas con más de 100.000 filas antes de calcular finger
 - Si los datos de prueba están dañados, restaurar en otra rama aislada y validar antes de cambiar la conexión del preview.
 - Nunca promover el preview, hacer merge a `main`, resetear producción o reemplazar políticas de Turnkey como parte del rollback.
 - Documentar resultado y riesgo residual. Una recuperación de página sin validar backend y permisos no cierra el incidente.
+
+## Credencial del preview
+
+La aplicación usa `command_preview_app`, un rol dedicado sin `neon_superuser`. Crear como `read_write` restringido a la base aislada y aplicar `scripts/admin/preview-role-permissions.sql`: las tablas heredadas y el marcador quedan de consulta, y auditoría sólo admite INSERT/SELECT. Mantener las conexiones de migración/bootstrap fuera de Vercel. Verificar `has_table_privilege` antes de desplegar. Cada ejecución de trabajos registra como actor al operador que la inicia; el trabajo conserva quién lo encoló.

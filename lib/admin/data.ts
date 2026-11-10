@@ -103,17 +103,26 @@ export async function overview() {
 }
 const listTables:Record<string,string>={cases:'command_cases',incidents:'command_incidents',audit:'command_audit',grants:'command_role_grants',jobs:'command_jobs',operations:'command_transactions'};
 export async function listResource(resource:string,q:URLSearchParams,access:AdminAccess) {
- if(!Object.hasOwn(listTables,resource))throw new Error('resource_not_found');const table=listTables[resource];
- const take=limitOf(q),search=(q.get('q')||'').slice(0,120),state=(q.get('status')||'').slice(0,40),after=readCursor(q.get('cursor'));
+ if(!Object.hasOwn(listTables,resource))throw new Error('resource_not_found');
+ const table=listTables[resource],take=limitOf(q),after=readCursor(q.get('cursor'));
+ const search=(q.get('q')||'').slice(0,120),state=(q.get('status')||'').slice(0,40);
  const key=resource==='operations'?'tx_hash':'id';
- const where=resource==='operations'?"($3='' OR state=$3) AND ($4='' OR tx_hash ILIKE $5 OR wallet_address ILIKE $5 OR recipient ILIKE $5 OR account_id ILIKE $5)":resource==='grants'?"revoked_at IS NULL AND ($4='' OR clerk_user_id ILIKE $5)":resource==='audit'?"($4='' OR id::text ILIKE $5 OR resource ILIKE $5 OR actor_id ILIKE $5 OR permission ILIKE $5)":resource==='jobs'?"($3='' OR status=$3) AND ($4='' OR resource_id ILIKE $5)":"($3='' OR status=$3) AND ($4='' OR title ILIKE $5)";
- const params:unknown[]=[env(),after,state,search,'%'+search+'%',take+1];
- let accessWhere='';
- if(resource==='audit'&&access.role==='support'){params.push(access.userId);accessWhere=' AND actor_id=$7';}
- if(resource==='audit'&&access.role==='operations'){params.push(permissionsForRole('operations'));accessWhere=' AND permission=ANY($7::text[])';}
- const rows=(await adminQuery(`SELECT * FROM ${table} WHERE environment=$1 AND ${key}::text>$2 AND ${where}${accessWhere} ORDER BY ${key} LIMIT $6`,params)).rows;
+ const params:unknown[]=[];
+ const bind=(value:unknown)=>{params.push(value);return '$'+params.length;};
+ const conditions=['environment='+bind(env())];
+ if(after)conditions.push(`${key}::text>${bind(after)}`);
+ if(resource==='grants')conditions.push('revoked_at IS NULL');
+ if(state&&['operations','cases','incidents','jobs'].includes(resource))conditions.push(`${resource==='operations'?'state':'status'}=${bind(state)}`);
+ if(search) {
+  const columns=resource==='operations'?['tx_hash','wallet_address','recipient','account_id']:resource==='grants'?['clerk_user_id']:resource==='audit'?['id::text','resource','actor_id','permission']:resource==='jobs'?['resource_id']:['title'];
+  const pattern=bind('%'+search+'%');
+  conditions.push('('+columns.map(column=>`${column} ILIKE ${pattern}`).join(' OR ')+')');
+ }
+ if(resource==='audit'&&access.role==='support')conditions.push('actor_id='+bind(access.userId));
+ if(resource==='audit'&&access.role==='operations')conditions.push('permission=ANY('+bind(permissionsForRole('operations'))+'::text[])');
+ const limit=bind(take+1);
+ const rows=(await adminQuery(`SELECT * FROM ${table} WHERE ${conditions.join(' AND ')} ORDER BY ${key} LIMIT ${limit}`,params)).rows;
  const items=rows.slice(0,take);
-
  if(resource==='cases'&&access.role!=='auditor')for(const row of items)row.notes=(await adminQuery('SELECT id,actor_id,note,created_at FROM command_case_notes WHERE environment=$1 AND case_id=$2 ORDER BY created_at DESC LIMIT 20',[env(),row.id])).rows;
  return {items,nextCursor:rows.length>take?cursor(rows[take-1]?.[key]):null};
 }

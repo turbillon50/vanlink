@@ -157,10 +157,10 @@ test('audit search, filter and pagination are scoped in SQL before rows reach su
     const d = getData(role);
     await d.api.listResource('audit', new URLSearchParams({ q: grantId, cursor: Buffer.from('cursor-id').toString('base64url') }), d.actor);
     const query = d.queries[0];
-    assert.match(query.sql, /id::text ILIKE \$5/);
+    assert.match(query.sql, /id::text ILIKE \$\d+/);
     assert.match(query.sql, /environment=\$1/);
-    if (role === 'support') { assert.match(query.sql, /AND actor_id=\$7/); assert.equal(query.params[6], 'user_actor'); }
-    else { assert.match(query.sql, /permission=ANY\(\$7::text\[\]\)/); assert.equal(query.params[6].includes('roles.write'), false); }
+    if (role === 'support') { const position=query.sql.match(/AND actor_id=\$(\d+)/); assert.ok(position); assert.equal(query.params[Number(position[1])-1], 'user_actor'); }
+    else { const position=query.sql.match(/permission=ANY\(\$(\d+)::text\[\]\)/); assert.ok(position); assert.equal(query.params[Number(position[1])-1].includes('roles.write'), false); }
   }
 });
 
@@ -188,4 +188,20 @@ test('actual action handler returns Clerk MFA hint while keeping the action bloc
   assert.equal(response.status, 403);
   const output = await response.json(); assert.equal(output.clerk_error.reason, 'reverification-error'); assert.equal(output.clerk_error.metadata.reverification.level, 'multi_factor'); assert.equal(output.clerk_error.metadata.reverification.afterMinutes, 5);
   assert.equal(d.d.commits, 0);
+});
+
+
+test('each list query binds exactly the placeholders it uses, with every filter and role combination', async () => {
+  for (const role of ['owner','operations','support','auditor']) {
+    for (const resource of ['cases','incidents','audit','grants','jobs','operations']) {
+      for (const filters of [{}, { q: 'search', status: 'open', cursor: Buffer.from('cursor-value').toString('base64url'), limit: '25' }]) {
+        const d = getData(role);
+        await d.api.listResource(resource, new URLSearchParams(filters), d.actor);
+        for (const query of d.queries) {
+          const referenced = [...new Set(Array.from(query.sql.matchAll(/\$(\d+)/g), match => Number(match[1])))].sort((a,b)=>a-b);
+          assert.deepEqual(referenced, Array.from({ length: query.params.length }, (_,index)=>index+1), `${resource}/${role}: unused or unbound placeholder`);
+        }
+      }
+    }
+  }
 });
