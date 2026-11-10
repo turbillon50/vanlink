@@ -44,8 +44,10 @@ export async function recoverWithCode(userId: string, otpId: string, code: strin
     import("@turnkey/crypto"), import("@turnkey/encoding"), import("@turnkey/api-key-stamper"), import("@turnkey/http"),
   ]);
   const ephemeral = generateP256KeyPair();
-  const res = await post<{ credentialBundle: string; organizationId: string; turnkeyUserId: string }>(
+  const res = await post<{ clerkUserId: string; credentialBundle: string; organizationId: string; turnkeyUserId: string }>(
     "/api/wallet/recover/verify", { otpId, code, targetPublicKey: ephemeral.publicKeyUncompressed });
+
+  if (res.clerkUserId !== userId) throw new Error("wallet_recovery_account_changed");
 
   // Do not hold a browser lock while the user is entering the code. Recheck
   // both marker and key under the same global lock used by auto-enrollment.
@@ -89,6 +91,12 @@ export async function recoverWithCode(userId: string, otpId: string, code: strin
       timestampMs: String(Date.now()), parameters: { userId: res.turnkeyUserId,
         apiKeys: [{ apiKeyName: `VanLink device ${stamp}`, publicKey: devicePublic, curveType: "API_KEY_CURVE_P256" }] } });
     if (act.activity.status !== "ACTIVITY_STATUS_COMPLETED") throw new Error("wallet_device_registration_unconfirmed");
+    const currentDevice = await recoveryDevice(userId);
+    if (!currentDevice || currentDevice.getPublicKey() !== devicePublic) throw new Error("wallet_device_changed");
+    const current = new TurnkeyClient({ baseUrl: "https://api.turnkey.com" }, currentDevice);
+    const identity = await current.getWhoami({ organizationId: res.organizationId });
+    if (identity.organizationId !== res.organizationId || identity.userId !== res.turnkeyUserId)
+      throw new Error("wallet_device_identity_mismatch");
     return true;
   });
 }

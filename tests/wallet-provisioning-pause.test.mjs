@@ -39,22 +39,47 @@ function rows(result) {
 function server(options = {}) {
   const calls = [];
   const env = { ...activeEnv, ...(options.env || {}) };
-  const current = options.existing || null;
+  let current = options.existing || null;
+  let intent;
+  let providerOrg;
+  let saveFailures = options.saveFailures || 0;
   const select = () => ({ from: () => ({ where: () => { calls.push("lookup"); return rows(current ? [current] : []); } }) });
-  const tx = {
-    execute: async () => { calls.push("lock"); }, select,
-    insert: () => ({ values: values => ({ returning: async () => { calls.push("save"); return [{ ...values }]; } }) }),
+  const db = () => ({ select, insert: () => ({ values: values => ({
+    onConflictDoNothing: async () => {
+      calls.push("save");
+      if (saveFailures-- > 0) throw new Error("database temporarily unavailable");
+      current ??= values;
+    },
+  }) }) });
+  const ledger = {
+    async reserveIntent(_user, parent_id, public_key) {
+      calls.push("reserve");
+      if (intent) return { intent, dispatch: false };
+      if (options.noBudget) throw new Error("budget exhausted");
+      intent = { attempt_id: "test-intent", parent_id, public_key, organization_id: null };
+      return { intent, dispatch: true };
+    },
+    async recordOrganization(_id, org) { intent.organization_id = org; },
   };
-  const db = () => ({ select, transaction: operation => operation(tx) });
   const client = {
-    getSubOrgIds: async () => { calls.push("suborg-lookup"); return { organizationIds: options.matches || [] }; },
-    createSubOrganization: async () => { calls.push("create"); return { subOrganizationId: "new-org" }; },
+    getSubOrgIds: async ({ filterType, filterValue }) => {
+      calls.push("suborg-lookup");
+      const legacy = filterType === "NAME" && filterValue.startsWith("VanLink ");
+      const foreign = filterType === "PUBLIC_KEY" && options.matches;
+      return { organizationIds: legacy ? (options.legacy || []) : foreign || (providerOrg ? [providerOrg] : []) };
+    },
+    createSubOrganization: async () => {
+      calls.push("create"); providerOrg = "new-org";
+      if (options.lostResponse) throw new Error("response lost");
+      return { subOrganizationId: providerOrg };
+    },
+    getApiKeys: async () => ({ apiKeys: [{ credential: { type: "CREDENTIAL_TYPE_API_KEY_P256", publicKey: key } }] }),
     getWallets: async () => { calls.push("read-wallets"); return { wallets: [{ walletId: "new-wallet" }] }; },
     getWalletAccounts: async () => ({ accounts: [
       { addressFormat: "ADDRESS_FORMAT_ETHEREUM", address: "0x" + "22".repeat(20) },
       { addressFormat: "ADDRESS_FORMAT_BITCOIN_MAINNET_P2WPKH", address: "bc1-new" },
     ] }),
-    getUsers: async () => ({ users: [{ userId: "new-owner" }] }),
+    getUsers: async () => ({ users: [{ userId: "new-owner", userEmail: "owner@example.test" }] }),
   };
   const exports = load("server", {
     "server-only": {},
@@ -63,6 +88,7 @@ function server(options = {}) {
     "drizzle-orm": { eq: (...args) => args, sql: (...args) => args },
     "@/lib/db": { db }, "@/lib/db/schema": { wallets: { clerkUserId: "clerk_user_id" } },
     "./config": config(env),
+    "./provision-intent": ledger,
     "./service-identity": { assertServiceIdentity: async () => { calls.push("identity"); } },
     "./diagnostics": { walletStep: async (_step, operation) => operation() },
   }, env);
@@ -112,13 +138,13 @@ test("provisioning flag cannot bypass incomplete wallet service configuration", 
 test("deep provisioning call while paused cannot construct the provider or query/create a suborg", async () => {
   const s = server();
   await assert.rejects(s.provisionWallet(userId, key, "owner@example.test"), error => error.code === "wallet_provisioning_paused");
-  assert.deepEqual(s.calls, ["lock", "lookup"]);
+  assert.deepEqual(s.calls, ["lookup"]);
 });
 
 test("existing wallet retry returns the same mapping without touching Turnkey while paused", async () => {
   const s = server({ existing });
   assert.equal(await s.provisionWallet(userId, "03" + "cd".repeat(32)), existing);
-  assert.deepEqual(s.calls, ["lock", "lookup"]);
+  assert.deepEqual(s.calls, ["lookup"]);
 });
 
 test("deep existing lookup is preserved even when service activation is unavailable", async () => {
@@ -133,15 +159,32 @@ test("explicit enable performs the mocked creation path only after lock and owne
   assert.equal(result.organizationId, "new-org");
   assert.equal(s.calls.filter(call => call === "create").length, 1);
   assert.ok(s.calls.indexOf("lookup") < s.calls.indexOf("sdk"));
-  assert.ok(s.calls.indexOf("identity") < s.calls.indexOf("create"));
+  assert.ok(s.calls.indexOf("reserve") < s.calls.indexOf("create"));
 });
 
-test("explicit enable reuses an already indexed suborg instead of creating another", async () => {
-  const s = server({ matches: ["indexed-org"], env: { WALLET_PROVISIONING_ENABLED: "true" } });
-  assert.equal((await s.provisionWallet(userId, key)).organizationId, "indexed-org");
-  assert.equal(s.calls.includes("create"), false);
+for (const option of [{ matches: ["foreign-org"] }, { legacy: ["legacy-org"] }, { noBudget: true }]) {
+  test("unbound historical resource or missing quota blocks dispatch " + Object.keys(option)[0], async () => {
+    const s = server({ ...option, env: { WALLET_PROVISIONING_ENABLED: "true" } });
+    await assert.rejects(s.provisionWallet(userId, key, "owner@example.test"));
+    assert.equal(s.calls.includes("create"), false);
+    assert.equal(s.calls.includes("save"), false);
+  });
+}
+for (const option of [{ saveFailures: 1 }, { lostResponse: true }]) {
+  test("reconciles the original wallet after failure with a different device " + Object.keys(option)[0], async () => {
+    const s = server({ ...option, env: { WALLET_PROVISIONING_ENABLED: "true" } });
+    await assert.rejects(s.provisionWallet(userId, key, "owner@example.test"));
+    const result = await s.provisionWallet(userId, "03" + "cd".repeat(32), "owner@example.test");
+    assert.equal(result.walletId, "new-wallet");
+    assert.equal(s.calls.filter(c => c === "create").length, 1);
+  });
+}
+test("simultaneous calls reserve one external creation", async () => {
+  const s = server({ env: { WALLET_PROVISIONING_ENABLED: "true" } });
+  const concurrent = await Promise.allSettled([key, key].map(k => s.provisionWallet(userId, k, "owner@example.test")));
+  assert.ok(concurrent.some(r => r.status === "fulfilled"));
+  assert.equal(s.calls.filter(c => c === "create").length, 1);
 });
-
 test("start rejects unauthenticated requests before lookup, email, or provisioning", async () => {
   const r = start({ unauthorized: true });
   assert.equal((await r.POST(r.request())).status, 401);

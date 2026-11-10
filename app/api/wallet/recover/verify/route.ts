@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { walletConfig, walletConfigured } from "@/lib/wallet/config";
 import { allowedOrigin } from "@/lib/wallet/security";
-import { verifyRecoveryCode, walletFor } from "@/lib/wallet/recovery-server";
+import { ownerEmail, primaryEmail, verifyRecoveryCode, walletFor } from "@/lib/wallet/recovery-server";
 import { walletDiagnostic } from "@/lib/wallet/diagnostics";
 
 export const runtime = "nodejs";
@@ -22,9 +22,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Revisa el código." }, { status: 400, headers });
     const wallet = await walletFor(userId);
     if (!wallet) return NextResponse.json({ error: "Aún no tienes wallet activada." }, { status: 404, headers });
+    const [registered, verified] = await Promise.all([
+      ownerEmail(wallet.organizationId, wallet.turnkeyUserId), primaryEmail(userId),
+    ]);
+    if (!registered || registered !== verified) return NextResponse.json({ error: "Revisa el correo de recuperación de tu wallet." }, { status: 409, headers });
     const res = await verifyRecoveryCode(wallet.organizationId, otpId, String(code).trim(), targetPublicKey);
     if (res.userId !== wallet.turnkeyUserId) return NextResponse.json({ error: "Ese código no corresponde a tu wallet." }, { status: 403, headers });
-    return NextResponse.json({ credentialBundle: res.credentialBundle, organizationId: wallet.organizationId,
+    return NextResponse.json({ clerkUserId: userId, credentialBundle: res.credentialBundle, organizationId: wallet.organizationId,
       turnkeyUserId: wallet.turnkeyUserId }, { headers });
   } catch (error) {
     console.error("wallet_recovery_failed", { stage: "verify_code", ...walletDiagnostic(error) });
