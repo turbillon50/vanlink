@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "black",
     title: "VanDeFi",
   },
   icons: { icon: "/icon.svg", apple: "/apple-touch-icon.png" },
