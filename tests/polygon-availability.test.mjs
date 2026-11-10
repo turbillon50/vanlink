@@ -132,7 +132,6 @@ function publicUi(path, state, name, props = {}) {
       if (path === "components/wallet/simple-usdc.tsx") return { userId: null, isLoaded: true };
       throw new Error("Paused Send/Receive must not mount authenticated wallet components");
     } },
-    "@/components/mode/wallet-mode": { useWalletMode: () => ({ mode: "simple", setMode: empty }) },
     "@/lib/auth-config": { authConfigured: true },
     "@/components/ui/press-button": { PressButton: Button },
     "@/components/wallet/recover-device": { RecoverDevice: empty },
@@ -182,7 +181,7 @@ test("Cuenta explica copiar para consulta y conserva Bitcoin histórico sin ofre
       organizationId: "test_org", turnkeyUserId: "test_user", networks: ["Polygon", "Bitcoin"],
       evmAddress: "0x1111111111111111111111111111111111111111", bitcoinAddress: "bc1testonly",
     } },
-    error: "", busy: false, verified: true, userId: "user_test123", expert: true,
+    error: "", busy: false, verified: true, userId: "user_test123",
     onRecovered() {}, onConnect() {}, onRetry() {},
   });
   assert.match(html, /Polygon PoS · consulta e historial/);

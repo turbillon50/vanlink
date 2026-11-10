@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useWalletMode } from "@/components/mode/wallet-mode";
 
 const CHOICES = [
   { id: "polygon-usdt", asset: "USDT", network: "Polygon", label: "USDT", note: "Polygon · en preparación" },
@@ -13,7 +12,6 @@ const CHOICES = [
 
 export function CreateVanLinkForm() {
   const router = useRouter();
-  const { mode } = useWalletMode();
   const [choiceId, setChoiceId] = useState<(typeof CHOICES)[number]["id"]>("polygon-usdt");
   const [amount, setAmount] = useState("");
   const [concept, setConcept] = useState("");
@@ -22,7 +20,7 @@ export function CreateVanLinkForm() {
   const [message, setMessage] = useState("");
   const [link, setLink] = useState("");
 
-  const choice = mode === "simple" ? CHOICES[0] : CHOICES.find(item => item.id === choiceId) || CHOICES[0];
+  const choice = CHOICES.find(item => item.id === choiceId) || CHOICES[0];
 
   const create = async () => {
     setMessage("");
@@ -80,7 +78,7 @@ export function CreateVanLinkForm() {
         <strong>{choice.asset}</strong>
         <span>{choice.network} {choice.network === "Polygon" ? "PoS" : ""}</span>
       </div>
-      {mode === "expert" && (
+      <details className="vd-network-options"><summary>Elegir red de cobro</summary>
         <div className="vl-assets" role="group" aria-label="Activo y red de cobro">
           {CHOICES.map(item => (
             <button key={item.id} type="button" className={choice.id === item.id ? "vl-asset active" : "vl-asset"}
@@ -89,7 +87,7 @@ export function CreateVanLinkForm() {
             </button>
           ))}
         </div>
-      )}
+      </details>
       <label htmlFor="vanlink-amount">Monto en {choice.asset}{choice.network === "Polygon" ? "" : " (opcional)"}</label>
       <input id="vanlink-amount" inputMode="decimal" value={amount} placeholder="0.00"
         onChange={e => setAmount(e.target.value.replace(/[^\d.,]/g, ""))}/>

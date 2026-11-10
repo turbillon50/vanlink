@@ -17,7 +17,6 @@ import QRCode from "qrcode";
 import { usePolygonAvailability } from "@/lib/polygon/use-availability";
 import type { PolygonAvailability } from "@/lib/polygon/availability";
 import { PolygonAvailabilityNotice } from "@/components/wallet/polygon-availability";
-import { useWalletMode } from "@/components/mode/wallet-mode";
 
 type Wallet = { evmAddress: string; bitcoinAddress: string };
 
@@ -31,12 +30,11 @@ function chunk(address: string) {
   return address.replace(/(.{4})/g, "$1 ").trim();
 }
 
-function ReceivePanelInner({ availability }: { availability: PolygonAvailability }) {
+function ReceivePanelInner({ availability, historical }: { availability: PolygonAvailability; historical: boolean }) {
   const { userId, isLoaded } = useAuth();
-  const { mode } = useWalletMode();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [state, setState] = useState<"cargando" | "listo" | "sin-sesion" | "sin-wallet" | "error">("cargando");
-  const [network, setNetwork] = useState<"polygon" | "base" | "bitcoin">("polygon");
+  const [network, setNetwork] = useState<"polygon" | "base" | "bitcoin">(historical ? "base" : "polygon");
   const [qr, setQr] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [clipboardError, setClipboardError] = useState(false);
@@ -88,10 +86,6 @@ function ReceivePanelInner({ availability }: { availability: PolygonAvailability
     return () => { active = false; controller.abort(); };
   }, [walletVersion, isLoaded, userId]);
 
-  useEffect(() => {
-    if (mode === "simple" && network !== "polygon") setNetwork("polygon");
-  }, [mode, network]);
-
   const address = useMemo(() => {
     if (!wallet) return "";
     return network === "bitcoin" ? wallet.bitcoinAddress : wallet.evmAddress;
@@ -111,7 +105,7 @@ function ReceivePanelInner({ availability }: { availability: PolygonAvailability
   }, [address, network, polygonReady]);
 
   if (state === "cargando") return <div className="rcv-skeleton" aria-label="Cargando" />;
-  if (state === "sin-sesion") return <div className="snd-gate"><p>{polygonReady ? "Entra con tu cuenta para consultar las direcciones de tu wallet." : "Entra para consultar tus direcciones históricas de Base y Bitcoin."}</p><Link href="/login?redirect_url=/receive" className="vd-small-outline">Iniciar sesión</Link></div>;
+  if (state === "sin-sesion") return <div className="snd-gate"><p>{!historical ? "Entra con tu cuenta para consultar la dirección de tu wallet." : "Entra para consultar tus direcciones históricas de Base y Bitcoin."}</p><Link href="/login?redirect_url=/receive" className="vd-small-outline">Iniciar sesión</Link></div>;
   if (state === "sin-wallet") {
     return <p className="bal-note">Tu cuenta todavía no tiene direcciones de wallet. Consulta su estado en Cuenta.</p>;
   }
@@ -124,7 +118,7 @@ function ReceivePanelInner({ availability }: { availability: PolygonAvailability
   return (
     <div className="rcv">
       <div className="rcv-tabs" role="tablist" aria-label="Red">
-        {(mode === "simple" ? NETWORKS.filter((n) => n.id === "polygon") : NETWORKS).map((n) => (
+        {NETWORKS.filter(n => historical ? n.id !== "polygon" : n.id === "polygon").map((n) => (
           <button
             key={n.id}
             role="tab"
@@ -187,20 +181,19 @@ function ReceivePanelInner({ availability }: { availability: PolygonAvailability
   );
 }
 
-function ReceivePanelSession({ availability }: { availability: PolygonAvailability }) {
+function ReceivePanelSession({ availability, historical }: { availability: PolygonAvailability; historical: boolean }) {
   const { userId, isLoaded } = useAuth();
-  return <ReceivePanelInner key={isLoaded ? userId || "guest" : "loading"} availability={availability} />;
+  return <ReceivePanelInner key={(isLoaded ? userId || "guest" : "loading") + (historical ? ":historical" : "")} historical={historical} availability={availability} />;
 }
 
-export function ReceivePanel() {
+export function ReceivePanel({ historical = false }: { historical?: boolean } = {}) {
   const availability = usePolygonAvailability();
-  const { mode } = useWalletMode();
-  if (mode === "simple" && availability !== "enabled") return <>
+  if (!historical && availability !== "enabled") return <>
     <PolygonAvailabilityNotice availability={availability} />
-    <p className="vd-legal-note">Puedes consultar tus activos históricos de Base y Bitcoin desde el modo Experto.</p>
+    <p className="vd-legal-note"><Link href="/cartera">Consultar activos de Base y Bitcoin</Link></p>
   </>;
   return <>
-    <PolygonAvailabilityNotice availability={availability} />
-    {authConfigured ? <ReceivePanelSession availability={availability} /> : <p className="bal-note">Inicia sesión para consultar las direcciones de tu wallet.</p>}
+    {!historical && <PolygonAvailabilityNotice availability={availability} />}
+    {authConfigured ? <ReceivePanelSession historical={historical} availability={availability} /> : <p className="bal-note">Inicia sesión para consultar las direcciones de tu wallet.</p>}
   </>;
 }

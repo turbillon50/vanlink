@@ -8,9 +8,9 @@ export default function CreatePage() {
     <AppShell>
       <TopBar title="Nuevo VanLink" backHref="/vanlink" />
       <PageIntro
-        eyebrow="COBRAR, ASÍ DE SIMPLE"
+        eyebrow="VANLINK"
         title="Crea tu cobro"
-        description="Genera un link. Quien lo abra paga directo a tu wallet."
+        description="Elige la red para consultar las opciones de cobro."
       />
       <CreateVanLinkForm></CreateVanLinkForm>
     </AppShell>

@@ -7,7 +7,6 @@ import { Logo } from "@/components/brand/logo";
 import { usePolygonAvailability } from "@/lib/polygon/use-availability";
 import type { PolygonAvailability } from "@/lib/polygon/availability";
 import { PolygonAvailabilityNotice } from "@/components/wallet/polygon-availability";
-import { useWalletMode } from "@/components/mode/wallet-mode";
 import { ExportWallet } from "@/components/wallet/export-wallet";
 import { DeviceCheck } from "@/components/wallet/device-check";
 import { enrollmentMessage, requestWallet, WALLET_READY_EVENT } from "@/lib/wallet/request-wallet";
@@ -40,7 +39,6 @@ export function WalletSetup({ userId }: { userId: string }) {
 }
 
 function WalletSetupInner({ userId }: { userId: string }) {
-  const { mode } = useWalletMode();
   const availability = usePolygonAvailability();
   const [status, setStatus] = useState<WalletStatus | null>(null);
   const [error, setError] = useState("");
@@ -96,17 +94,17 @@ function WalletSetupInner({ userId }: { userId: string }) {
     return () => controller.abort();
   }, [userId, retry]);
 
-  return <WalletSetupView status={status} error={error} busy={busy} verified={verified} userId={userId} expert={mode === "expert"} availability={availability}
+  return <WalletSetupView status={status} error={error} busy={busy} verified={verified} userId={userId} availability={availability}
     onRecovered={() => { setVerified(true); setError(""); }}
     onConnect={connect}
     onRetry={() => { setError(""); setRetry(n => n + 1); }} />;
 }
 
 /** Presentation only, shared by real account states and isolated visual review. */
-export function WalletSetupView({ status, error, busy, verified, userId, onRecovered, onConnect, onRetry, expert = false, availability = "unknown" }: {
+export function WalletSetupView({ status, error, busy, verified, userId, onRecovered, onConnect, onRetry, availability = "unknown" }: {
   status: WalletStatus | null; error: string; busy: boolean; verified: boolean | null;
   userId: string; onRecovered: () => void;
-  onConnect: () => void; onRetry: () => void; expert?: boolean; availability?: PolygonAvailability;
+  onConnect: () => void; onRetry: () => void; availability?: PolygonAvailability;
 }) {
   return <section className="access-status wallet-setup" aria-busy={busy} aria-labelledby="wallet-title">
     <div className="wallet-status-line"><span className="eyebrow">MI WALLET</span><span className={"wallet-state" + (verified ? " connected" : "")}><i aria-hidden="true" />{status?.wallet ? verified ? "Acceso reconocido" : verified === null ? "Verificando acceso" : "Acceso por comprobar" : status ? status.canActivate ? "Sin wallet vinculada" : "Nuevas wallets en pausa" : error ? "Sin conexión" : "Consultando"}</span></div>
@@ -121,14 +119,13 @@ export function WalletSetupView({ status, error, busy, verified, userId, onRecov
     </div>
     {status ? <>
       <div className="wallet-network-list"><span>USDT <em>en Polygon PoS</em></span>
-        {expert && <><span className="wallet-future">USDC <em>Base · histórico</em></span><span className="wallet-future">BTC <em>Bitcoin · histórico</em></span></>}
       </div>
       {status?.wallet && <PolygonAvailabilityNotice availability={availability} />}
       {status?.wallet?.evmAddress ? (
         <div className="wallet-address-list">
           <p className="vd-legal-note">Esta dirección permite identificar tu wallet y consultar su historial.{availability !== "enabled" ? " Copiarla no habilita depósitos: no envíes dinero a Polygon mientras los movimientos estén en pausa o sin comprobar." : " Antes de usarla para recibir, verifica siempre la red."}</p>
           <WalletAddress label={availability === "enabled" ? "Polygon PoS · EVM" : "Polygon PoS · consulta e historial"} value={status.wallet.evmAddress} />
-          {expert && status.wallet.bitcoinAddress ? (
+          {status.wallet.bitcoinAddress ? (
             <WalletAddress label="Bitcoin · histórico" value={status.wallet.bitcoinAddress} />
           ) : null}
         </div>

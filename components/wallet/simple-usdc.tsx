@@ -8,7 +8,6 @@ import type { PolygonAvailability } from "@/lib/polygon/availability";
 import { PolygonAvailabilityNotice } from "@/components/wallet/polygon-availability";
 import { Wordmark } from "@/components/brand/logo";
 import { Icon } from "@/components/icons";
-import { useWalletMode } from "@/components/mode/wallet-mode";
 import { USDTOperationBar } from "@/components/design/usdc-operations";
 
 type ViewState = "loading" | "ready" | "guest" | "no-wallet" | "error";
@@ -38,7 +37,6 @@ function AuthenticatedSimpleUSDTWallet({ availability }: { availability: Polygon
 function SimpleUSDTWalletForUser({ availability, userId, isLoaded }: {
   availability: PolygonAvailability; userId: string | null; isLoaded: boolean;
 }) {
-  const { setMode } = useWalletMode();
   const [state, setState] = useState<ViewState>(isLoaded && !userId ? "guest" : "loading");
   const [data, setData] = useState<PolygonBalance | null>(null);
   const [hidden, setHidden] = useState(false);
@@ -77,7 +75,7 @@ function SimpleUSDTWalletForUser({ availability, userId, isLoaded }: {
     state === "loading" ? "Leyendo saldo en Polygon…"
       : state === "guest" ? "Inicia sesión para consultar tu USDT."
       : state === "no-wallet" ? "Tu cuenta todavía no tiene una wallet. Consulta su estado en Cuenta."
-      : state === "error" ? "No pudimos comprobar tu saldo. No mostraremos un cero falso."
+      : state === "error" ? "No pudimos consultar tu saldo."
       : "USDT de Tether · Polygon PoS. Valor en USD aproximado.";
 
 
@@ -116,7 +114,6 @@ function SimpleUSDTWalletForUser({ availability, userId, isLoaded }: {
       {availability === "enabled" && <USDTOperationBar />}
       <div className="vd-simple-information">
         <div>
-          <p className="vd-overline">UN DÓLAR DIGITAL</p>
           <h2>{availability === "enabled" ? "Compra. Envía. Retira." : "Consulta tu wallet"}</h2>
           <p>{availability === "enabled" ? "Sin elegir tokens o cadenas. VanDeFi muestra los costos y la red antes de confirmar." : "Tu saldo y tus movimientos siguen disponibles para consulta."}</p>
         </div>
@@ -125,9 +122,9 @@ function SimpleUSDTWalletForUser({ availability, userId, isLoaded }: {
       {availability === "enabled" && ready && Number(data!.polygon!.polGasBalance) === 0 && (
         <p className="vd-gas-disclaimer">Para enviar USDT en Polygon se necesita POL para la comisión. El patrocinio automático de gas todavía no está habilitado.</p>
       )}
-      <button type="button" className="vd-other-assets-link" onClick={() => setMode("expert")}>
-        Tengo otros activos o quiero configurar más tokens <Icon name="chevron" size={16}/>
-      </button>
+      <Link href="/cartera" className="vd-other-assets-link">
+        Ver otros activos <Icon name="chevron" size={16}/>
+      </Link>
     </>
   );
 }

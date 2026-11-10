@@ -47,7 +47,6 @@ function environment(kind) {
     "@/components/wallet/polygon-availability": { PolygonAvailabilityNotice: () => null },
     "@/components/brand/logo": { Wordmark: () => null },
     "@/components/icons": { Icon: () => null },
-    "@/components/mode/wallet-mode": { useWalletMode: () => ({ mode: "simple", setMode() {} }) },
     "@/components/design/usdc-operations": { USDTOperationBar: () => null },
     "@/lib/polygon/use-availability": { usePolygonAvailability: () => "enabled" },
     qrcode: { toDataURL: async () => "data:image/png;base64,test-only" },
@@ -75,9 +74,9 @@ function environment(kind) {
     }
     return find(node.props?.children);
   }
-  function leaf(userId, isLoaded = true) {
+  function leaf(userId, isLoaded = true, historical = false) {
     auth = { userId, isLoaded };
-    return find(Component({ availability: "enabled" }));
+    return find(Component({ availability: "enabled", historical }));
   }
   function mount(node) {
     const current = { values: [], updates: [], dependencies: [], effects: [], cleanups: [], cursor: 0 };
@@ -110,6 +109,15 @@ test("Home and Receive remount account A, account B, guest and loading before an
       e.leaf(null).key, e.leaf("user_accountB", false).key], ["user_accountA", "user_accountB", "guest", "loading"]);
     assert.equal(e.requests.length, 0);
   }
+});
+
+test("Switching between Polygon and historical networks remounts the address panel", () => {
+  const e = environment("receive");
+  const polygon = e.leaf("user_accountA");
+  const historical = e.leaf("user_accountA", true, true);
+  assert.notEqual(polygon.key, historical.key);
+  assert.equal(historical.props.historical, true);
+  assert.equal(e.requests.length, 0);
 });
 
 test("Home aborts account A and ignores its late balance while account B displays only its own balance", async () => {
