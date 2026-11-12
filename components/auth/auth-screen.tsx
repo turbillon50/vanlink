@@ -34,7 +34,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
         <ClerkLoaded>{signUp ? <SignUp routing="path" path="/sign-up" signInUrl="/login" /> : <SignIn routing="path" path="/login" signUpUrl="/sign-up" />}</ClerkLoaded>
       </div> : <section className="access-status"><h2>El acceso está en preparación</h2><p>Puedes explorar VanDeFi y preparar borradores. El registro estará disponible al conectar esta instalación.</p></section>}
       <PressButton variant="ghost" href="/">Seguir explorando</PressButton>
-      <p className="auth-note">Al registrarte generamos direcciones de Bitcoin y Base automáticamente. La llave del dispositivo permanece protegida en tu navegador. No movemos dinero por registrarte.</p>
+      <p className="auth-note">Al registrarte generamos tu wallet y una dirección EVM para Polygon. La llave de tu dispositivo permanece protegida en este navegador. El registro no mueve dinero.</p>
     </main>
   );
 }
