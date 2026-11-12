@@ -11,7 +11,6 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { vanlinks, wallets } from "@/lib/db/schema";
 import { ASSETS, isValidAmount, newSlug, type AssetKey } from "@/lib/vanlink";
-import { polygonUsdcMoneyEnabled } from "@/lib/polygon/capabilities";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,8 +36,9 @@ export async function POST(req: NextRequest) {
     || (asset === "USDT" && network === "Base")
     || (asset === "BTC" && network === "Bitcoin");
   if (!comboValid) return NextResponse.json({ error: "red_no_soportada" }, { status: 400, headers });
-  if (network === "Polygon" && !polygonUsdcMoneyEnabled()) {
-    return NextResponse.json({ error: "polygon_no_habilitado", message: "Estamos habilitando VanLink USDC en Polygon. No se generó el cobro ni se movió dinero." },
+  if (network === "Polygon") {
+    // ADR-009: Polygon opera sólo USDT. VanLink en USDT aún no está homologado.
+    return NextResponse.json({ error: "polygon_no_habilitado", message: "VanLink en USDT (Polygon) está en preparación. No se generó el cobro ni se movió dinero." },
       { status: 503, headers });
   }
   if (body.amount && !isValidAmount(body.amount)) {

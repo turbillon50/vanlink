@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useWalletMode } from "@/components/mode/wallet-mode";
 
 const CHOICES = [
-  { id: "polygon-usdc", asset: "USDC", network: "Polygon", label: "USDC", note: "Polygon" },
+  { id: "polygon-usdt", asset: "USDC", network: "Polygon", label: "USDC", note: "Polygon" },
   { id: "base-usdc", asset: "USDC", network: "Base", label: "USDC", note: "Base · legado" },
   { id: "base-usdt", asset: "USDT", network: "Base", label: "USDT", note: "Base · legado" },
   { id: "bitcoin-btc", asset: "BTC", network: "Bitcoin", label: "BTC", note: "Bitcoin · legado" },
@@ -14,7 +14,7 @@ const CHOICES = [
 export function CreateVanLinkForm() {
   const router = useRouter();
   const { mode } = useWalletMode();
-  const [choiceId, setChoiceId] = useState<(typeof CHOICES)[number]["id"]>("polygon-usdc");
+  const [choiceId, setChoiceId] = useState<(typeof CHOICES)[number]["id"]>("polygon-usdt");
   const [amount, setAmount] = useState("");
   const [concept, setConcept] = useState("");
   const [days, setDays] = useState("7");

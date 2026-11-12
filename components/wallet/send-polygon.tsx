@@ -6,8 +6,8 @@ import { useAuth } from "@clerk/nextjs";
 import { PressButton } from "@/components/ui/press-button";
 import { RecoverDevice } from "@/components/wallet/recover-device";
 import {
-  buildPolygonUSDCUnsigned, formatPolygonUSDC, maxPolygonGas,
-  normalizePolygonAddress, polygonUSDCUnits, verifyPolygonUSDCSigned,
+  buildPolygonUSDTUnsigned, formatPolygonUSDT, maxPolygonGas,
+  normalizePolygonAddress, polygonUSDTUnits, verifyPolygonUSDTSigned,
   type PolygonTransferQuote,
 } from "@/lib/send/polygon-tx";
 
@@ -26,7 +26,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function SendPolygonUSDC() {
+export function SendPolygonUSDT() {
   const { isLoaded, userId } = useAuth();
   const [phase, setPhase] = useState<Phase>("loading");
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -93,10 +93,10 @@ export function SendPolygonUSDC() {
     if (!wallet || busy) return;
     setError("");
     const to = normalizePolygonAddress(destination);
-    const value = polygonUSDCUnits(amount);
+    const value = polygonUSDTUnits(amount);
     if (!to) { setError("Revisa la dirección. Sólo se admite una dirección válida de Polygon (0x…)."); return; }
     if (to.toLowerCase() === wallet.evmAddress.toLowerCase()) { setError("No puedes enviarte a ti mismo."); return; }
-    if (!value) { setError("Escribe un monto válido de USDC, con hasta seis decimales."); return; }
+    if (!value) { setError("Escribe un monto válido de USDT, con hasta seis decimales."); return; }
     setBusy(true);
     try {
       const query = new URLSearchParams({ to, value: value.toString() });
@@ -113,12 +113,12 @@ export function SendPolygonUSDC() {
     if (Date.now() >= quote.expiryMs) { setQuote(null); setError("La cotización venció. Revisa el importe nuevamente."); return; }
     setError(""); setBusy(true);
     try {
-      const { unsigned } = buildPolygonUSDCUnsigned({
+      const { unsigned } = buildPolygonUSDTUnsigned({
         to: quote.to, amount: BigInt(quote.value), quote: quote.quote,
       });
       const { signEvmTransaction } = await import("@/lib/send/signer");
       const signature = await signEvmTransaction(wallet.organizationId, wallet.evmAddress, unsigned);
-      const verified = await verifyPolygonUSDCSigned(signature, { from: wallet.evmAddress, unsigned });
+      const verified = await verifyPolygonUSDTSigned(signature, { from: wallet.evmAddress, unsigned });
       const result = await request<{ hash: string; explorer: string }>("/api/send/polygon/broadcast", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ signed: verified }),
@@ -131,7 +131,7 @@ export function SendPolygonUSDC() {
 
   if (phase === "loading") return <div className="snd-skeleton" aria-label="Cargando wallet"/>;
   if (phase === "guest") return <div className="snd-gate">
-    <p>Tu wallet se crea al registrarte. Entra para enviar USDC.</p>
+    <p>Tu wallet se crea al registrarte. Entra para enviar USDT.</p>
     <PressButton href="/login?redirect_url=/send">Entrar a mi cuenta</PressButton>
   </div>;
   if (phase === "no-wallet") return <div className="snd-gate">
@@ -141,7 +141,7 @@ export function SendPolygonUSDC() {
   if (phase === "error" || !wallet) return <p className="field-error">No pudimos consultar tu wallet.</p>;
   if (!sendEnabled) return (
     <div className="snd-gate">
-      <p><strong>USDC Polygon · en habilitación.</strong> La nueva red está siendo probada. Todavía no están activados los envíos ni los depósitos.</p>
+      <p><strong>USDT Polygon · en habilitación.</strong> La nueva red está siendo probada. Todavía no están activados los envíos ni los depósitos.</p>
       <p>La opción Experto mantiene el acceso a tus activos históricos de Base y Bitcoin.</p>
       <PressButton href="/expert" variant="secondary">Abrir herramientas expertas</PressButton>
     </div>
@@ -151,7 +151,7 @@ export function SendPolygonUSDC() {
     <div className="form-stack">
       <div className="snd-done">
         <h2>{sent.state === "confirmed" ? "Transferencia confirmada" : sent.state === "failed" ? "Transferencia fallida" : "Enviada a Polygon"}</h2>
-        <p>{sent.state === "pending" ? "Esperando la confirmación de la red." : sent.state === "failed" ? "La red rechazó la ejecución y pudo cobrar gas." : "El USDC llegó a la red de destino."}</p>
+        <p>{sent.state === "pending" ? "Esperando la confirmación de la red." : sent.state === "failed" ? "La red rechazó la ejecución y pudo cobrar gas." : "El USDT llegó a la red de destino."}</p>
         <code className="snd-txid">{sent.hash.slice(0, 18)}…{sent.hash.slice(-8)}</code>
       </div>
       <PressButton href={sent.explorer} target="_blank" rel="noopener noreferrer">Ver en Polygonscan</PressButton>
@@ -161,12 +161,12 @@ export function SendPolygonUSDC() {
 
   if (quote) return (
     <div className="form-stack">
-      <div className="snd-hero"><span>Vas a enviar</span><strong>{formatPolygonUSDC(BigInt(quote.value))} USDC</strong><small>Polygon PoS · comisión en POL</small></div>
+      <div className="snd-hero"><span>Vas a enviar</span><strong>{formatPolygonUSDT(BigInt(quote.value))} USDT</strong><small>Polygon PoS · comisión en POL</small></div>
       <div className="summary-panel">
         <p><strong>Destino:</strong> <code className="snd-addr">{quote.to}</code></p>
         <p><strong>Red:</strong> Polygon PoS · 137</p>
         <p><strong>Comisión máxima estimada:</strong> {formatPOL(maxPolygonGas(quote.quote))} POL</p>
-        <p><strong>Contrato:</strong> USDC nativo de Circle</p>
+        <p><strong>Contrato:</strong> USDT de Tether</p>
       </div>
       <p className="rcv-warn">Verifica dirección, red y costo. Las transacciones confirmadas no se pueden revertir.</p>
       {deviceOk === false && userId && <RecoverDevice userId={userId} context="firmar envíos" onRecovered={() => setDeviceOk(true)} />}
@@ -180,18 +180,18 @@ export function SendPolygonUSDC() {
   );
 
   return <form className="form-stack" onSubmit={review} noValidate>
-    <div className="vd-polygon-line"><strong>USDC</strong><span>Polygon PoS</span></div>
+    <div className="vd-polygon-line"><strong>USDT</strong><span>Polygon PoS</span></div>
     <label className="field-label">Dirección de destino
       <input value={destination} onChange={e => setDestination(e.target.value)} placeholder="0x…"
         autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="off"/>
     </label>
-    <label className="amount-field"><span>Monto en USDC</span>
+    <label className="amount-field"><span>Monto en USDT</span>
       <div><input inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
-        placeholder="0.00"/><strong className="currency-label">USDC</strong></div>
+        placeholder="0.00"/><strong className="currency-label">USDT</strong></div>
     </label>
-    <p className="vd-legal-note">Disponible: {balance === null ? "—" : balance + " USDC"} · Se requiere POL para el gas.</p>
+    <p className="vd-legal-note">Disponible: {balance === null ? "—" : balance + " USDT"} · Se requiere POL para el gas.</p>
     {error && <p role="alert" className="field-error">{error}</p>}
     <PressButton type="submit" disabled={busy || !wallet}>{busy ? "Cotizando…" : "Revisar envío"}</PressButton>
-    <Link className="snd-link" href="/receive">¿Quieres recibir USDC? Abre tu QR de Polygon.</Link>
+    <Link className="snd-link" href="/receive">¿Quieres recibir USDT? Abre tu QR de Polygon.</Link>
   </form>;
 }

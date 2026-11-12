@@ -2,7 +2,7 @@
 
 import { useWalletMode } from "@/components/mode/wallet-mode";
 import { SendFlow } from "@/components/wallet/send-flow";
-import { SendPolygonUSDC } from "@/components/wallet/send-polygon";
+import { SendPolygonUSDT } from "@/components/wallet/send-polygon";
 import { PageIntro } from "@/components/craft";
 
 export function SendExperience() {
@@ -11,7 +11,7 @@ export function SendExperience() {
     <>
       <PageIntro eyebrow="USDC · POLYGON" title="Enviar dinero"
         description="Escribe cuánto y a quién. Revisa la comisión y confirma desde tu dispositivo." />
-      <SendPolygonUSDC/>
+      <SendPolygonUSDT/>
     </>
   );
   return (

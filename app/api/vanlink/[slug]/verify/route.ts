@@ -3,7 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { vanlinks } from "@/lib/db/schema";
 import { polygonRpc } from "@/lib/chain/polygon";
-import { POLYGON_EXPLORER, POLYGON_USDC_ADDRESS } from "@/lib/polygon/asset";
+import { POLYGON_EXPLORER, POLYGON_USDT_ADDRESS } from "@/lib/polygon/asset";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ type PolygonLog = { address?: string; topics?: string[]; data?: string };
 type Receipt = { status?: string; blockNumber?: string; logs?: PolygonLog[] } | null;
 
 function creditedTo(log: PolygonLog, recipient: string): bigint | null {
-  if (!log.address || log.address.toLowerCase() !== POLYGON_USDC_ADDRESS.toLowerCase()) return null;
+  if (!log.address || log.address.toLowerCase() !== POLYGON_USDT_ADDRESS.toLowerCase()) return null;
   if (log.topics?.length !== 3 || log.topics[0]?.toLowerCase() !== TOPIC_TRANSFER) return null;
   const to = log.topics[2];
   if (!to || !/^0x[0-9a-fA-F]{64}$/.test(to)) return null;

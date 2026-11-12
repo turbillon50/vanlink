@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { wallets } from "@/lib/db/schema";
-import { readPolygonUSDC } from "@/lib/chain/polygon";
-import { polygonUsdcMoneyEnabled } from "@/lib/polygon/capabilities";
+import { readPolygonUSDT } from "@/lib/chain/polygon";
+import { polygonUsdtMoneyEnabled } from "@/lib/polygon/capabilities";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,12 +20,12 @@ export async function GET() {
       : null;
     if (!wallet) return NextResponse.json({ wallet: null, network: "Polygon", receiveEnabled: false, sendEnabled: false }, { headers });
 
-    const value = await readPolygonUSDC(wallet.evmAddress);
+    const value = await readPolygonUSDT(wallet.evmAddress);
     return NextResponse.json({
       wallet: { evmAddress: wallet.evmAddress },
       polygon: value,
-      receiveEnabled: polygonUsdcMoneyEnabled(),
-      sendEnabled: polygonUsdcMoneyEnabled(),
+      receiveEnabled: polygonUsdtMoneyEnabled(),
+      sendEnabled: polygonUsdtMoneyEnabled(),
     }, { headers });
   } catch (error) {
     // Do not turn network / provider errors into false 0 balances.

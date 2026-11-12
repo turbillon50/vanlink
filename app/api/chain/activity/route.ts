@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { wallets } from "@/lib/db/schema";
-import { baseMovements, bitcoinMovements, type Movement } from "@/lib/chain/history";
+import { baseMovementsWithCoverage, bitcoinMovements, type Movement } from "@/lib/chain/history";
+import { polygonUsdtMovements } from "@/lib/chain/polygon-operations";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,13 +26,15 @@ export async function GET() {
   }
   if (!wallet) return NextResponse.json({ wallet: null, movements: [] }, { headers });
 
-  const [base, btc] = await Promise.allSettled([
-    baseMovements(wallet.evmAddress),
+  const [base, btc, polygon] = await Promise.allSettled([
+    baseMovementsWithCoverage(wallet.evmAddress),
     bitcoinMovements(wallet.bitcoinAddress),
+    polygonUsdtMovements(wallet.evmAddress),
   ]);
 
   const movements: Movement[] = [
-    ...(base.status === "fulfilled" ? base.value : []),
+    ...(polygon.status === "fulfilled" ? polygon.value : []),
+    ...(base.status === "fulfilled" ? base.value.movements : []),
     ...(btc.status === "fulfilled" ? btc.value : []),
   ].sort((a, b) => (b.at ?? "").localeCompare(a.at ?? ""));
 
@@ -39,8 +42,11 @@ export async function GET() {
     {
       wallet: { evmAddress: wallet.evmAddress, bitcoinAddress: wallet.bitcoinAddress },
       movements,
+      baseRecentOnly: base.status === "fulfilled" ? base.value.limited : false,
+      baseScannedBlocks: base.status === "fulfilled" ? base.value.scannedBlocks : null,
       // Se declara qué red no se pudo leer: nunca un vacío que parezca "sin movimientos".
       unavailable: [
+        polygon.status === "rejected" ? "Polygon" : null,
         base.status === "rejected" ? "Base" : null,
         btc.status === "rejected" ? "Bitcoin" : null,
       ].filter(Boolean),
